@@ -1,5 +1,6 @@
 # Team Liquid — Build Roadmap
-## Civic Access: Doctor Discovery & Booking Platform (CanYouHackIt, Clark)
+## AI-Powered Healthcare Navigation Platform (CanYouHackIt, Clark)
+### "The Right Doctor. The First Time."
 
 **Team size:** 5
 **Duration:** 14 days
@@ -34,8 +35,8 @@ This only works if it's habitual — if even one task skips it, the log has a ga
 ### If you need to make a major scope change mid-hackathon
 
 1. **Add a row to the PRD's Change Log** (top of `liquid-prd.md`) describing the change and why.
-2. **Update the actual PRD sections it touches** — usually Section 4 (Data Models) and/or Section 6 (Feature Logic Specs). Don't leave the Change Log and the spec disagreeing.
-3. **Check this roadmap for any task whose meta-prompt references the section you just changed** — those meta-prompts are now stale. You don't need to rewrite the whole roadmap; just flag it verbally at standup ("Section 4 changed, anyone using the Doctor model prompt should re-check it").
+2. **Update the actual PRD sections it touches** — usually Section 6 (Data Models) and/or Section 6 (Feature Logic Specs). Don't leave the Change Log and the spec disagreeing.
+3. **Check this roadmap for any task whose meta-prompt references the section you just changed** — those meta-prompts are now stale. You don't need to rewrite the whole roadmap; just flag it verbally at standup ("Section 6 changed, anyone using the Doctor model prompt should re-check it").
 4. **Timing check:** a change in Phase 1-2 is nearly free. The same change in Phase 4-5, after screens are already built against the old schema, means real rework — if you're deep into Phase 4+, weigh whether the change is worth it before committing to it.
 
 ---
@@ -61,8 +62,8 @@ Assign names now — every task below is tagged with the role responsible, not a
 | Phase 1 | 1-2 | Foundation: repo, schema, auth, seed data skeleton |
 | Phase 2 | 3-5 | Doctor/secretary side built first (simpler, unblocks real data) |
 | Phase 3 | 6-9 | Patient intake + AI matching + safety gate (riskiest piece) |
-| Phase 4 | 10-11 | Doctor list, filtering, booking flow — connect both sides |
-| Phase 5 | 12-13 | Should-have features + accessibility + polish |
+| Phase 4 | 10-11 | Doctor list, HMO verification + ranking, booking flow — connect both sides |
+| Phase 5 | 12-13 | Should-have features + accessibility + polish + before/after visual + financial framing |
 | Phase 6 | 14 | Rehearsal, backup demo, pitch |
 
 ---
@@ -83,7 +84,7 @@ This is how all 5 of you work in parallel without anyone's push breaking the liv
 
 ### Where conflicts actually happen
 
-Most of your work won't overlap in the same files, since roles are split by screen/feature (Patient side, Doctor side, AI logic). The real risk is **shared files** — `/lib/supabaseClient.ts` and the Data Models from PRD Section 4 in particular. If two people need to touch the Doctor table schema on the same day, that's when conflicts happen. Cheap fix: say so at standup ("I'm touching the Doctor table today") so nobody else branches off a stale version of it mid-edit.
+Most of your work won't overlap in the same files, since roles are split by screen/feature (Patient side, Doctor side, AI logic). The real risk is **shared files** — `/lib/supabaseClient.ts` and the Data Models from PRD Section 6 in particular. If two people need to touch the Doctor table schema on the same day, that's when conflicts happen. Cheap fix: say so at standup ("I'm touching the Doctor table today") so nobody else branches off a stale version of it mid-edit.
 
 ### Tie this to the build log habit
 
@@ -160,12 +161,12 @@ Get a "hello world" version of the full pipeline (frontend → backend → datab
 > "I have a Next.js app in a git repo with a Supabase project already created (I have the URL and anon key). Refer to `/docs/liquid-prd.md` in this repo for full context on what I'm building. Write a build prompt for a coding agent to: install the Supabase client, create a `/lib/supabaseClient.ts` helper reading from environment variables, and create one simple test page that reads and displays a row from Supabase, so I can confirm the connection works before building real features."
 
 ### Task 1.2 — Database schema — *Owner: A*
-Implement the data models exactly as defined in PRD Section 4 (User, Doctor, Schedule Slot, Appointment, Review, Specialty Taxonomy).
+Implement the data models exactly as defined in PRD Section 6 (User, Doctor, Schedule Slot, Appointment, Review, Specialty Taxonomy).
 
 **Meta-prompt:**
-> "Refer to `/docs/liquid-prd.md` in this repo (Section 4, Data Models) for the full schema. Write a detailed build prompt for a coding agent to create these as Supabase Postgres tables, including foreign key relationships, appropriate types, and any needed indexes. Also ask it to generate the Supabase client setup code for a Next.js app."
+> "Refer to `/docs/liquid-prd.md` in this repo (Section 6, Data Models) for the full schema. Write a detailed build prompt for a coding agent to create these as Supabase Postgres tables, including foreign key relationships, appropriate types, and any needed indexes. Also ask it to generate the Supabase client setup code for a Next.js app."
 >
-> *(No repo access? Paste PRD Section 4 in full instead of the file reference.)*
+> *(No repo access? Paste PRD Section 6 in full instead of the file reference.)*
 
 ### Task 1.3 — Auth setup (patient + doctor login) — *Owner: A*
 Two user types (patient, doctor/secretary) need separate sign-up flows but can share the same auth backend.
@@ -174,10 +175,10 @@ Two user types (patient, doctor/secretary) need separate sign-up flows but can s
 > "Using Supabase Auth in a Next.js app, write a build prompt for a coding agent to implement sign-up/login for two user roles: 'patient' and 'doctor'. After login, redirect each role to a different dashboard route. Keep it simple — no email verification flows needed for a hackathon demo."
 
 ### Task 1.4 — Specialty taxonomy seed data — *Owner: E (with A)*
-Pick ONE specialty to seed deeply (PRD Section 6.4 recommends Ophthalmology with 4 sub-specialties). Write the actual seed data: 4 sub-specialties, 6-10 realistic doctor profiles across them, with credentials, rates, HMO tags, and schedule slots.
+Pick ONE specialty to seed deeply (PRD Section 8.5 recommends Ophthalmology with 4 sub-specialties). Write the actual seed data: 4 sub-specialties, 6-10 realistic doctor profiles across them, with credentials, rates, HMO tags, and schedule slots.
 
 **Meta-prompt:**
-> "I need realistic-sounding seed data for a Philippine healthcare app demo. Generate 8 doctor profiles for [Ophthalmology], split across these sub-specialties: Retina, Cataract, Glaucoma, Pediatric Ophthalmology. For each doctor include: name, credentials (PRC license style, med school, years of experience), rate in PHP, 2-3 HMO accreditations from this list [Maxicare, Intellicare, Medicard, PhilCare], clinic location in [your target city], and 3-4 open schedule slots over the next 2 weeks. Format as JSON matching this schema: [paste Doctor + Schedule Slot models from PRD Section 4]."
+> "I need realistic-sounding seed data for a Philippine healthcare app demo. Generate 8 doctor profiles for [Ophthalmology], split across these sub-specialties: Retina, Cataract, Glaucoma, Pediatric Ophthalmology. For each doctor include: name, credentials (PRC license style, med school, years of experience), rate in PHP, 2-3 HMO accreditations from this list [Maxicare, Intellicare, Medicard, PhilCare], clinic location in [your target city], and 3-4 open schedule slots over the next 2 weeks. Format as JSON matching this schema: [paste Doctor + Schedule Slot models from PRD Section 6]."
 
 **End of Phase 1 checkpoint:** everyone can log in as patient or doctor, database is live, seed data exists.
 
@@ -189,19 +190,19 @@ Pick ONE specialty to seed deeply (PRD Section 6.4 recommends Ophthalmology with
 Build the sign-up-time profile form: credentials upload, specialty + sub-specialty picker (constrained to your seeded taxonomy), rate, clinic location.
 
 **Meta-prompt:**
-> "Here's my Doctor data model: [paste from PRD Section 4]. Here's my specialty taxonomy: [paste PRD Section 6.4]. Write a build prompt for a coding agent to create a doctor profile setup form in Next.js/React that lets a doctor enter their name, upload a credential file (can just store a filename/URL for demo purposes), pick specialty then sub-specialty from a constrained dropdown, set rate, and set clinic location. On submit, save to Supabase."
+> "Here's my Doctor data model: [paste from PRD Section 6]. Here's my specialty taxonomy: [paste PRD Section 8.5]. Write a build prompt for a coding agent to create a doctor profile setup form in Next.js/React that lets a doctor enter their name, upload a credential file (can just store a filename/URL for demo purposes), pick specialty then sub-specialty from a constrained dropdown, set rate, and set clinic location. On submit, save to Supabase."
 
 ### Task 2.2 — Schedule management screen — *Owner: C*
 Doctor/secretary adds and edits available time slots.
 
 **Meta-prompt:**
-> "Here's my Schedule Slot model: [paste from PRD Section 4]. Write a build prompt for a coding agent to build a simple calendar/list UI where a logged-in doctor can add new available slots (date, start time, end time) and see/delete their existing upcoming slots. Should update Supabase in real time."
+> "Here's my Schedule Slot model: [paste from PRD Section 6]. Write a build prompt for a coding agent to build a simple calendar/list UI where a logged-in doctor can add new available slots (date, start time, end time) and see/delete their existing upcoming slots. Should update Supabase in real time."
 
 ### Task 2.3 — Appointments dashboard (accept/decline) — *Owner: C (with A on backend logic)*
 The core doctor-side workflow screen.
 
 **Meta-prompt:**
-> "Here's my Appointment model: [paste from PRD Section 4]. Write a build prompt for a coding agent to build a dashboard for a logged-in doctor showing all appointments with status 'pending', with Accept/Decline buttons that update the appointment status in Supabase. Also show a separate list of already-confirmed upcoming appointments."
+> "Here's my Appointment model: [paste from PRD Section 6]. Write a build prompt for a coding agent to build a dashboard for a logged-in doctor showing all appointments with status 'pending', with Accept/Decline buttons that update the appointment status in Supabase. Also show a separate list of already-confirmed upcoming appointments."
 
 **End of Phase 2 checkpoint:** a fake doctor account can fully set up a profile, add slots, and would be able to manage bookings once they exist.
 
@@ -216,16 +217,16 @@ Demographics → HMO selection → free-text symptoms → up to 2 branching foll
 > "Write a build prompt for a coding agent to build a multi-step intake form in React: step 1 asks name/age/sex/location, step 2 asks the user to pick their HMO from [Maxicare, Intellicare, Medicard, PhilCare, None/Cash], step 3 is a free-text box asking 'What symptoms are you feeling?' with a placeholder encouraging natural language, including Tagalog. Keep the UI simple, large tap targets, plain language — this app may be used by elderly or less tech-savvy users."
 
 ### Task 3.2 — AI symptom → sub-specialty matching integration — *Owner: D*
-This is the core differentiator. Build the LLM call exactly per PRD Section 6.1.
+This is the core differentiator. Build the LLM call exactly per PRD Section 8.1.
 
 **Meta-prompt:**
-> "Here is my exact AI matching spec: [paste PRD Section 6.1 in full, including the taxonomy from 6.4]. Write a detailed build prompt for a coding agent to implement this as a Next.js API route that calls an LLM API, constrains its output to my seeded taxonomy, returns structured JSON, and handles the case where the model asks a clarifying follow-up question instead of giving a final answer. Include error handling for malformed AI responses."
+> "Here is my exact AI matching spec: [paste PRD Section 8.1 in full, including the taxonomy from 8.5]. Write a detailed build prompt for a coding agent to implement this as a Next.js API route that calls an LLM API, constrains its output to my seeded taxonomy, returns structured JSON, and handles the case where the model asks a clarifying follow-up question instead of giving a final answer. Include error handling for malformed AI responses."
 
 ### Task 3.3 — Emergency safety gate logic — *Owner: D*
-This must be built exactly per the calibrated logic in PRD Section 6.2 — NOT tone-based.
+This must be built exactly per the calibrated logic in PRD Section 8.2 — NOT tone-based.
 
 **Meta-prompt:**
-> "Here is my exact safety gate spec: [paste PRD Section 6.2 in full]. Write a build prompt for a coding agent to implement this as a check that runs on the patient's parsed symptom text BEFORE the specialty-matching call in Task 3.2. It must only trigger on the specific symptom combinations listed, never on tone, punctuation, or intensity language, since we've specifically decided that will cause false positives on anxious users. If triggered, return a flag that the frontend uses to show the calm interstitial message instead of proceeding to AI matching."
+> "Here is my exact safety gate spec: [paste PRD Section 8.2 in full]. Write a build prompt for a coding agent to implement this as a check that runs on the patient's parsed symptom text BEFORE the specialty-matching call in Task 3.2. It must only trigger on the specific symptom combinations listed, never on tone, punctuation, or intensity language, since we've specifically decided that will cause false positives on anxious users. If triggered, return a flag that the frontend uses to show the calm interstitial message instead of proceeding to AI matching."
 
 ### Task 3.4 — AI match result screen — *Owner: B*
 Displays the specialty + sub-specialty + plain-language reason, or the emergency interstitial if the safety gate triggered.
@@ -237,28 +238,30 @@ Displays the specialty + sub-specialty + plain-language reason, or the emergency
 Should-have, scoped to Tagalog only per team decision.
 
 **Meta-prompt:**
-> "Building on the AI matching from Task 3.2: [paste PRD Section 6.1], write a build prompt for a coding agent to make sure the symptom-matching prompt correctly handles Tagalog free-text input alongside English, and returns its plain-language 'reason' field in the same language the user typed in. Scope this to Tagalog only, not other languages or Taglish code-switching."
+> "Building on the AI matching from Task 3.2: [paste PRD Section 8.1], write a build prompt for a coding agent to make sure the symptom-matching prompt correctly handles Tagalog free-text input alongside English, and returns its plain-language 'reason' field in the same language the user typed in. Scope this to Tagalog only, not other languages or Taglish code-switching."
 
 **End of Phase 3 checkpoint:** a patient can type real symptoms (English or Tagalog) and either get routed to a sub-specialty or see the emergency message — this is your riskiest and most important demo moment, test it heavily.
 
 ---
 
-## PHASE 4 — Days 10-11: Doctor List, Filtering, Booking (connect both sides)
+## PHASE 4 — Days 10-11: Doctor List, HMO Verification, Ranking, Booking (connect both sides)
 
-### Task 4.1 — Doctor list screen with HMO + sub-specialty filtering — *Owner: B*
+### Task 4.1 — Doctor list screen: HMO verification + ranking (not just filtering) — *Owner: B*
+This task now covers two PRD sections, not one — the doctor list needs to be ranked, and HMO mismatches need to be surfaced with a message, not silently hidden. This is the feature that makes the difference between "a directory" and "a navigation platform," so don't cut corners here even under time pressure.
 
 **Meta-prompt:**
-> "Here's my Doctor model: [paste from PRD Section 4]. Here's my HMO filtering spec: [paste PRD Section 6.3]. Write a build prompt for a coding agent to build a doctor list screen that queries Supabase for doctors matching the AI-recommended sub-specialty from Task 3.4 AND the patient's selected HMO from Task 3.1, with a toggle to 'show all doctors' including non-matching HMO. Each card shows name, sub-specialty, rate, HMO tags, and next available slot. Include a small disclaimer that HMO data is for demo purposes."
+> "Here's my Doctor model: [paste from PRD Section 6]. Here's my HMO Matching Intelligence Layer spec: [paste PRD Section 8.3]. Here's my Doctor Ranking spec: [paste PRD Section 8.4]. Write a build prompt for a coding agent to build a doctor list screen that queries Supabase for doctors matching the AI-recommended sub-specialty from Task 3.4, then: (1) ranks results by sub-specialty match strength, HMO coverage, rating, and soonest availability, in that order; (2) shows a '✓ Covered by [HMO]' badge on matching doctors; (3) if no doctor in the top results matches the patient's HMO, shows a message explaining that instead of silently hiding non-matching doctors, with an option to 'show all doctors.' Each card shows name, sub-specialty, rate, HMO tags, and next available slot, plus a small disclaimer that HMO data is for demo purposes."
 
 ### Task 4.2 — Doctor profile detail + booking screen — *Owner: B*
 
 **Meta-prompt:**
-> "Here's my Schedule Slot and Appointment models: [paste from PRD Section 4]. Write a build prompt for a coding agent to build a doctor profile detail page showing full credentials, rate, and a calendar/list of open slots. When the patient selects a slot and confirms, create a new Appointment record with status 'pending' and mark that slot as booked."
+> "Here's my Schedule Slot and Appointment models: [paste from PRD Section 6]. Write a build prompt for a coding agent to build a doctor profile detail page showing full credentials, rate, and a calendar/list of open slots. When the patient selects a slot and confirms, create a new Appointment record with status 'pending' and mark that slot as booked."
 
 ### Task 4.3 — Booking confirmation screen — *Owner: B*
 
 **Meta-prompt:**
 > "Write a build prompt for a coding agent to build a simple confirmation screen shown after Task 4.2's booking action, showing the doctor name, date/time, and a 'View my appointments' link. Keep it clean and reassuring — this is the payoff moment of the whole patient flow."
+
 
 ### Task 4.4 — End-to-end connection test — *Owner: A + E*
 Not a build task — a testing task. Walk through the full patient flow into the full doctor flow using real seeded data, fix any breaks between the two sides.
@@ -275,7 +278,7 @@ Not a build task — a testing task. Walk through the full patient flow into the
 ### Task 5.1 — Review/rating system (verified-visit-only) — *Owner: C*
 
 **Meta-prompt:**
-> "Here's my Review model and the rule for who can review: [paste PRD Section 6.5]. Write a build prompt for a coding agent to build a review submission form only accessible for appointments with status 'completed', and a display of average rating + reviews on the doctor profile page."
+> "Here's my Review model and the rule for who can review: [paste PRD Section 8.6]. Write a build prompt for a coding agent to build a review submission form only accessible for appointments with status 'completed', and a display of average rating + reviews on the doctor profile page."
 
 ### Task 5.2 — "Booking for a family member" toggle — *Owner: B + E*
 
@@ -283,10 +286,10 @@ Not a build task — a testing task. Walk through the full patient flow into the
 > "Write a build prompt for a coding agent to add a simple 'Who is this for?' toggle at the start of the intake flow (Task 3.1) — options: 'Myself' or 'A family member' — and if the latter, ask for that person's name/age/sex instead of the logged-in user's. This should be a light UI addition, not a new backend system."
 
 ### Task 5.3 — Accessibility & plain-language pass — *Owner: E*
-Not a single build task — a review pass across every screen against PRD Section 6.6.
+Not a single build task — a review pass across every screen against PRD Section 8.7.
 
 **Meta-prompt:**
-> "Here is my accessibility/UX spec: [paste PRD Section 6.6]. Write a build prompt for a coding agent to review [list your key screen files] and adjust font sizes, tap target sizes, and any jargon-heavy copy (especially the AI 'reason' explanation and any medical terminology) to be simpler and friendlier, suitable for elderly or less tech-savvy users."
+> "Here is my accessibility/UX spec: [paste PRD Section 8.7]. Write a build prompt for a coding agent to review [list your key screen files] and adjust font sizes, tap target sizes, and any jargon-heavy copy (especially the AI 'reason' explanation and any medical terminology) to be simpler and friendlier, suitable for elderly or less tech-savvy users."
 
 ### Task 5.4 — Visual/design consistency pass — *Owner: E*
 Make sure all 5 people's AI-generated screens look like one app, not five.
@@ -294,7 +297,15 @@ Make sure all 5 people's AI-generated screens look like one app, not five.
 **Meta-prompt:**
 > "I have a React app built across multiple screens by different people using AI coding tools, so styling is inconsistent. Write a build prompt for a coding agent to establish a single shared design system — colors, fonts, spacing, button styles — as a Tailwind config or shared CSS variables, then apply it consistently across [list your screens]."
 
-**End of Phase 5 checkpoint:** should-have features are in (or consciously dropped if time-constrained), and the whole app looks and reads like one coherent product.
+### Task 5.5 — Before/after visual + financial framing research — *Owner: E*
+Two pitch assets from PRD Sections 9 and 11, not app features — do these now so they're ready for rehearsal, not thrown together on Day 14.
+- **Before/after visual:** a mockup or screenshot-style comparison — "before" showing a cluttered generic Google search, "after" showing your AI match result screen (specialty → sub-specialty → HMO-verified, ranked doctor). This can be a simple slide graphic, doesn't need to be built in the app.
+- **Financial framing:** find or reasonably estimate (a) an average PH specialist consultation fee for your seed specialty, and (b) a plausible rate of mismatched-specialist visits. Multiply for a rough "wasted spend avoided" figure — label it clearly as an estimate when presenting it, don't present it as verified data.
+
+**Meta-prompt (for the before/after visual, if generating it with AI image/design tools):**
+> "Create a simple two-panel 'before and after' comparison graphic for a pitch deck slide. Before panel: a cluttered, generic search results list with no clear specialist match, labeled 'Searching on your own.' After panel: a clean app screen showing a specific sub-specialty match, an HMO-verified badge, and a ranked doctor recommendation, labeled '[App name]: The Right Doctor. The First Time.' Keep it simple and high-contrast enough to read from the back of a room."
+
+**End of Phase 5 checkpoint:** should-have features are in (or consciously dropped if time-constrained), the whole app looks and reads like one coherent product, and both new pitch assets exist ahead of rehearsal.
 
 ---
 
@@ -304,13 +315,13 @@ Make sure all 5 people's AI-generated screens look like one app, not five.
 In case live demo fails on stage. Screen-record the full happy path plus the emergency-gate path.
 
 ### Task 6.2 — Build the pitch deck — *Owner: E (whole team reviews)*
-Structure per PRD Section 10: problem → live demo → differentiation (name NowServing/MyDoktor.ph explicitly) → roadmap slide (PRD Section 8) → close.
+Structure per PRD Section 13: problem statement → positioning line → live demo (walking through all 5 pipeline stages) → differentiation (name NowServing/MyDoktor.ph/KonsultaMD/Doctor Anywhere explicitly, per Section 3's objection-handling) → before/after visual + roadmap slide (PRD Section 11) → financial framing (PRD Section 9) → close on the tagline "The Right Doctor. The First Time."
 
 **Meta-prompt (for slide content, not code):**
-> "Here's my PRD: [paste full PRD]. Write me a slide-by-slide outline for a 5-minute hackathon pitch that covers: the problem, a live demo walkthrough script, our differentiation vs named competitors, and a brief roadmap/scalability vision slide. Keep each slide to 3-4 bullet points max."
+> "Here's my PRD: [paste full PRD, or refer to /docs/liquid-prd.md if the agent has repo access]. Write me a slide-by-slide outline for a 5-minute hackathon pitch that covers: the problem statement, our positioning as an AI navigation platform (not a directory), a live demo walkthrough script covering all 5 pipeline stages, our differentiation vs each named competitor from the objection-handling section, the before/after visual, the financial/impact framing, and a closing slide with our tagline. Keep each slide to 3-4 bullet points max."
 
 ### Task 6.3 — Full team rehearsal — *All*
-Run the entire demo script from PRD Section 10 at least twice, timed. Assign who talks during which part (e.g., one person narrates the problem, another drives the live demo, another closes with roadmap/impact).
+Run the entire demo script from PRD Section 13 at least twice, timed. Assign who talks during which part (e.g., one person narrates the problem, another drives the live demo, another closes with the tagline). Also rehearse answers to the Section 3 objection-handling questions out loud — judges may ask them directly in Q&A, not just expect them pre-empted in the pitch.
 
 ---
 
@@ -321,7 +332,7 @@ Keep it to 10 minutes, every day:
 2. What are you building today (which task number from this roadmap)?
 3. Any blocker — especially anything where your screen depends on someone else's API route or component not being ready yet?
 
-Since 5 people will all be vibe-coding in parallel, the most common failure mode is two people's AI-generated code assuming different shapes for the same data. When in doubt, check back against PRD Section 4 (Data Models) as the single source of truth — nobody should improvise a new field or table without updating that section first and telling the team.
+Since 5 people will all be vibe-coding in parallel, the most common failure mode is two people's AI-generated code assuming different shapes for the same data. When in doubt, check back against PRD Section 6 (Data Models) as the single source of truth — nobody should improvise a new field or table without updating that section first and telling the team.
 
 ---
 
@@ -342,7 +353,7 @@ Since 5 people will all be vibe-coding in parallel, the most common failure mode
 | 3.3 | Emergency safety gate logic | D | 3 |
 | 3.4 | AI match result screen | B | 3 |
 | 3.5 | Tagalog handling | D | 3 |
-| 4.1 | Doctor list + filtering | B | 4 |
+| 4.1 | Doctor list: HMO verification + ranking | B | 4 |
 | 4.2 | Doctor profile + booking | B | 4 |
 | 4.3 | Booking confirmation | B | 4 |
 | 4.4 | End-to-end connection test | A, E | 4 |
@@ -350,6 +361,7 @@ Since 5 people will all be vibe-coding in parallel, the most common failure mode
 | 5.2 | Family-member booking toggle | B, E | 5 |
 | 5.3 | Accessibility pass | E | 5 |
 | 5.4 | Design consistency pass | E | 5 |
+| 5.5 | Before/after visual + financial framing | E | 5 |
 | 6.1 | Backup demo video | E | 6 |
 | 6.2 | Pitch deck | E, All | 6 |
 | 6.3 | Full rehearsal | All | 6 |
