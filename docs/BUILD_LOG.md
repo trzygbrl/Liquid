@@ -29,6 +29,25 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-15 — Sign-up / login for patient and doctor roles
+**Task:** 1.3
+**Owner:** Coding agent
+**What changed:** Added Supabase Auth sign-up and login for two roles (`patient` and `doctor`). Each role gets a combined auth page (`/doctor/auth`, `/patient/auth`) with a login/signup toggle rather than two separate routes. After auth succeeds, users are redirected to their own dashboard stub (`/doctor/dashboard`, `/patient/dashboard`). Dashboard pages are protected by a client-side `RequireRole` guard that checks the session and bounces unauthenticated or wrong-role visitors immediately.
+**Files touched:**
+- `src/lib/auth.ts` [NEW] — `signUpWithRole`, `signIn`, `getRoleFromUser`, `dashboardRouteForRole`, `authRouteForRole` helper functions
+- `src/components/AuthForm.tsx` [NEW] — shared email/password form; parent passes `mode` and `role`
+- `src/components/RequireRole.tsx` [NEW] — client-side route guard; renders a spinner while checking session, then redirects or renders children
+- `src/app/doctor/auth/page.tsx` [NEW] — doctor/secretary auth page (login + signup toggle, indigo accent)
+- `src/app/patient/auth/page.tsx` [NEW] — patient auth page (login + signup toggle, teal accent)
+- `src/app/doctor/dashboard/page.tsx` [NEW] — doctor dashboard stub, guarded by RequireRole
+- `src/app/patient/dashboard/page.tsx` [NEW] — patient dashboard stub, guarded by RequireRole
+**Notes/trade-offs:**
+- **Role stored in `user_metadata`, not a table column.** `signUp()` sets `options: { data: { role } }` so the role is readable immediately from the session without any DB query. This was necessary because `doctors` rows aren't created until profile setup (Task 2.1) and `patients` rows until the intake flow (Task 3.1) — so right after signup there's no row in either table to infer the role from.
+- **No `patients`/`doctors` rows written at signup.** This task only creates the `auth.users` row. Profile rows are created in Tasks 2.1 (doctor) and 3.1 (patient). The dashboard stubs render fine before those rows exist.
+- **Route guarding is client-side only.** `RequireRole` calls `supabase.auth.getSession()` in a `useEffect`. This means an unauthenticated user could briefly see the dashboard before the redirect fires (mitigated by rendering a spinner instead of content while the check is in flight). A hardened server-side guard would need `@supabase/ssr` + cookie-based session handling and a `middleware.ts` file — flagged as a "harden later" item if this ever goes to a public URL longer than a demo.
+- **One email = one role.** Supabase ties one email/password pair to one `auth.users` row, so the same email can't hold both roles. Testers needing both roles should use two email addresses.
+- **Email confirmation is OFF** — must be disabled in Supabase Dashboard → Authentication → Providers → Email. Without this, `signUp()` won't return an active session and the immediate redirect after signup will fail.
+
 ### 2026-08-14 — Supabase schema, RLS, and client setup
 **Task:** 1.2
 **Owner:** Coding agent
