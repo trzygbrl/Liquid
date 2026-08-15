@@ -1,13 +1,30 @@
 -- =============================================================
 -- 0001_initial_schema.sql
--- Civic Access (Team Liquid) — PRD Section 6 data models
+-- Civic Access (Team Liquid) — PRD Section 6 data models (REWORKED)
 --
--- Design assumptions documented in the task brief:
+-- Changes from the original draft:
+--   * NEW: clinics table — a doctor can practice at multiple locations, each
+--     with its own consultation_fee and room_details. `rate` and `location`
+--     are removed from doctors and now live per-clinic.
+--   * schedule_slots now references a specific clinic_id (a doctor's slot
+--     belongs to one of their clinics), and the old boolean `is_booked` is
+--     now a three-state enum (`available` / `booked` / `doctor_on_leave`)
+--     to support marking a doctor unavailable without a booking existing.
+--     NOTE: the column is still named `is_booked` per the brief, even
+--     though it's no longer a boolean — kept as-is to match spec exactly.
+--
+-- Design assumptions carried over from the original draft:
 --   * patients and doctors use auth.users(id) as their PK (no separate auth_user_id)
---   * doctors rows are created at profile-setup time (Task 2.1), so NOT NULL on name/specialty/rate
+--   * doctors rows are created at profile-setup time (Task 2.1), so NOT NULL on name/specialty
 --   * composite FK doctors(specialty, sub_specialty) -> specialty_taxonomy enforces taxonomy at DB level
 --   * one active appointment per slot enforced via partial unique index
 --   * one review per appointment enforced via unique constraint on appointment_id
+--
+-- See 0002_slot_appointment_triggers.sql for:
+--   * a trigger keeping schedule_slots.is_booked in sync with appointment
+--     status (insert/update/delete), and
+--   * a trigger enforcing that a slot's clinic_id belongs to the same
+--     doctor_id as the slot itself.
 -- =============================================================
 
 create extension if not exists "pgcrypto";
@@ -40,16 +57,15 @@ create table public.patients (
 
 -- =========================================================
 -- 3. Doctors
+--    (rate + location removed -- now per-clinic, see clinics table below)
 -- =========================================================
 create table public.doctors (
   id uuid primary key references auth.users (id) on delete cascade,
   name text not null,
-  credentials text,
+  credentials text, -- free text or a file-upload URL
   specialty text not null,
   sub_specialty text not null,
-  rate numeric(10, 2) not null check (rate >= 0),
   hmo_accreditations text[] not null default '{}',
-  location text,
   verified boolean not null default true,
   created_at timestamptz not null default now(),
   foreign key (specialty, sub_specialty)
@@ -60,25 +76,48 @@ create index idx_doctors_specialty_sub on public.doctors (specialty, sub_special
 create index idx_doctors_hmo_accreditations on public.doctors using gin (hmo_accreditations);
 
 -- =========================================================
--- 4. Schedule Slots
+-- 4. Clinics / Practice Locations
+--    A doctor may practice at several locations; fee and room details
+--    are per-clinic rather than per-doctor.
 -- =========================================================
+create table public.clinics (
+  id uuid primary key default gen_random_uuid(),
+  doctor_id uuid not null references public.doctors (id) on delete cascade,
+  name text not null,
+  room_details text,
+  location text not null,
+  consultation_fee numeric(10, 2) not null check (consultation_fee >= 0),
+  created_at timestamptz not null default now()
+);
+
+create index idx_clinics_doctor on public.clinics (doctor_id);
+
+-- =========================================================
+-- 5. Schedule Slots
+--    `is_booked` is now a 3-state enum instead of a boolean, so a doctor
+--    can block out time as `doctor_on_leave` without an appointment.
+-- =========================================================
+create type public.slot_status as enum ('available', 'booked', 'doctor_on_leave');
+
 create table public.schedule_slots (
   id uuid primary key default gen_random_uuid(),
   doctor_id uuid not null references public.doctors (id) on delete cascade,
+  clinic_id uuid not null references public.clinics (id) on delete cascade,
   date date not null,
   start_time time not null,
   end_time time not null,
-  is_booked boolean not null default false,
+  is_booked public.slot_status not null default 'available',
   created_at timestamptz not null default now(),
   check (end_time > start_time)
 );
 
 create index idx_schedule_slots_doctor_date on public.schedule_slots (doctor_id, date);
+create index idx_schedule_slots_clinic_date on public.schedule_slots (clinic_id, date);
 create index idx_schedule_slots_available on public.schedule_slots (doctor_id, date)
-  where is_booked = false;
+  where is_booked = 'available';
 
 -- =========================================================
--- 5. Appointments
+-- 6. Appointments
 -- =========================================================
 create table public.appointments (
   id uuid primary key default gen_random_uuid(),
@@ -99,8 +138,10 @@ create unique index idx_appointments_active_slot
 create index idx_appointments_patient on public.appointments (patient_id);
 create index idx_appointments_doctor_status on public.appointments (doctor_id, status);
 
+-- (slot/appointment sync trigger lives in 0002_slot_appointment_triggers.sql)
+
 -- =========================================================
--- 6. Reviews -- verified-visit-only, per PRD Section 8.6
+-- 7. Reviews -- verified-visit-only, per PRD Section 8.6
 -- =========================================================
 create table public.reviews (
   id uuid primary key default gen_random_uuid(),
@@ -121,6 +162,7 @@ create index idx_reviews_doctor on public.reviews (doctor_id);
 alter table public.specialty_taxonomy enable row level security;
 alter table public.patients enable row level security;
 alter table public.doctors enable row level security;
+alter table public.clinics enable row level security;
 alter table public.schedule_slots enable row level security;
 alter table public.appointments enable row level security;
 alter table public.reviews enable row level security;
@@ -133,6 +175,12 @@ create policy "specialty_taxonomy_read_all" on public.specialty_taxonomy
 create policy "doctors_read_all" on public.doctors for select using (true);
 create policy "doctors_insert_own" on public.doctors for insert with check (auth.uid() = id);
 create policy "doctors_update_own" on public.doctors for update using (auth.uid() = id);
+
+-- Clinics: public read (patients need fee/location before booking);
+-- only the owning doctor manages their own clinic rows
+create policy "clinics_read_all" on public.clinics for select using (true);
+create policy "clinics_manage_own" on public.clinics for all
+  using (auth.uid() = doctor_id) with check (auth.uid() = doctor_id);
 
 -- Patients: visible to themselves, and to a doctor they have an appointment with
 create policy "patients_select_own" on public.patients for select using (auth.uid() = id);
