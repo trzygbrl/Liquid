@@ -29,6 +29,14 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-15 — PRD schema rework for multi-clinic support
+**Task:** 1.2 (Rework Proposal)
+**Owner:** Coding agent
+**What changed:** Updated the database schema in the PRD to better fit the Philippine medical system. Extracted location and pricing data from the Doctor table into a new `Clinic / Practice Location` table to support multiple hospital affiliations. Updated the Schedule Slot table to link directly to a clinic and replaced the simple boolean booking toggle with a status enum to handle emergency leaves.
+**Files touched:**
+- `/docs/liquid-prd.md` (or the specific file where the schema is documented)
+**Notes/trade-offs:** This normalizes the database and reflects real-world human behavior in the PH, but it means the frontend booking flow will need to expand from two steps to three (Select Doctor ➔ Select Clinic ➔ Select Time Slot). Using an enum for schedule slots (`doctor_on_leave`) allows secretaries to block out times without deleting the slots entirely.
+
 ### 2026-08-15 — Sign-up / login for patient and doctor roles
 **Task:** 1.3
 **Owner:** Coding agent
