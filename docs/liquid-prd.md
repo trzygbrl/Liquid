@@ -13,6 +13,7 @@ Track every scope decision or major edit here — newest on top. This is separat
 
 | Date | Change | Reason |
 |---|---|---|
+| _(today)_ | Expanded scope to support doctors practicing at multiple clinics, location-specific consultation fees, and emergency schedule blocking (e.g., sudden leaves). Booking flow updated to require clinic selection. | To align with the Philippine medical context where doctors rotate across multiple hospitals/MABs, charge different rates per location, and frequently adjust schedules for emergencies. |
 | _(today)_ | Major repositioning per mentor review: reframed as an AI healthcare navigation platform (not a directory), added explicit problem statement, objection-handling section, multi-stage AI pipeline, HMO intelligence layer, doctor ranking, financial framing, tagline | Mentor flagged that the pitch read as "a directory with AI-assisted search" — needed sharper positioning and proactive answers to likely judge challenges |
 | _(earlier)_ | Added Change Log + linked BUILD_LOG.md process | Wanted a clear, non-technical-friendly way to track scope changes and build progress |
 | _(earlier)_ | Scoped Tagalog-only free-text (dropped Taglish/multi-language) | Reduce NLP risk for 2-week build |
@@ -110,26 +111,34 @@ Doctor
 - credentials (text or file upload URL)
 - specialty (e.g. "Ophthalmologist")
 - sub_specialty (e.g. "Retina")
-- rate (number, PHP)
 - hmo_accreditations (array of HMO names — mocked/static list)
-- location (clinic address/city)
 - verified (boolean — for demo, can default true on manual seed)
+- created_at
+
+Clinic / Practice Location
+- id
+- doctor_id (FK)
+- name
+- room_details (nullable)
+- location
+- consultation_fee (number, PHP)
 - created_at
 
 Schedule Slot
 - id
 - doctor_id (FK)
+- clinic_id (FK)
 - date
 - start_time
 - end_time
-- is_booked (boolean)
+- is_booked (enum: `available` / `booked` / `doctor_on_leave`)
 
 Appointment
 - id
 - patient_id (FK)
 - doctor_id (FK)
 - slot_id (FK)
-- status (pending / confirmed / declined / completed / cancelled)
+- status (enum: `pending` / `confirmed` / `declined` / `completed` / `cancelled`)
 - symptom_summary (text — what the patient described)
 - created_at
 
