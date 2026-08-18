@@ -29,6 +29,17 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-18 — Specialty taxonomy seed (re-seed after DB wipe)
+**Task:** 1.4
+**Owner:** Coding agent
+**What changed:** Seeded `public.specialty_taxonomy` and `public.specialties` with the Ophthalmology specialty and its four sub-specialties (Retina, Cataract, Glaucoma, Pediatric Ophthalmology). Also added `General Practice` to `public.specialties`. The database was wiped during a schema rework (adding the `clinics` table and changing `doctors` to drop `rate`/`location`), which cleared the taxonomy rows that had been seeded previously — this is a re-seed, not a first-time seed.
+**Files touched:**
+- `supabase/seeds/seed_taxonomy_only.sql` [NEW] — standalone re-runnable script that seeds only `specialty_taxonomy` and `specialties`; does not touch `auth.users`, `doctors`, `clinics`, or `schedule_slots`. Safe to paste into the Supabase SQL Editor at any time.
+- `supabase/seeds/seed_ophthalmology.sql` — unchanged; still contains the full 8-doctor demo seed (auth users + doctors + clinics + slots) for the Pampanga Ophthalmology demo. Run separately when the full demo accounts are needed.
+**Notes/trade-offs:**
+- Taxonomy seeding is a manual SQL Editor step (service-role only — the taxonomy tables have no INSERT policy for authenticated users). The `seed_taxonomy_only.sql` script exists specifically so future re-seeds don't require pulling the full doctor seed or remembering the exact SQL.
+- `General Practice` is not in `specialty_taxonomy` (by design — it has no sub-specialty rows). It lives only in `specialties`, which is the table the profile-setup form reads for the specialty dropdown's complete list.
+
 ### 2026-08-18 — Make `doctors.sub_specialty` nullable (general practitioners)
 **Task:** 2.1 (follow-up)
 **Owner:** Coding agent
