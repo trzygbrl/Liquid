@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabaseClient';
 
 function DashboardContent() {
   const router = useRouter();
-  // true = still checking whether a doctors row exists; null is rendered as a spinner
+  // true = still checking; null content is rendered as a spinner until confirmed
   const [checkingProfile, setCheckingProfile] = useState(true);
 
   useEffect(() => {
@@ -24,7 +24,21 @@ function DashboardContent() {
         .maybeSingle();
 
       if (!doctorRow) {
-        // No profile yet — send them through onboarding before showing the dashboard.
+        // No doctor row at all — send through onboarding.
+        router.replace('/doctor/profile-setup');
+        return;
+      }
+
+      // "Profile complete" now requires both a doctors row *and* at least one clinics row.
+      // If only the doctors row exists (partial failure from a prior attempt), send them
+      // back to the setup page which will pre-fill the already-saved doctor data.
+      const { data: clinicRows } = await supabase
+        .from('clinics')
+        .select('id')
+        .eq('doctor_id', session.user.id)
+        .limit(1);
+
+      if (!clinicRows || clinicRows.length === 0) {
         router.replace('/doctor/profile-setup');
         return;
       }

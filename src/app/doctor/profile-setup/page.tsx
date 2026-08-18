@@ -12,12 +12,17 @@ function ProfileSetupForm() {
   const [taxonomy, setTaxonomy] = useState<TaxonomyRow[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Doctor fields
   const [name, setName] = useState('');
   const [credentialFileName, setCredentialFileName] = useState('');
   const [specialty, setSpecialty] = useState('');
   const [subSpecialty, setSubSpecialty] = useState('');
-  const [rate, setRate] = useState('');
-  const [location, setLocation] = useState('');
+
+  // Clinic fields
+  const [clinicName, setClinicName] = useState('');
+  const [roomDetails, setRoomDetails] = useState('');
+  const [clinicLocation, setClinicLocation] = useState('');
+  const [consultationFee, setConsultationFee] = useState('');
 
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -29,17 +34,31 @@ function ProfileSetupForm() {
       } = await supabase.auth.getSession();
       if (!session) return; // RequireRole already handles this redirect
 
-      // One-time onboarding step, not an edit screen — skip straight to the
-      // dashboard if this doctor already has a profile.
-      const { data: existing } = await supabase
+      const { data: existingDoctor } = await supabase
         .from('doctors')
-        .select('id')
+        .select('*')
         .eq('id', session.user.id)
         .maybeSingle();
 
-      if (existing) {
-        router.replace('/doctor/dashboard');
-        return;
+      if (existingDoctor) {
+        const { data: existingClinics } = await supabase
+          .from('clinics')
+          .select('id')
+          .eq('doctor_id', session.user.id)
+          .limit(1);
+
+        if (existingClinics && existingClinics.length > 0) {
+          // Both a doctors row and a clinics row exist — fully onboarded.
+          router.replace('/doctor/dashboard');
+          return;
+        }
+
+        // Doctor row exists but no clinic yet — likely a prior attempt where the
+        // clinic insert failed. Pre-fill what's already saved so they don't retype it.
+        setName(existingDoctor.name ?? '');
+        setSpecialty(existingDoctor.specialty ?? '');
+        setSubSpecialty(existingDoctor.sub_specialty ?? '');
+        setCredentialFileName(existingDoctor.credentials ?? '');
       }
 
       const { data: taxonomyRows, error: taxonomyError } = await supabase
@@ -78,23 +97,14 @@ function ProfileSetupForm() {
     e.preventDefault();
     setError(null);
 
-    if (!name.trim()) {
-      setError('Please enter your full name.');
-      return;
-    }
-    if (!specialty || !subSpecialty) {
-      setError('Please select both a specialty and a sub-specialty.');
+    if (!name.trim() || !specialty || !subSpecialty || !clinicName.trim() || !clinicLocation.trim() || !consultationFee) {
+      setError('Please fill in your name, specialty, sub-specialty, clinic name, clinic location, and consultation fee.');
       return;
     }
 
-    const parsedRate = parseFloat(rate);
-    if (!rate || Number.isNaN(parsedRate) || parsedRate < 0) {
-      setError('Rate must be a positive number.');
-      return;
-    }
-
-    if (!location.trim()) {
-      setError('Please enter your clinic location.');
+    const parsedFee = parseFloat(consultationFee);
+    if (Number.isNaN(parsedFee) || parsedFee < 0) {
+      setError('Consultation fee must be a positive number.');
       return;
     }
 
@@ -110,22 +120,39 @@ function ProfileSetupForm() {
       return;
     }
 
-    const { error: insertError } = await supabase.from('doctors').insert({
+    // upsert, not insert — safe to re-run if a previous attempt saved the doctor
+    // row but failed on the clinic insert below (no cross-table transaction available
+    // through the Supabase JS client).
+    const { error: doctorError } = await supabase.from('doctors').upsert({
       id: session.user.id, // must equal auth.uid() — required by doctors_insert_own RLS policy
       name: name.trim(),
       credentials: credentialFileName || null,
       specialty,
       sub_specialty: subSpecialty,
-      rate: parsedRate,
-      location: location.trim(),
       // hmo_accreditations left to DB default '{}' — seeded via Task 1.4
       // verified left to DB default true
     });
 
+    if (doctorError) {
+      setError(doctorError.message);
+      setSubmitting(false);
+      return;
+    }
+
+    const { error: clinicError } = await supabase.from('clinics').insert({
+      doctor_id: session.user.id,
+      name: clinicName.trim(),
+      room_details: roomDetails.trim() || null,
+      location: clinicLocation.trim(),
+      consultation_fee: parsedFee,
+    });
+
     setSubmitting(false);
 
-    if (insertError) {
-      setError(insertError.message);
+    if (clinicError) {
+      setError(
+        `Your profile saved, but the clinic details didn't — ${clinicError.message}. Please submit again.`
+      );
       return;
     }
 
@@ -153,10 +180,10 @@ function ProfileSetupForm() {
         </p>
       </div>
 
-      <form
-        onSubmit={handleSubmit}
-        className="flex w-full max-w-lg flex-col gap-5"
-      >
+      <form onSubmit={handleSubmit} className="flex w-full max-w-lg flex-col gap-5">
+
+        {/* ── Doctor details ──────────────────────────────────────── */}
+
         {/* Full name */}
         <div className="flex flex-col gap-1.5">
           <label htmlFor="doctor-name" className="text-sm font-medium text-slate-300">
@@ -212,9 +239,7 @@ function ProfileSetupForm() {
           >
             <option value="">Select specialty</option>
             {specialties.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
+              <option key={s} value={s}>{s}</option>
             ))}
           </select>
           {specialties.length === 0 && !error && (
@@ -241,48 +266,87 @@ function ProfileSetupForm() {
               {specialty ? 'Select sub-specialty' : 'Pick a specialty first'}
             </option>
             {subSpecialties.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
+              <option key={s} value={s}>{s}</option>
             ))}
           </select>
         </div>
 
-        {/* Rate */}
+        {/* ── Clinic details ──────────────────────────────────────── */}
+
+        <div className="mt-2 border-t border-slate-800 pt-5">
+          <p className="mb-4 text-sm font-semibold text-slate-300">Your first clinic</p>
+          <p className="mb-5 -mt-2 text-xs text-slate-500">
+            You&apos;ll be able to add more clinics later. This sets up your primary practice location.
+          </p>
+        </div>
+
+        {/* Clinic / practice name */}
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="doctor-rate" className="text-sm font-medium text-slate-300">
-            Consultation rate (PHP) <span className="text-red-400">*</span>
+          <label htmlFor="clinic-name" className="text-sm font-medium text-slate-300">
+            Clinic / practice name <span className="text-red-400">*</span>
           </label>
-          <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-slate-400">₱</span>
-            <input
-              id="doctor-rate"
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="500.00"
-              value={rate}
-              onChange={(e) => setRate(e.target.value)}
-              required
-              className="w-full rounded-lg border border-slate-600 bg-slate-800/60 py-2.5 pl-8 pr-4 text-sm text-white placeholder-slate-500 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition"
-            />
-          </div>
+          <input
+            id="clinic-name"
+            type="text"
+            placeholder="e.g. Angeles University Foundation Medical Center"
+            value={clinicName}
+            onChange={(e) => setClinicName(e.target.value)}
+            required
+            className="rounded-lg border border-slate-600 bg-slate-800/60 px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition"
+          />
+        </div>
+
+        {/* Room / suite details */}
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="clinic-room" className="text-sm font-medium text-slate-300">
+            Room / suite details
+            <span className="ml-1.5 text-xs font-normal text-slate-500">(optional)</span>
+          </label>
+          <input
+            id="clinic-room"
+            type="text"
+            placeholder="e.g. 3rd Floor, Suite 210"
+            value={roomDetails}
+            onChange={(e) => setRoomDetails(e.target.value)}
+            className="rounded-lg border border-slate-600 bg-slate-800/60 px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition"
+          />
         </div>
 
         {/* Clinic location */}
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="doctor-location" className="text-sm font-medium text-slate-300">
+          <label htmlFor="clinic-location" className="text-sm font-medium text-slate-300">
             Clinic location <span className="text-red-400">*</span>
           </label>
           <input
-            id="doctor-location"
+            id="clinic-location"
             type="text"
-            placeholder="e.g. 3rd Floor, XYZ Medical Center, Angeles City"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
+            placeholder="e.g. MacArthur Highway, Angeles City, Pampanga"
+            value={clinicLocation}
+            onChange={(e) => setClinicLocation(e.target.value)}
             required
             className="rounded-lg border border-slate-600 bg-slate-800/60 px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition"
           />
+        </div>
+
+        {/* Consultation fee */}
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="clinic-fee" className="text-sm font-medium text-slate-300">
+            Consultation fee (PHP) <span className="text-red-400">*</span>
+          </label>
+          <div className="relative">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-slate-400">₱</span>
+            <input
+              id="clinic-fee"
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="500.00"
+              value={consultationFee}
+              onChange={(e) => setConsultationFee(e.target.value)}
+              required
+              className="w-full rounded-lg border border-slate-600 bg-slate-800/60 py-2.5 pl-8 pr-4 text-sm text-white placeholder-slate-500 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition"
+            />
+          </div>
         </div>
 
         {/* Error */}
