@@ -29,6 +29,35 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-18 — Make `doctors.sub_specialty` nullable (general practitioners)
+**Task:** 2.1 (follow-up)
+**Owner:** Coding agent
+**What changed:** `doctors.sub_specialty` was NOT NULL, which prevented general practitioners (who have no sub-specialty) from creating a profile. This change drops the NOT NULL constraint, adds a `public.specialties` lookup table to preserve specialty-level validation, and updates the Task 2.1 profile-setup form so the sub-specialty field is hidden when the selected specialty has no taxonomy entries (e.g. "General Practice") and `sub_specialty = NULL` is submitted to the database.
+**Files touched:**
+- `supabase/migrations/0003_nullable_subspecialty.sql` [NEW] — drops NOT NULL on `sub_specialty`; creates `public.specialties` table (backfilled from `specialty_taxonomy` + `'General Practice'` row); adds `doctors_specialty_fk` FK from `doctors.specialty` to `specialties.specialty`; RLS policy on `specialties`
+- `docs/liquid-prd.md` [MODIFIED] — Change Log row added; Section 6 Doctor model updated to mark `sub_specialty` as nullable with explanation; Section 8.5 general-practice note added
+- `src/app/doctor/profile-setup/page.tsx` [MODIFIED] — `'General Practice'` prepended to specialty list; `isGeneralPractice` derived from whether taxonomy has sub-entries for the selected specialty; sub-specialty field conditionally rendered (hidden when `isGeneralPractice`); form validation updated to not require sub-specialty for general practitioners; upsert sends `sub_specialty: subSpecialty || null` (never an empty string)
+- `docs/BUILD_LOG.md` [MODIFIED] — this entry
+**Notes/trade-offs:**
+- **Design decision — `public.specialties` table (not a trigger):** The existing composite FK `doctors(specialty, sub_specialty) → specialty_taxonomy` uses Postgres MATCH SIMPLE: it skips validation entirely when `sub_specialty` is NULL. Simply dropping NOT NULL would have left `specialty` unvalidated for general-practice doctors. Two options were considered: (a) a `BEFORE INSERT/UPDATE` trigger that checks `specialty` against `specialty_taxonomy` when `sub_specialty IS NULL`, or (b) a small `public.specialties` lookup table with a second FK. Option (b) was chosen because it's fully declarative — no trigger code to maintain — and incurs negligible overhead. The team should be aware of this and can revisit (switch to a trigger approach) if the separate `specialties` table feels like extra schema weight post-hackathon.
+- **`'General Practice'` hardcoded in `specialties`:** The label is inserted explicitly in the migration (not derived from taxonomy). If the team later changes the label (e.g. to "Family Medicine"), both the migration and the `specialties` list in `page.tsx` need updating.
+- **`isGeneralPractice` is taxonomy-driven, not string-matched:** The form hides sub-specialty whenever the selected specialty has zero taxonomy entries — so any future specialty added to `public.specialties` but not to `specialty_taxonomy` will automatically behave like "General Practice" without code changes.
+- **Seed data TODO:** Any future seed rework should include at least one general-practice doctor with `sub_specialty = NULL` to exercise this path in the demo.
+- **Migration not applied automatically:** Per the build brief, Zin will apply `0003_nullable_subspecialty.sql` manually via the Supabase SQL Editor. Do not run `supabase db push` against the live project.
+
+### 2026-08-18 — Task 2.1 rework: doctor profile setup updated for multi-clinic schema
+**Task:** 2.1 (Rework — supersedes the 2026-08-15 entry below)
+**Owner:** Coding agent
+**What changed:** The original Task 2.1 build (2026-08-15) wrote `rate` and `location` directly into the `doctors` table. Those columns no longer exist after the 2026-08-15 schema rework that extracted them into the new `clinics` table. This rework rewrites both frontend files against the updated schema. The profile setup form now collects two logical entities: doctor details (name, credentials, specialty, sub_specialty) and first-clinic details (clinic name, room details, location, consultation_fee). These are written as two sequential Supabase calls — an `upsert` into `doctors` followed by an `insert` into `clinics`. The dashboard gate was also updated so that "profile complete" now means a `doctors` row *and* at least one `clinics` row both exist; a doctor with only a `doctors` row (partial-failure state) is redirected back to the setup page, which pre-fills their already-saved doctor data so they don't have to retype it.
+**Files touched:**
+- `src/app/doctor/profile-setup/page.tsx` [MODIFIED] — removed `rate`/`location` fields; added `clinicName`, `roomDetails`, `clinicLocation`, `consultationFee` fields; changed insert to a `doctors` upsert + `clinics` insert; added partial-failure pre-fill logic on load
+- `src/app/doctor/dashboard/page.tsx` [MODIFIED] — `checkProfile` now also queries `clinics` for at least one row; redirects to setup if either the `doctors` row or any `clinics` row is missing
+**Notes/trade-offs:**
+- **`upsert` on `doctors`, not `insert`**: If a prior submission saved the doctor row but the clinic insert failed (no cross-table transaction in the Supabase JS client), resubmitting would have thrown a duplicate-key error with a plain `insert`. `upsert` keyed on `id` makes re-submission safe.
+- **Two-step write, no transaction**: If the `doctors` upsert succeeds but the `clinics` insert fails, the user is shown an error message telling them their profile was saved but the clinic wasn't, and asking them to submit again. On re-submit the upsert silently overwrites the `doctors` row and the `clinics` insert is retried. This is the agreed recovery path per the design doc (design decision #2).
+- **One clinic at setup only**: The multi-clinic schema supports many clinics per doctor, but collecting a *second* clinic post-onboarding is explicitly out of scope for this task and has no assigned roadmap task yet — flagged for the team to pick up.
+- **HMO accreditations still not collected here**: unchanged from original Task 2.1 scope; still seeded via Task 1.4.
+
 ### 2026-08-15 — PRD schema rework for multi-clinic support
 **Task:** 1.2 (Rework Proposal)
 **Owner:** Coding agent
@@ -42,6 +71,20 @@ If you're building manually (not through an agent), add the same entry yourself 
 - The `doctor_on_leave` enum value lets secretaries block out times without deleting slots outright.
 - Slot/appointment sync and slot/clinic/doctor consistency are now enforced at the DB level via triggers rather than relying on the app layer to keep them in sync — this closes a gap flagged in the original schema draft.
 - Open item: no DB-level guard yet preventing a doctor from double-booking across overlapping time ranges within the same clinic (only exact slot reuse is blocked); worth a follow-up if that turns out to matter for the demo.
+
+### 2026-08-15 — Doctor profile setup form
+**Task:** 2.1
+**Owner:** Coding agent
+**What changed:** Built the doctor profile-setup page at `/doctor/profile-setup`. The form collects full name, credential filename (placeholder only — no file storage), specialty, sub-specialty (filtered by selected specialty from `specialty_taxonomy`), consultation rate in PHP, and clinic location. On submit it inserts a row into `public.doctors` with `id = auth.uid()` (required by the `doctors_insert_own` RLS policy) and redirects to `/doctor/dashboard`. Updated `/doctor/dashboard` to check for an existing `doctors` row on mount and redirect to profile setup if none exists, closing the gap where a newly-signed-up doctor would land on the dashboard with no profile row yet.
+**Files touched:**
+- `src/app/doctor/profile-setup/page.tsx` [NEW] — full profile setup form; guarded by `RequireRole`, skips itself if a profile already exists, validates specialty/sub-specialty pairing against `specialty_taxonomy` rows fetched from DB
+- `src/app/doctor/dashboard/page.tsx` [MODIFIED] — added `checkProfile` effect that redirects to `/doctor/profile-setup` when no `doctors` row exists; dashboard content only renders after that check passes; spinner shown during the async check
+**Notes/trade-offs:**
+- **Create-only, not an edit screen.** If a `doctors` row already exists when the page loads, it redirects immediately to the dashboard. Editing an existing profile is out of scope for this task.
+- **`id` set explicitly from session.** `doctors.id` has no default and RLS requires `auth.uid() = id` — the insert explicitly sets `id: session.user.id`. If the session expired between page load and submit, the error is caught and surfaced to the user.
+- **HMO accreditations not collected here.** The form doesn't include an HMO field — the `hmo_accreditations text[]` column defaults to `{}`. Per the task brief, accreditations are populated via the seed process (Task 1.4) for MVP. A doctor signing up live gets an empty array until that data is seeded separately.
+- **Credential field is filename-only.** No actual file upload wiring. The UI makes this explicit with a disclaimer line under the file picker.
+- **Taxonomy must be seeded** for the specialty dropdowns to have any options. If `specialty_taxonomy` is empty, the page shows an amber warning and the form can't be meaningfully submitted.
 
 ### 2026-08-15 — Sign-up / login for patient and doctor roles
 **Task:** 1.3
