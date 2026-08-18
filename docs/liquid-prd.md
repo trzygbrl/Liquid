@@ -13,6 +13,7 @@ Track every scope decision or major edit here — newest on top. This is separat
 
 | Date | Change | Reason |
 |---|---|---|
+| 2026-08-18 | `doctors.sub_specialty` made nullable. New `public.specialties` lookup table added with a second FK on `doctors.specialty` to close the Postgres MATCH SIMPLE gap. Profile-setup form updated: sub-specialty field is hidden/optional when the selected specialty has no taxonomy entries; form submits `sub_specialty = NULL` for general practitioners. | General practitioners have a specialty (e.g. "General Practice") but no sub-specialty — the previous NOT NULL constraint incorrectly excluded them. |
 | _(today)_ | Expanded scope to support doctors practicing at multiple clinics, location-specific consultation fees, and emergency schedule blocking (e.g., sudden leaves). Booking flow updated to require clinic selection. | To align with the Philippine medical context where doctors rotate across multiple hospitals/MABs, charge different rates per location, and frequently adjust schedules for emergencies. |
 | _(today)_ | Major repositioning per mentor review: reframed as an AI healthcare navigation platform (not a directory), added explicit problem statement, objection-handling section, multi-stage AI pipeline, HMO intelligence layer, doctor ranking, financial framing, tagline | Mentor flagged that the pitch read as "a directory with AI-assisted search" — needed sharper positioning and proactive answers to likely judge challenges |
 | _(earlier)_ | Added Change Log + linked BUILD_LOG.md process | Wanted a clear, non-technical-friendly way to track scope changes and build progress |
@@ -109,8 +110,8 @@ Doctor
 - id
 - name
 - credentials (text or file upload URL)
-- specialty (e.g. "Ophthalmologist")
-- sub_specialty (e.g. "Retina")
+- specialty (e.g. "Ophthalmologist", "General Practice") — required; validated against the `specialties` lookup table
+- sub_specialty (e.g. "Retina") — **nullable**; NULL for general practitioners who have no sub-specialty; validated against `specialty_taxonomy` only when not NULL (composite FK uses MATCH SIMPLE)
 - hmo_accreditations (array of HMO names — mocked/static list)
 - verified (boolean — for demo, can default true on manual seed)
 - created_at
@@ -235,6 +236,8 @@ Example if you pick Ophthalmology as your seed specialty:
 - Ophthalmologist → Pediatric Ophthalmology
 
 Pick ONE specialty to seed deeply and convincingly rather than spreading thin.
+
+**General practitioners and the taxonomy:** Not every doctor has a sub-specialty. Doctors who are general practitioners or general healthcare specialists select `specialty = 'General Practice'` and submit `sub_specialty = NULL`. These doctors are intentionally **not** represented in `specialty_taxonomy` — that table contains only specialties that have sub-specialty offerings. `'General Practice'` is a row in the separate `public.specialties` lookup table (added in migration 0003), which validates all specialty values independently of the sub-specialty taxonomy.
 
 ### 8.6 Reviews (Should-Have)
 - Only allow a review if there's a matching Appointment with status = "completed" for that patient + doctor pair (verified-visit-only, reduces fake/malicious reviews). Feeds into Doctor Ranking (8.4) once populated.

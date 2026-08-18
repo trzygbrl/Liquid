@@ -78,10 +78,19 @@ function ProfileSetupForm() {
     init();
   }, [router]);
 
-  const specialties = Array.from(new Set(taxonomy.map((t) => t.specialty)));
+  // Derive unique specialty list from taxonomy, plus 'General Practice' which has no
+  // sub-specialty entries and therefore won't appear in the taxonomy-derived list.
+  const specialties = [
+    'General Practice',
+    ...Array.from(new Set(taxonomy.map((t) => t.specialty))),
+  ];
   const subSpecialties = taxonomy
     .filter((t) => t.specialty === specialty)
     .map((t) => t.sub_specialty);
+
+  // True when the selected specialty has no sub-specialty entries in the taxonomy.
+  // Used to hide the sub-specialty field and skip the sub-specialty validation requirement.
+  const isGeneralPractice = specialty !== '' && subSpecialties.length === 0;
 
   function handleSpecialtyChange(value: string) {
     setSpecialty(value);
@@ -97,8 +106,15 @@ function ProfileSetupForm() {
     e.preventDefault();
     setError(null);
 
-    if (!name.trim() || !specialty || !subSpecialty || !clinicName.trim() || !clinicLocation.trim() || !consultationFee) {
-      setError('Please fill in your name, specialty, sub-specialty, clinic name, clinic location, and consultation fee.');
+    // Sub-specialty is only required when the selected specialty has taxonomy entries.
+    // Specialties like 'General Practice' have no sub-specialties and submit sub_specialty = null.
+    const subSpecialtyRequired = !isGeneralPractice;
+    if (!name.trim() || !specialty || (subSpecialtyRequired && !subSpecialty) || !clinicName.trim() || !clinicLocation.trim() || !consultationFee) {
+      setError(
+        subSpecialtyRequired
+          ? 'Please fill in your name, specialty, sub-specialty, clinic name, clinic location, and consultation fee.'
+          : 'Please fill in your name, specialty, clinic name, clinic location, and consultation fee.'
+      );
       return;
     }
 
@@ -128,7 +144,11 @@ function ProfileSetupForm() {
       name: name.trim(),
       credentials: credentialFileName || null,
       specialty,
-      sub_specialty: subSpecialty,
+      // Send null (not an empty string) when there is no sub-specialty.
+      // An empty string would not satisfy the composite FK to specialty_taxonomy.
+      // null is correct: the composite FK uses MATCH SIMPLE and skips validation
+      // when sub_specialty is null; the new doctors_specialty_fk still validates specialty.
+      sub_specialty: subSpecialty || null,
       // hmo_accreditations left to DB default '{}' — seeded via Task 1.4
       // verified left to DB default true
     });
@@ -249,27 +269,40 @@ function ProfileSetupForm() {
           )}
         </div>
 
-        {/* Sub-specialty */}
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="doctor-sub-specialty" className="text-sm font-medium text-slate-300">
-            Sub-specialty <span className="text-red-400">*</span>
-          </label>
-          <select
-            id="doctor-sub-specialty"
-            value={subSpecialty}
-            onChange={(e) => setSubSpecialty(e.target.value)}
-            required
-            disabled={!specialty}
-            className="rounded-lg border border-slate-600 bg-slate-800/60 px-4 py-2.5 text-sm text-white outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <option value="">
-              {specialty ? 'Select sub-specialty' : 'Pick a specialty first'}
-            </option>
-            {subSpecialties.map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
-        </div>
+        {/* Sub-specialty — hidden when the selected specialty has no taxonomy entries
+             (e.g. 'General Practice'). In that case sub_specialty is submitted as null. */}
+        {!isGeneralPractice && (
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="doctor-sub-specialty" className="text-sm font-medium text-slate-300">
+              Sub-specialty{' '}
+              {specialty && subSpecialties.length > 0 ? (
+                <span className="text-red-400">*</span>
+              ) : (
+                <span className="ml-1.5 text-xs font-normal text-slate-500">(optional)</span>
+              )}
+            </label>
+            <select
+              id="doctor-sub-specialty"
+              value={subSpecialty}
+              onChange={(e) => setSubSpecialty(e.target.value)}
+              required={subSpecialties.length > 0}
+              disabled={!specialty}
+              className="rounded-lg border border-slate-600 bg-slate-800/60 px-4 py-2.5 text-sm text-white outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <option value="">
+                {specialty ? 'Select sub-specialty' : 'Pick a specialty first'}
+              </option>
+              {subSpecialties.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          </div>
+        )}
+        {isGeneralPractice && (
+          <p className="text-xs text-slate-500 -mt-1">
+            General Practice has no sub-specialty — this field will be left blank.
+          </p>
+        )}
 
         {/* ── Clinic details ──────────────────────────────────────── */}
 
