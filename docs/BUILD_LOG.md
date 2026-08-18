@@ -29,6 +29,20 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-18 — Doctor schedule management
+**Task:** 2.2
+**Owner:** Coding agent
+**What changed:** Built the doctor schedule management UI. Doctors can now add available time slots (clinic, date, start/end time), see all upcoming slots grouped by date with status badges, and delete available slots. The dashboard's "Routing & auth stub" placeholder was replaced with the real `ScheduleManager` component.
+**Files touched:**
+- `src/components/ScheduleManager.tsx` [NEW] — self-contained component: loads the doctor's clinics and upcoming slots on mount, add-slot form with client-side validation, delete button (available slots only), grouped-by-date slot list with status badges, and a Supabase Realtime subscription
+- `src/app/doctor/dashboard/page.tsx` [MODIFIED] — imported `ScheduleManager`, replaced the stub placeholder card with `<ScheduleManager />`. Header, sign-out, `RequireRole` wrapper, and `checkingProfile` logic were left untouched.
+**Notes/trade-offs:**
+- **`clinic_id` is required on every slot insert.** The DB trigger `trg_check_slot_clinic_doctor_match` rejects any slot where `clinic_id.doctor_id ≠ slot.doctor_id`. The form always populates `clinic_id` from the doctor's own clinic list, so this can't misfire through the UI — but the constraint matters if the table is ever written to directly.
+- **Booked slots are deliberately non-deletable.** A slot with `is_booked = 'booked'` has a patient attached (via an appointment). The Delete button is hidden on those rows and an informational note is shown instead ("A patient has booked this slot"). Cancellation of booked appointments (which would free the slot back to `available` via the DB trigger) is out of scope here — that's Task 2.3/4.2.
+- **Real-time sync uses Supabase Realtime** on `public.schedule_slots` filtered by `doctor_id=eq.<uid>`. INSERT/UPDATE/DELETE events update the local slot state directly without a re-fetch. The channel is cleaned up in the `useEffect` return to prevent leaks on unmount.
+- **No slot overlap validation client-side** — intentional. A doctor can legitimately offer overlapping slots at different clinics (different `clinic_id`). The DB has no unique constraint on time ranges.
+- **Optimistic local append on insert** — after a successful slot insert, the new row is appended to local state and re-sorted rather than re-fetching the whole list. This keeps the UI snappy.
+
 ### 2026-08-18 — Specialty taxonomy seed (re-seed after DB wipe)
 **Task:** 1.4
 **Owner:** Coding agent
