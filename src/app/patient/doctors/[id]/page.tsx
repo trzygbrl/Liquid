@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, useEffect, useState, useMemo } from 'react';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import RequireRole from '@/components/RequireRole';
 import { supabase } from '@/lib/supabaseClient';
 
@@ -66,6 +66,7 @@ function formatDateHeader(dateStr: string): string {
 function DoctorDetailPageContent() {
   const params = useParams();
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   const doctorId = Array.isArray(params.id) ? params.id[0] : params.id;
   const patientHmo = searchParams.get('hmo') || null;
@@ -79,14 +80,6 @@ function DoctorDetailPageContent() {
   const [symptomSummary, setSymptomSummary] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
-  const [bookingSuccess, setBookingSuccess] = useState<boolean>(false);
-  const [confirmedAppointment, setConfirmedAppointment] = useState<{
-    id: string;
-    date: string;
-    time: string;
-    clinicName: string;
-    doctorName: string;
-  } | null>(null);
 
   // Load doctor details
   useEffect(() => {
@@ -235,15 +228,10 @@ function DoctorDetailPageContent() {
         throw insertError;
       }
 
-      // 3. Mark success state
-      setConfirmedAppointment({
-        id: apptData.id,
-        date: selectedSlot.date,
-        time: `${formatTime(selectedSlot.start_time)} - ${formatTime(selectedSlot.end_time)}`,
-        clinicName: selectedClinic?.name || 'Clinic',
-        doctorName: doctor.name,
-      });
-      setBookingSuccess(true);
+      // 3. Redirect to the dedicated confirmation screen (Task 4.3).
+      // router.replace keeps the history clean so "back" returns to the doctor list
+      // rather than re-triggering the booking flow.
+      router.replace(`/patient/appointments/${apptData.id}/confirmation`);
     } catch (err: any) {
       console.error('Booking failed:', err);
       setBookingError(err.message || 'Failed to submit booking. Please try again.');
@@ -284,71 +272,6 @@ function DoctorDetailPageContent() {
     );
   }
 
-  // ─── Render: Booking Success Confirmation State ────────────────────────────
-  if (bookingSuccess && confirmedAppointment) {
-    return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-slate-950 px-4 py-12 sm:px-6">
-        <div className="w-full max-w-lg rounded-2xl border border-teal-500/40 bg-slate-900/90 p-8 shadow-2xl backdrop-blur text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-teal-500/20 text-teal-400">
-            <svg className="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
-              <path
-                fillRule="evenodd"
-                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </div>
-
-          <span className="mt-4 inline-block rounded-md bg-teal-500/15 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-teal-300">
-            Appointment Requested
-          </span>
-
-          <h1 className="mt-2 text-2xl font-bold text-white">
-            Booking Confirmed!
-          </h1>
-          <p className="mt-2 text-sm text-slate-300">
-            Your appointment request has been submitted to <strong>{confirmedAppointment.doctorName}</strong>.
-          </p>
-
-          <div className="mt-6 rounded-xl border border-slate-800 bg-slate-800/50 p-5 text-left text-xs space-y-2.5 text-slate-300">
-            <div className="flex justify-between">
-              <span className="text-slate-400">Status:</span>
-              <span className="font-semibold text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded">
-                Pending Confirmation
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-400">Date:</span>
-              <span className="font-semibold text-white">{formatDateHeader(confirmedAppointment.date)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-400">Time:</span>
-              <span className="font-semibold text-white">{confirmedAppointment.time}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-400">Location:</span>
-              <span className="font-semibold text-white">{confirmedAppointment.clinicName}</span>
-            </div>
-          </div>
-
-          <div className="mt-8 flex flex-col gap-3">
-            <a
-              href="/patient/dashboard"
-              className="w-full rounded-xl bg-teal-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg transition hover:bg-teal-500"
-            >
-              Go to Patient Dashboard →
-            </a>
-            <a
-              href="/patient/intake"
-              className="w-full rounded-xl border border-slate-700 bg-slate-800/60 px-6 py-3 text-xs font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white"
-            >
-              Check Other Symptoms
-            </a>
-          </div>
-        </div>
-      </main>
-    );
-  }
 
   // Computations for ratings and HMO
   const isHmoCovered = Boolean(

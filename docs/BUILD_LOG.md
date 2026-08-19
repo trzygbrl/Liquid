@@ -29,6 +29,23 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-19 — Booking confirmation screen (Task 4.3)
+**Task:** 4.3
+**Owner:** Coding agent
+**What changed:** Built `/patient/appointments/[id]/confirmation` — a dedicated, refresh-safe booking confirmation route that serves as the reassuring payoff moment of the patient flow. Updated Task 4.2's booking submission handler in `/patient/doctors/[id]` to redirect directly to this route with the created appointment ID (`router.replace`) rather than rendering an inline temporary state. The confirmation page fetches appointment details via joined Supabase tables (`appointments` → `schedule_slots` → `clinics`, and `appointments` → `doctors`), formats date and time in `Asia/Manila` local time (12-hour AM/PM), provides defense-in-depth authorization checking against the session user's ID, and links to the patient dashboard (`/patient/dashboard`).
+**Files touched:**
+- `src/app/patient/appointments/[id]/confirmation/page.tsx` [NEW] — dedicated confirmation page with loading state, not-found/unauthorized fallback, doctor details, formatted date/time, clinic location, and "View my appointments" action.
+- `src/app/patient/doctors/[id]/page.tsx` [MODIFIED] — updated `handleConfirmBooking` to redirect to `/patient/appointments/${apptData.id}/confirmation` on insert success; cleaned up redundant in-memory confirmation state.
+- `docs/BUILD_LOG.md` [MODIFIED] — logged build entry.
+**Notes/trade-offs:**
+- **Confirmed schema & field names:**
+  - `appointments`: `id`, `patient_id`, `doctor_id`, `slot_id`, `status` (`'pending' | 'confirmed' | 'declined' | 'completed' | 'cancelled'`), `symptom_summary`, `created_at`
+  - `schedule_slots`: `id`, `doctor_id`, `clinic_id`, `date`, `start_time`, `end_time`, `is_booked` (`'available' | 'booked' | 'doctor_on_leave'`)
+  - `clinics`: `id`, `doctor_id`, `name`, `room_details`, `location`, `consultation_fee`
+  - `doctors`: `id`, `name`, `credentials`, `specialty`, `sub_specialty`, `hmo_accreditations`, `verified`
+- **Destination of "View my appointments":** `AppointmentsDashboard` is currently only mounted on the doctor dashboard (`/doctor/dashboard`). Per current route structure, the patient "View my appointments" link routes to `/patient/dashboard`.
+- **Client-side auth pattern:** Consistent with all existing patient routes (`RequireRole`, `supabaseClient` anon key) as `@supabase/ssr` is not yet configured.
+
 ### 2026-08-19 — Dynamic slug collision resolved & 200 mock doctors seeded
 **Task:** Bugfix / Seed Execution
 **Owner:** Coding agent
