@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import RequireRole from '@/components/RequireRole';
 import { supabase } from '@/lib/supabaseClient';
 import ScheduleManager from '@/components/ScheduleManager';
+import AppointmentsDashboard from '@/components/AppointmentsDashboard';
 
 function DashboardContent() {
   const router = useRouter();
@@ -82,6 +83,7 @@ function DashboardContent() {
         </button>
       </div>
 
+      <AppointmentsDashboard />
       <ScheduleManager />
     </main>
   );

@@ -29,6 +29,24 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-19 — Doctor appointments dashboard
+**Task:** 2.3
+**Owner:** Coding agent
+**What changed:** Built `AppointmentsDashboard`, the doctor-facing view for managing appointment requests. The component renders above `ScheduleManager` on the doctor dashboard so pending decisions are always the first thing a doctor sees. It has two sections: (1) "Pending appointments" — all pending appointments for the doctor in FIFO order (oldest `created_at` first), each showing patient name/age/sex, symptom summary, and the requested slot date/time/clinic, with Accept and Decline buttons; (2) "Upcoming confirmed appointments" — confirmed appointments with a slot date today-or-later, sorted soonest first, read-only. Realtime subscription on `appointments` filtered by `doctor_id` keeps both lists live without a page refresh.
+**Files touched:**
+- `src/components/AppointmentsDashboard.tsx` [NEW] — self-contained client component: parallel-fetches pending and confirmed appointments on mount (with joins to `patients` and `schedule_slots → clinics`), optimistic removal on accept/decline, update-guarded write (`.eq('status','pending')`), Supabase Realtime subscription on `postgres_changes` for `appointments` filtered by `doctor_id=eq.<uid>`, loading/error states, and empty states — all matching `ScheduleManager.tsx` in pattern.
+- `src/app/doctor/dashboard/page.tsx` [MODIFIED] — imported `AppointmentsDashboard` and rendered it above `<ScheduleManager />` inside the existing `checkingProfile` gate.
+**Notes/trade-offs:**
+- **Only `appointments.status` is written on accept/decline.** The `trg_sync_slot_status` trigger (from `002_slot_appointment_triggers.sql`) flips `schedule_slots.is_booked` to `'booked'` on confirm and back to `'available'` on decline automatically. Writing to the slot directly from this component would race the trigger and is deliberately avoided (Assumption 3).
+- **Update guard against double-click / second-tab race (Assumption 4).** The update is scoped with `.eq('status', 'pending')` so a second action on an already-actioned appointment affects zero rows. Zero rows → treated as "already actioned by someone else" → re-fetch reconciles, no hard error surfaced.
+- **Client-side filter for confirmed-upcoming list (Assumption 5).** Supabase embedded-resource filters (filtering on a nested `schedule_slots.date`) filter the nested object *per row*, not which parent rows come back. All confirmed appointments are fetched and filtered/sorted in JS. Acceptable at hackathon demo volume.
+- **Realtime uses a full re-fetch on any event (INSERT/UPDATE/DELETE).** The raw `postgres_changes` payload does not include nested join data (`patients`, `schedule_slots`, `clinics`). A per-event partial state merge would require manually reconstructing the join data, which is error-prone. Re-fetching the full appointment list (two parallel queries) on each event is simpler, correct, and negligible at demo scale.
+- **Patient context kept minimal per Assumption 6.** Shows `name`, `age`, `sex`, and `symptom_summary` only. `location` and `hmo_provider` are available in the `patients` table and could be a quick follow-on if richer doctor context is wanted.
+- **Realtime subscription is a deliberate pull-forward of Task 4.4** (requirement: "new booking correctly and immediately appears in the doctor's pending appointments dashboard"). Flagged here explicitly per Assumption 8.
+- **Precondition (Assumption 9):** Migrations `0001_initial_schema.sql` (clinics table, slot_status enum) and `002_slot_appointment_triggers.sql` (trg_sync_slot_status, trg_check_slot_clinic_doctor_match) must be applied to the live Supabase project before testing. The trigger is what makes accept/decline automatically flip the slot status — without it, the appointment status updates but the slot stays in its old state.
+- **RLS-tightening TODO still outstanding (Assumption 7 / Tasks 4.2 and 2.3).** `appointments_update_involved` in `0001_initial_schema.sql` allows either the patient or the doctor on the appointment to update the row, with a `TODO` comment to tighten this (patients should only cancel; doctors should only accept/decline/complete). This task now supplies the doctor-side update shape (`status → 'confirmed' | 'declined'`). The tightened policy should be implemented in a follow-up task (originally flagged in the Task 2.1 entry as 4.2, now also touched here as 2.3 scope). **This TODO has now been noted in two build log entries without being resolved — it should be a prioritised item in the next session.**
+
+
 ### 2026-08-18 — Doctor schedule management
 **Task:** 2.2
 **Owner:** Coding agent
