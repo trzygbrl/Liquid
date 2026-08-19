@@ -29,6 +29,18 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-19 — Doctor list screen: HMO verification + multi-factor ranking
+**Task:** 4.1
+**Owner:** Coding agent
+**What changed:** Built `/patient/doctors` — the doctor list screen implementing the PRD Section 8.4 multi-factor ranking algorithm and Section 8.3 HMO matching intelligence layer. The page retrieves doctors with associated clinics, schedule slots, and reviews from Supabase. It ranks doctors across 4 deterministic tiers: (1) exact sub-specialty match strength, (2) HMO coverage, (3) review rating, and (4) soonest available schedule slot. Matching doctors display an explicit `✓ Covered by [HMO]` badge; when no sub-specialty doctor accepts the patient's HMO, an advisory banner surfaces the mismatch with estimated cash consultation rates instead of silently hiding doctors. Each doctor card shows verified badge, credentials, clinic location, fee, accredited HMO tags, earliest open slot, and a CTA linking to `/patient/doctors/[id]`.
+**Files touched:**
+- `src/lib/doctorRanking.ts` [NEW] — ranking engine calculating sub-specialty alignment, HMO coverage, rating average, earliest available slot date/time, and HMO mismatch detection.
+- `src/app/patient/doctors/page.tsx` [NEW] — patient doctor directory page with Suspense wrapper, active search recap pills, HMO mismatch intelligence callout, sub-specialty filter pills, HMO toggle, and responsive doctor cards.
+**Notes/trade-offs:**
+- **Ranking over filtering (Assumption 1).** Rather than a simple binary filter, all relevant doctors are surfaced in prioritized order so patients can evaluate trade-offs between HMO coverage, sub-specialty fit, and scheduling urgency.
+- **HMO mismatch intelligence (Assumption 2).** Directly addresses the pitch requirement: non-covered doctors are prominently displayed with cash rates when no in-network doctor matches the recommended sub-specialty.
+- **Downstream contract for Task 4.2 (Assumption 6).** "View Profile & Book →" buttons link directly to `/patient/doctors/${doctor.id}?hmo=${hmo}` for the upcoming booking screen.
+
 ### 2026-08-19 — Tagalog free-text handling in AI symptom matching
 **Task:** 3.5
 **Owner:** Coding agent
