@@ -34,7 +34,13 @@ export type ClarifyResult = {
   question: string;
 };
 
-export type MatchApiResult = MatchResult | ClarifyResult;
+export type EmergencyResult = {
+  type: 'emergency';
+  message: string;
+  matchedCriteria?: string;
+};
+
+export type MatchApiResult = MatchResult | ClarifyResult | EmergencyResult;
 
 export interface MatchApiRequest {
   /** Required — the free-text symptom description from IntakeFlow step 3 */

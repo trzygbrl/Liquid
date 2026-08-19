@@ -21,7 +21,8 @@
 
 import { GoogleGenAI } from '@google/genai';
 import { createClient } from '@supabase/supabase-js';
-import type { MatchResult, ClarifyResult, MatchApiResult } from '@/lib/matchApi';
+import type { MatchResult, ClarifyResult, EmergencyResult, MatchApiResult } from '@/lib/matchApi';
+import { checkEmergencySymptoms } from '@/lib/safetyGate';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -123,6 +124,22 @@ export async function POST(request: Request): Promise<Response> {
   // symptomText is required (Assumption 6)
   if (!symptomText || typeof symptomText !== 'string' || symptomText.trim().length < 1) {
     return Response.json({ error: 'symptomText is required.' }, { status: 400 });
+  }
+
+  // ── 2.5 Emergency Safety Gate (PRD Section 8.2 / Task 3.3) ────────────────
+  // Runs BEFORE any AI/specialty mapping call. Deterministic rule check on
+  // calibrated objective symptom combinations. Short-circuits immediately if
+  // an emergency condition is detected.
+  const safetyCheck = checkEmergencySymptoms(symptomText);
+  if (safetyCheck.isEmergency) {
+    const emergencyResponse: EmergencyResult = {
+      type: 'emergency',
+      message:
+        safetyCheck.message ??
+        'These symptoms can sometimes be serious. Please consider seeking urgent or emergency care.',
+      matchedCriteria: safetyCheck.matchedCriteria,
+    };
+    return Response.json(emergencyResponse);
   }
 
   // ── 3. Fetch taxonomy from Supabase (Assumption 3) ───────────────────────

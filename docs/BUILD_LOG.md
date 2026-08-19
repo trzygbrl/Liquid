@@ -29,6 +29,20 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-19 — Emergency safety gate logic
+**Task:** 3.3
+**Owner:** Coding agent
+**What changed:** Implemented the calibrated emergency safety gate per PRD Section 8.2. A deterministic rule engine in `src/lib/safetyGate.ts` screens patient symptom text in English and Tagalog against 6 objective clinical emergency criteria (chest pain + dyspnea, chest pain + radiating arm/jaw pain, severe respiratory distress, unilateral stroke symptoms, loss of consciousness/fainting, and severe uncontrolled bleeding). The safety gate runs as a zero-latency pre-check inside `POST /api/match` and short-circuits immediately before any DB taxonomy fetch or Gemini LLM call. Also added `EmergencyResult` to `src/lib/matchApi.ts` types.
+**Files touched:**
+- `src/lib/safetyGate.ts` [NEW] — deterministic rule engine with bilingual (English & Tagalog) regex patterns for 6 calibrated emergency criteria; strictly avoids triggering on panic tone, punctuation, or all-caps intensity words alone.
+- `src/lib/matchApi.ts` [MODIFIED] — added `EmergencyResult = { type: 'emergency'; message: string; matchedCriteria?: string }` to the `MatchApiResult` union.
+- `src/app/api/match/route.ts` [MODIFIED] — integrated `checkEmergencySymptoms(symptomText)` right after input validation to short-circuit with a 200 OK `{ type: 'emergency', ... }` response.
+**Notes/trade-offs:**
+- **Zero latency & 100% deterministic (Assumption 1).** The safety gate does not rely on LLM prompts or network calls, avoiding hallucination, quota latency, and AI outages for critical safety triage.
+- **Calibrated against anxiety/panic false positives (Assumption 2).** Purely emotional phrasing like `"I feel like I'm DYING"`, `"worst pain ever"`, or all-caps shouting does not trigger the gate unless an objective combination (e.g. chest pain + shortness of breath) is explicitly present. Anxious patients are safely passed through to regular specialty triage.
+- **Calm, non-alarming tone (Assumption 5).** Message is phrased calmly: *"These symptoms can sometimes be serious. Please consider seeking urgent or emergency care."* Task 3.4 will render this interstitial without red flashing alarm UI.
+- **Task 3.4 integration seam:** `callMatchApi` now returns `EmergencyResult` alongside `MatchResult` and `ClarifyResult`. The UI in Task 3.4 will branch on `result.type === 'emergency'` to display the emergency interstitial.
+
 ### 2026-08-19 — AI symptom → specialty matching API route
 **Task:** 3.2
 **Owner:** Coding agent
