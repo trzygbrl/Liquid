@@ -29,6 +29,17 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-19 — Tagalog free-text handling in AI symptom matching
+**Task:** 3.5
+**Owner:** Coding agent
+**What changed:** Enhanced the AI clinical triage prompt in `src/app/api/match/route.ts` to support seamless Tagalog free-text symptom descriptions alongside English. The system prompt now applies dynamic language mirroring: when a patient describes symptoms in Tagalog, the plain-language clinical `reason` (and `question` if clarifying) is returned in natural, polite Tagalog; when given English symptoms, it responds in English. Canonical `specialty` and `sub_specialty` taxonomy identifiers are strictly maintained in English, preserving downstream database querying and Task 4.1 routing compatibility.
+**Files touched:**
+- `src/app/api/match/route.ts` [MODIFIED] — refined system prompt with explicit language mirroring and localization rules while retaining English taxonomy constraints.
+**Notes/trade-offs:**
+- **Language Mirroring on Explanations, English on Taxonomy (Assumption 1).** Patients read natural Tagalog reasoning tailored to their dialect, while the application layer continues using standard database taxonomy values (`"Ophthalmology"`, `"Retina"`, etc.) without requiring mapping dictionaries.
+- **Zero latency overhead (Assumption 3).** Language detection and output localization occur within the single Gemini 2.5 Flash call.
+- **End of Phase 3 Checkpoint achieved:** Patients can now enter symptoms in Tagalog or English, undergo emergency safety screening, receive AI specialty matching with mirrored explanations, and transition into doctor search.
+
 ### 2026-08-19 — AI match result screen & emergency interstitial
 **Task:** 3.4
 **Owner:** Coding agent
