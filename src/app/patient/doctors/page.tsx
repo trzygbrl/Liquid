@@ -11,6 +11,7 @@ import {
   type Clinic,
   type ScheduleSlot,
 } from '@/lib/doctorRanking';
+import { getPlainSpecialtyInfo } from '@/lib/specialtyHelpers';
 
 function DoctorListContent() {
   const searchParams = useSearchParams();
@@ -425,13 +426,13 @@ function DoctorListContent() {
 
                       {/* Specialty & Sub-specialty Pill */}
                       <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
-                        <span className="font-semibold text-teal-300">
+                        <span className="font-semibold text-teal-300 text-sm">
                           {doctor.specialty}
                         </span>
                         {doctor.sub_specialty && (
                           <>
                             <span className="text-slate-600">•</span>
-                            <span className="rounded-md bg-slate-800 px-2 py-0.5 font-medium text-slate-200">
+                            <span className="rounded-md bg-slate-800 px-2.5 py-0.5 font-medium text-slate-200 text-xs">
                               {doctor.sub_specialty}
                             </span>
                           </>
@@ -439,9 +440,9 @@ function DoctorListContent() {
                         {doctor.averageRating !== null ? (
                           <>
                             <span className="text-slate-600">•</span>
-                            <span className="inline-flex items-center gap-1 font-semibold text-amber-300">
+                            <span className="inline-flex items-center gap-1 font-semibold text-amber-300 text-xs">
                               ★ {doctor.averageRating.toFixed(1)}
-                              <span className="text-slate-500 font-normal">
+                              <span className="text-slate-400 font-normal">
                                 ({doctor.reviewCount} {doctor.reviewCount === 1 ? 'review' : 'reviews'})
                               </span>
                             </span>
@@ -454,26 +455,37 @@ function DoctorListContent() {
                         )}
                       </div>
 
+                      {/* Plain-Language Specialty Subtitle & Tagalog Guide */}
+                      <p className="mt-1.5 text-xs text-slate-300">
+                        <span className="text-teal-200/90 font-medium">
+                          {getPlainSpecialtyInfo(doctor.specialty).plainName}
+                        </span>
+                        <span className="text-slate-500 mx-1.5">•</span>
+                        <span className="italic text-slate-400">
+                          {getPlainSpecialtyInfo(doctor.specialty).tagalogName}
+                        </span>
+                      </p>
+
                       {/* Credentials text */}
                       {doctor.credentials && (
-                        <p className="mt-3 text-xs leading-relaxed text-slate-400 line-clamp-2">
+                        <p className="mt-2.5 text-xs leading-relaxed text-slate-300 line-clamp-2">
                           {doctor.credentials}
                         </p>
                       )}
 
                       {/* Clinic Location & Fee */}
                       {clinic && (
-                        <div className="mt-4 rounded-xl border border-slate-800/80 bg-slate-800/40 p-3 text-xs">
+                        <div className="mt-4 rounded-xl border border-slate-800/80 bg-slate-800/50 p-3.5 text-xs">
                           <div className="flex items-center justify-between gap-2">
                             <div>
-                              <p className="font-medium text-slate-200">{clinic.name}</p>
+                              <p className="font-semibold text-white text-sm">{clinic.name}</p>
                               {clinic.room_details && (
-                                <p className="text-slate-400 text-[11px]">{clinic.room_details}</p>
+                                <p className="text-slate-300 text-xs mt-0.5">{clinic.room_details}</p>
                               )}
-                              <p className="text-slate-400 text-[11px] mt-0.5">📍 {clinic.location}</p>
+                              <p className="text-slate-400 text-xs mt-1">📍 {clinic.location}</p>
                             </div>
                             <div className="text-right shrink-0">
-                              <span className="text-[11px] text-slate-400 block">Consultation Fee</span>
+                              <span className="text-xs text-slate-400 block">Consultation Fee</span>
                               <span className="text-sm font-bold text-teal-300">{formattedFee}</span>
                             </div>
                           </div>
@@ -481,7 +493,7 @@ function DoctorListContent() {
                       )}
 
                       {/* HMO Coverage Badges */}
-                      <div className="mt-4 flex flex-wrap items-center gap-1.5">
+                      <div className="mt-4 flex flex-wrap items-center gap-2">
                         {doctor.isHmoCovered && patientHmo && (
                           <span className="inline-flex items-center gap-1 rounded-lg bg-teal-500 px-2.5 py-1 text-xs font-semibold text-slate-950 shadow-sm">
                             <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
@@ -495,7 +507,7 @@ function DoctorListContent() {
                           </span>
                         )}
 
-                        <span className="text-[11px] font-medium text-slate-500 mr-1">
+                        <span className="text-xs font-medium text-slate-400 mr-1">
                           Accreditations:
                         </span>
                         {doctor.hmo_accreditations && doctor.hmo_accreditations.length > 0 ? (
@@ -506,10 +518,10 @@ function DoctorListContent() {
                             return (
                               <span
                                 key={hmoName}
-                                className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${
+                                className={`rounded-md px-2.5 py-1 text-xs font-medium ${
                                   isMatch
                                     ? 'bg-teal-500/20 text-teal-300 border border-teal-500/30'
-                                    : 'bg-slate-800 text-slate-400'
+                                    : 'bg-slate-800 text-slate-300 border border-slate-700/60'
                                 }`}
                               >
                                 {hmoName}
@@ -517,7 +529,7 @@ function DoctorListContent() {
                             );
                           })
                         ) : (
-                          <span className="text-[11px] text-slate-500">None (Cash-only)</span>
+                          <span className="text-xs text-slate-400">None (Cash-only)</span>
                         )}
                       </div>
                     </div>

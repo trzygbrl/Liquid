@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState, useMemo } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import RequireRole from '@/components/RequireRole';
 import { supabase } from '@/lib/supabaseClient';
+import { getPlainSpecialtyInfo } from '@/lib/specialtyHelpers';
 
 interface Clinic {
   id: string;
@@ -200,6 +201,26 @@ function DoctorDetailPageContent() {
     return doctor.clinics.find((c) => c.id === selectedSlot.clinic_id) || doctor.clinics[0] || null;
   }, [doctor, selectedSlot]);
 
+  // Star rating distribution computation
+  const starDistribution = useMemo(() => {
+    const counts: Record<number, number> = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+    if (!doctor?.reviews) return counts;
+    for (const r of doctor.reviews) {
+      if (r.rating >= 1 && r.rating <= 5) {
+        counts[r.rating]++;
+      }
+    }
+    return counts;
+  }, [doctor]);
+
+  // Sorted reviews list computation
+  const sortedReviews = useMemo(() => {
+    if (!doctor?.reviews) return [];
+    return [...doctor.reviews].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+  }, [doctor]);
+
   // Handle appointment booking submission
   async function handleConfirmBooking() {
     if (!doctor || !selectedSlot || isSubmitting) return;
@@ -284,7 +305,6 @@ function DoctorDetailPageContent() {
     );
   }
 
-
   // Computations for ratings and HMO
   const isHmoCovered = Boolean(
     patientHmo &&
@@ -298,24 +318,6 @@ function DoctorDetailPageContent() {
     ratings.length > 0
       ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1)
       : null;
-
-  const starDistribution = useMemo(() => {
-    const counts: Record<number, number> = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
-    if (!doctor?.reviews) return counts;
-    for (const r of doctor.reviews) {
-      if (r.rating >= 1 && r.rating <= 5) {
-        counts[r.rating]++;
-      }
-    }
-    return counts;
-  }, [doctor]);
-
-  const sortedReviews = useMemo(() => {
-    if (!doctor?.reviews) return [];
-    return [...doctor.reviews].sort(
-      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    );
-  }, [doctor]);
 
   const datesWithSlots = Object.keys(groupedSlots);
   const primaryClinic = doctor.clinics[0] || null;
@@ -364,13 +366,13 @@ function DoctorDetailPageContent() {
 
               {/* Specialty & Rating Row */}
               <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-                <span className="font-semibold text-teal-300 text-sm">
+                <span className="font-semibold text-teal-300 text-base">
                   {doctor.specialty}
                 </span>
                 {doctor.sub_specialty && (
                   <>
                     <span className="text-slate-600">•</span>
-                    <span className="rounded-md bg-slate-800 px-2.5 py-0.5 text-xs font-medium text-slate-200">
+                    <span className="rounded-md bg-slate-800 px-3 py-1 text-xs font-medium text-slate-200">
                       {doctor.sub_specialty}
                     </span>
                   </>
@@ -390,13 +392,24 @@ function DoctorDetailPageContent() {
                 )}
               </div>
 
+              {/* Plain-Language Specialty Subtitle */}
+              <p className="mt-1.5 text-xs text-slate-300">
+                <span className="text-teal-200 font-medium">
+                  {getPlainSpecialtyInfo(doctor.specialty).plainName}
+                </span>
+                <span className="text-slate-500 mx-1.5">•</span>
+                <span className="italic text-slate-400">
+                  {getPlainSpecialtyInfo(doctor.specialty).tagalogName}
+                </span>
+              </p>
+
               {/* Credentials / Bio */}
               {doctor.credentials && (
                 <div className="mt-4 rounded-xl border border-slate-800/80 bg-slate-800/40 p-4">
                   <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                     Credentials & Experience
                   </p>
-                  <p className="mt-1 text-xs leading-relaxed text-slate-200">
+                  <p className="mt-1.5 text-xs leading-relaxed text-slate-200">
                     {doctor.credentials}
                   </p>
                 </div>
@@ -405,32 +418,32 @@ function DoctorDetailPageContent() {
 
             {/* HMO Coverage Status Card */}
             <div className="rounded-xl border border-slate-800 bg-slate-800/60 p-4 sm:w-64 shrink-0 text-xs">
-              <span className="font-semibold uppercase tracking-wider text-slate-400 text-[11px] block">
+              <span className="font-semibold uppercase tracking-wider text-slate-400 text-xs block">
                 HMO Accreditations
               </span>
               {isHmoCovered && patientHmo ? (
-                <div className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-teal-500 px-2.5 py-1 text-xs font-bold text-slate-950">
+                <div className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-teal-500 px-3 py-1.5 text-xs font-bold text-slate-950 shadow-sm">
                   <span>✓ Covered by {patientHmo}</span>
                 </div>
               ) : patientHmo ? (
-                <div className="mt-2 rounded-lg bg-slate-900/80 p-2 text-slate-300 border border-slate-700">
-                  <span className="text-[11px] text-amber-300 block font-medium">Not accredited with {patientHmo}</span>
-                  <span className="text-[10px] text-slate-400">Consultation available via cash rate.</span>
+                <div className="mt-2 rounded-lg bg-slate-900/80 p-2.5 text-slate-300 border border-slate-700">
+                  <span className="text-xs text-amber-300 block font-semibold">Not accredited with {patientHmo}</span>
+                  <span className="text-xs text-slate-400 mt-0.5 block">Consultation available via cash rate.</span>
                 </div>
               ) : null}
 
-              <div className="mt-3 flex flex-wrap gap-1">
+              <div className="mt-3 flex flex-wrap gap-1.5">
                 {doctor.hmo_accreditations && doctor.hmo_accreditations.length > 0 ? (
                   doctor.hmo_accreditations.map((hmo) => (
                     <span
                       key={hmo}
-                      className="rounded bg-slate-900 px-2 py-0.5 text-[11px] text-slate-300 border border-slate-750"
+                      className="rounded-md bg-slate-900 px-2.5 py-1 text-xs text-slate-300 border border-slate-700/80"
                     >
                       {hmo}
                     </span>
                   ))
                 ) : (
-                  <span className="text-slate-500 text-[11px]">No HMO listed (Cash only)</span>
+                  <span className="text-slate-400 text-xs">No HMO listed (Cash only)</span>
                 )}
               </div>
             </div>
@@ -511,18 +524,18 @@ function DoctorDetailPageContent() {
                               setSelectedSlotId(slot.id);
                               setBookingError(null);
                             }}
-                            className={`flex flex-col items-start rounded-xl p-3 text-left transition ${
+                            className={`flex flex-col items-start rounded-xl p-3.5 min-h-[56px] text-left transition ${
                               isSelected
                                 ? 'bg-teal-500 text-slate-950 font-bold shadow-md ring-2 ring-teal-400'
-                                : 'bg-slate-800/80 border border-slate-700/80 text-white hover:border-teal-500/60 hover:bg-slate-800'
+                                : 'bg-slate-800/90 border border-slate-700 text-white hover:border-teal-500/60 hover:bg-slate-800'
                             }`}
                           >
                             <span className="text-sm font-semibold">
                               {formatTime(slot.start_time)} – {formatTime(slot.end_time)}
                             </span>
                             <span
-                              className={`text-[11px] mt-0.5 ${
-                                isSelected ? 'text-slate-900 font-medium' : 'text-slate-400'
+                              className={`text-xs mt-1 ${
+                                isSelected ? 'text-slate-950 font-semibold' : 'text-slate-300'
                               }`}
                             >
                               Available for Booking

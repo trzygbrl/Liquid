@@ -463,10 +463,10 @@ function ReviewPageContent() {
           <form onSubmit={handleSubmitReview} className="mt-8 space-y-6">
             {/* Interactive Star Rating Picker */}
             <div>
-              <label className="block text-center text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">
+              <label className="block text-center text-xs font-bold uppercase tracking-wider text-slate-300 mb-3">
                 Overall Rating (Required)
               </label>
-              <div className="flex items-center justify-center gap-2">
+              <div className="flex items-center justify-center gap-3">
                 {[1, 2, 3, 4, 5].map((star) => {
                   const isFilled = star <= activeStars;
                   return (
@@ -476,13 +476,13 @@ function ReviewPageContent() {
                       onClick={() => setRating(star)}
                       onMouseEnter={() => setHoverRating(star)}
                       onMouseLeave={() => setHoverRating(null)}
-                      className="group p-1.5 text-3xl sm:text-4xl transition transform active:scale-125 focus:outline-none"
+                      className="group p-2 min-h-[48px] min-w-[48px] text-4xl sm:text-5xl transition transform active:scale-125 focus:outline-none focus:ring-2 focus:ring-amber-400/40 rounded-xl"
                       aria-label={`${star} star`}
                     >
                       <span
                         className={`transition-colors duration-150 ${
                           isFilled
-                            ? 'text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]'
+                            ? 'text-amber-400 drop-shadow-[0_0_10px_rgba(251,191,36,0.6)]'
                             : 'text-slate-700 hover:text-slate-500'
                         }`}
                       >
@@ -494,14 +494,14 @@ function ReviewPageContent() {
               </div>
 
               {/* Rating Label Text */}
-              <p className="mt-2 text-center text-xs font-medium text-amber-300">
+              <p className="mt-3 text-center text-sm font-semibold text-amber-300">
                 {RATING_LABELS[activeStars]}
               </p>
             </div>
 
             {/* Written Comment Textarea */}
             <div>
-              <label htmlFor="review-comment" className="block text-xs font-medium text-slate-300 mb-1.5">
+              <label htmlFor="review-comment" className="block text-sm font-medium text-slate-200 mb-2">
                 Written Feedback & Experience (Optional)
               </label>
               <textarea
@@ -510,15 +510,15 @@ function ReviewPageContent() {
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 placeholder="How was the doctor's communication? Was the clinic staff helpful? Did the consultation address your concerns?"
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-xs leading-relaxed text-white placeholder-slate-500 outline-none transition focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3.5 text-sm leading-relaxed text-white placeholder-slate-500 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-500/40"
               />
-              <p className="mt-1 text-right text-[11px] text-slate-500">
+              <p className="mt-1.5 text-right text-xs text-slate-400">
                 {comment.length} / 1000 characters
               </p>
             </div>
 
             {submitError && (
-              <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-300">
+              <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3.5 text-xs text-red-300">
                 {submitError}
               </div>
             )}
@@ -528,7 +528,7 @@ function ReviewPageContent() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full sm:flex-1 rounded-xl bg-teal-600 px-8 py-3.5 text-sm font-semibold text-white shadow-lg transition hover:bg-teal-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-teal-500/50"
+                className="w-full sm:flex-1 rounded-xl bg-teal-600 px-8 py-4 text-base font-semibold text-white shadow-lg transition hover:bg-teal-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-teal-500/50"
               >
                 {submitting ? 'Submitting review…' : 'Submit Verified Review →'}
               </button>
@@ -536,7 +536,7 @@ function ReviewPageContent() {
                 type="button"
                 onClick={() => router.push('/patient/dashboard')}
                 disabled={submitting}
-                className="w-full sm:w-auto rounded-xl border border-slate-700 bg-slate-800/80 px-6 py-3.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white"
+                className="w-full sm:w-auto rounded-xl border border-slate-700 bg-slate-800/80 px-6 py-4 text-sm font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white"
               >
                 Cancel
               </button>

@@ -201,14 +201,19 @@ RULES:
   {"type":"clarify","question":"one plain-language follow-up question"}
 - If the patient has already answered a clarifying question (you will see it in the conversation history), you MUST now return a {"type":"match",...} response. Do not ask another question if the history already contains a patient answer.
 
-LANGUAGE MIRRORING & LOCALIZATION RULES (CRITICAL):
-1. Detect whether the patient's symptom description is in English or Tagalog.
-2. Return the "reason" field (and "question" field if asking a follow-up) strictly in the SAME language as the patient's symptom input:
-   - ENGLISH INPUT -> Write "reason" and "question" in ENGLISH (e.g. "Cloudy vision and glare from bright lights are common symptoms of cataracts.").
-   - TAGALOG INPUT -> Write "reason" and "question" in TAGALOG (e.g. "Ang malabong paningin na parang may ulap at pagkasilaw sa ilaw ay karaniwang senyales ng katarata.").
-3. The "specialty" and "sub_specialty" fields MUST ALWAYS be returned in their exact English taxonomy names from the list below, regardless of the patient's input language.
-4. The "reason" must be written for a non-medical audience — warm, reassuring, plain language. Maximum 25 words.
-5. The "question" field (if used) must be a single short question in the patient's language. No numbered lists, no bullet points.
+ACCESSIBILITY, PLAIN-LANGUAGE & NURSE-TONE RULES (PRD 8.7 - CRITICAL):
+1. The "reason" field MUST sound like a warm, caring clinic nurse explaining to a worried relative — NOT a medical textbook.
+2. ELIMINATE all dense clinical jargon (e.g. do NOT say "etiology", "pathology", "bilateral presentation", "manifests", "symptomatology").
+   - Instead of: "Symptoms manifest classic retinal detachment etiology."
+   - Say: "These dark spots and flashes of light often involve the back of the eye, so an eye specialist should examine it promptly."
+   - In Tagalog: "Ang ganitong panlalabo at mga kislap sa paningin ay mahalagang masuri agad ng espesyalista sa mata upang maagapan."
+3. LANGUAGE MIRRORING:
+   - Detect whether the patient's symptom description is in English or Tagalog.
+   - ENGLISH INPUT -> Write "reason" and "question" strictly in ENGLISH.
+   - TAGALOG INPUT -> Write "reason" and "question" strictly in natural, conversational TAGALOG.
+4. The "specialty" and "sub_specialty" fields MUST ALWAYS be returned in their exact English taxonomy names from the list below, regardless of the patient's input language.
+5. The "reason" must be concise and reassuring. Maximum 25 words.
+6. The "question" field (if asking a follow-up) must be a single short question in the patient's language. No numbered lists, no bullet points.
 
 VALID SPECIALTY / SUB-SPECIALTY PAIRS (specialty → sub-specialty):
 ${taxonomyLines}
@@ -248,27 +253,44 @@ ${noSubLines}`;
     },
   ];
 
-  // ── 7. Call the Gemini API ────────────────────────────────────────────────
-  let rawText: string;
-  try {
-    const ai = new GoogleGenAI({ apiKey: geminiKey });
+  // ── 7. Call the Gemini API with automatic model fallback ──────────────────
+  const modelsToTry = [
+    'gemini-flash-lite-latest',
+    'gemini-2.5-flash',
+    'gemini-flash-latest',
+  ];
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents,
-      config: {
-        systemInstruction: systemPrompt,
-        // Low temperature for deterministic JSON output — we don't want creativity here
-        temperature: 0.1,
-      },
-    });
+  let rawText = '';
+  let lastError: unknown = null;
+  const ai = new GoogleGenAI({ apiKey: geminiKey });
 
-    rawText = response.text ?? '';
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error('[match] Gemini API call failed:', message);
+  for (const model of modelsToTry) {
+    try {
+      const response = await ai.models.generateContent({
+        model,
+        contents,
+        config: {
+          systemInstruction: systemPrompt,
+          // Low temperature for deterministic JSON output
+          temperature: 0.1,
+        },
+      });
+
+      if (response.text) {
+        rawText = response.text;
+        break;
+      }
+    } catch (err) {
+      lastError = err;
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn(`[match] Model "${model}" failed: ${msg.substring(0, 100)}... trying fallback model.`);
+    }
+  }
+
+  if (!rawText) {
+    console.error('[match] All Gemini models failed:', lastError);
     return Response.json(
-      { error: 'AI service unavailable. Please try again.' },
+      { error: 'AI service unavailable. Please try again in a few moments.' },
       { status: 502 }
     );
   }

@@ -387,7 +387,7 @@ export default function ScheduleManager() {
               id="add-slot-submit"
               type="submit"
               disabled={submitting || clinics.length === 0}
-              className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+              className="rounded-xl bg-indigo-600 px-6 py-3 min-h-[44px] text-sm font-semibold text-white transition hover:bg-indigo-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
             >
               {submitting ? 'Adding…' : '+ Add slot'}
             </button>
@@ -408,7 +408,7 @@ export default function ScheduleManager() {
             {Array.from(grouped.entries()).map(([dateStr, daySlots]) => (
               <div key={dateStr}>
                 {/* Date header */}
-                <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-slate-500">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-slate-400">
                   {fmtDate(dateStr)}
                 </p>
 
@@ -428,11 +428,11 @@ export default function ScheduleManager() {
                           <p className="text-sm font-medium text-white">
                             {fmt24to12(slot.start_time)} – {fmt24to12(slot.end_time)}
                           </p>
-                          <p className="truncate text-xs text-slate-400">
+                          <p className="truncate text-xs text-slate-300">
                             {clinicNameById(slot.clinic_id)}
                           </p>
                           {!isAvailable && (
-                            <p className="text-xs text-slate-500 mt-0.5">
+                            <p className="text-xs text-slate-400 mt-0.5">
                               {slot.is_booked === 'booked'
                                 ? 'A patient has booked this slot'
                                 : 'Marked unavailable'}
@@ -454,7 +454,7 @@ export default function ScheduleManager() {
                               onClick={() => handleDelete(slot.id)}
                               disabled={isDeleting}
                               aria-label="Delete slot"
-                              className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-400 transition hover:border-red-500/50 hover:text-red-400 disabled:opacity-50"
+                              className="rounded-xl border border-slate-700 bg-slate-800/80 px-3.5 py-2 min-h-[38px] text-xs font-semibold text-slate-300 transition hover:border-red-500/60 hover:text-red-400 disabled:opacity-50"
                             >
                               {isDeleting ? '…' : 'Delete'}
                             </button>

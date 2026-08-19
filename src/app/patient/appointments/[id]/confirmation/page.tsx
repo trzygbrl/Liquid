@@ -259,47 +259,47 @@ function ConfirmationContent() {
           </p>
 
           {/* Appointment Details */}
-          <div className="mt-6 rounded-xl border border-slate-800 bg-slate-800/50 p-5 text-left space-y-3">
+          <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-800/60 p-6 text-left space-y-3.5">
 
             {/* Doctor */}
             <div className="flex items-start justify-between gap-3">
-              <span className="flex-shrink-0 text-xs text-slate-400">Doctor</span>
-              <span className="text-xs font-semibold text-white text-right">{data.doctorName}</span>
+              <span className="flex-shrink-0 text-sm text-slate-300">Doctor</span>
+              <span className="text-sm font-bold text-white text-right">{data.doctorName}</span>
             </div>
 
             {/* Date */}
             {formattedDate && (
-              <div className="flex items-start justify-between gap-3 border-t border-slate-700/60 pt-3">
-                <span className="flex-shrink-0 text-xs text-slate-400">Date</span>
-                <span className="text-xs font-semibold text-white text-right">{formattedDate}</span>
+              <div className="flex items-start justify-between gap-3 border-t border-slate-700/60 pt-3.5">
+                <span className="flex-shrink-0 text-sm text-slate-300">Date</span>
+                <span className="text-sm font-semibold text-white text-right">{formattedDate}</span>
               </div>
             )}
 
             {/* Time */}
             {timeRange && (
-              <div className="flex items-start justify-between gap-3 border-t border-slate-700/60 pt-3">
-                <span className="flex-shrink-0 text-xs text-slate-400">Time</span>
-                <span className="text-xs font-semibold text-white text-right">{timeRange}</span>
+              <div className="flex items-start justify-between gap-3 border-t border-slate-700/60 pt-3.5">
+                <span className="flex-shrink-0 text-sm text-slate-300">Time</span>
+                <span className="text-sm font-semibold text-white text-right">{timeRange}</span>
               </div>
             )}
 
             {/* Clinic */}
             {data.clinicName && (
-              <div className="flex items-start justify-between gap-3 border-t border-slate-700/60 pt-3">
-                <span className="flex-shrink-0 text-xs text-slate-400">Clinic</span>
-                <span className="text-xs font-semibold text-white text-right">
+              <div className="flex items-start justify-between gap-3 border-t border-slate-700/60 pt-3.5">
+                <span className="flex-shrink-0 text-sm text-slate-300">Clinic</span>
+                <span className="text-sm font-semibold text-white text-right">
                   {data.clinicName}
                   {data.clinicLocation && (
-                    <span className="block font-normal text-slate-400 mt-0.5">{data.clinicLocation}</span>
+                    <span className="block font-normal text-xs text-slate-400 mt-0.5">{data.clinicLocation}</span>
                   )}
                 </span>
               </div>
             )}
 
             {/* Status */}
-            <div className="flex items-start justify-between gap-3 border-t border-slate-700/60 pt-3">
-              <span className="flex-shrink-0 text-xs text-slate-400">Status</span>
-              <span className="text-xs font-semibold text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded capitalize">
+            <div className="flex items-start justify-between gap-3 border-t border-slate-700/60 pt-3.5">
+              <span className="flex-shrink-0 text-sm text-slate-300">Status</span>
+              <span className="text-xs font-semibold text-amber-300 bg-amber-500/15 border border-amber-500/30 px-3 py-1 rounded-full capitalize">
                 {data.status}
               </span>
             </div>
@@ -310,13 +310,13 @@ function ConfirmationContent() {
             <a
               id="view-appointments-link"
               href="/patient/dashboard"
-              className="w-full rounded-xl bg-teal-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg transition hover:bg-teal-500 active:scale-[0.98]"
+              className="w-full rounded-xl bg-teal-600 px-6 py-4 text-base font-semibold text-white shadow-lg transition hover:bg-teal-500 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-teal-500/50"
             >
               View my appointments →
             </a>
             <a
               href="/patient/doctors"
-              className="w-full rounded-xl border border-slate-700 bg-slate-800/60 px-6 py-3 text-xs font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white"
+              className="w-full rounded-xl border border-slate-700 bg-slate-800/80 px-6 py-3.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white"
             >
               Browse more doctors
             </a>

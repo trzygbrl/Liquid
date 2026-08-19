@@ -1,8 +1,15 @@
 'use client';
 
+// src/components/MatchResultView.tsx
+//
+// Specialist Recommendation, Emergency Advisory & Clarification Flow
+// Task 5.3: Plain-language descriptions, nurse-tone guidance, large touch targets,
+// and accessible typography for elderly and low-literacy users.
+
 import { useState } from 'react';
 import type { MatchApiResult, MatchResult, ClarifyResult, EmergencyResult } from '@/lib/matchApi';
 import type { IntakeCompleteData } from '@/components/IntakeFlow';
+import { getPlainSpecialtyInfo } from '@/lib/specialtyHelpers';
 
 interface MatchResultViewProps {
   result: MatchApiResult;
@@ -24,6 +31,7 @@ export default function MatchResultView({
   // ─── STATE 1: Match Found ──────────────────────────────────────────────────
   if (result.type === 'match') {
     const match = result as MatchResult;
+    const plainInfo = getPlainSpecialtyInfo(match.specialty);
     const findDoctorsUrl = `/patient/doctors?specialty=${encodeURIComponent(
       match.specialty
     )}&sub_specialty=${encodeURIComponent(
@@ -32,14 +40,14 @@ export default function MatchResultView({
 
     return (
       <div className="flex flex-col gap-6">
-        {/* Pipeline reasoning stepper (PRD 8.1) */}
-        <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+        {/* Pipeline reasoning stepper */}
+        <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-teal-400">
             Clinical AI Navigation Pipeline
           </p>
           <div className="mt-3 flex items-center gap-2 text-xs text-slate-300 flex-wrap">
-            <span className="inline-flex items-center gap-1 rounded-md bg-teal-500/10 px-2 py-1 text-teal-300">
-              <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+            <span className="inline-flex items-center gap-1 rounded-md bg-teal-500/10 px-2.5 py-1 text-teal-300">
+              <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                 <path
                   fillRule="evenodd"
                   d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
@@ -49,8 +57,8 @@ export default function MatchResultView({
               Symptoms parsed
             </span>
             <span className="text-slate-600">→</span>
-            <span className="inline-flex items-center gap-1 rounded-md bg-teal-500/10 px-2 py-1 text-teal-300">
-              <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+            <span className="inline-flex items-center gap-1 rounded-md bg-teal-500/10 px-2.5 py-1 text-teal-300">
+              <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                 <path
                   fillRule="evenodd"
                   d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
@@ -60,16 +68,16 @@ export default function MatchResultView({
               Specialty: {match.specialty}
             </span>
             <span className="text-slate-600">→</span>
-            <span className="inline-flex items-center gap-1 rounded-md bg-teal-400/20 px-2 py-1 font-semibold text-teal-200">
+            <span className="inline-flex items-center gap-1 rounded-md bg-teal-400/20 px-2.5 py-1 font-semibold text-teal-200">
               Sub-specialty: {match.sub_specialty || 'General'}
             </span>
           </div>
         </div>
 
         {/* Main Recommendation Card */}
-        <div className="rounded-2xl border border-teal-500/30 bg-slate-900/80 p-7 shadow-xl backdrop-blur">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-500/15 text-teal-400">
+        <div className="rounded-2xl border border-teal-500/30 bg-slate-900/90 p-6 sm:p-8 shadow-xl backdrop-blur">
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-teal-500/15 text-teal-400 mt-1">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-6 w-6"
@@ -86,49 +94,59 @@ export default function MatchResultView({
               </svg>
             </div>
             <div>
-              <p className="text-xs font-medium uppercase tracking-wider text-slate-400">
-                Recommended Specialist
+              <p className="text-xs font-semibold uppercase tracking-wider text-teal-400">
+                Recommended Medical Specialist
               </p>
-              <h2 className="text-2xl font-bold text-white">
+              <h2 className="text-2xl sm:text-3xl font-bold text-white mt-1">
                 {match.sub_specialty
                   ? `${match.specialty} — ${match.sub_specialty}`
                   : match.specialty}
               </h2>
+              {/* Plain-language subtitle & Tagalog translation */}
+              <div className="mt-1.5 flex flex-wrap items-center gap-2 text-sm text-slate-300">
+                <span className="font-medium text-teal-300">
+                  {plainInfo.plainName}
+                </span>
+                <span className="text-slate-600">•</span>
+                <span className="italic text-slate-400">
+                  {plainInfo.tagalogName}
+                </span>
+              </div>
             </div>
           </div>
 
-          {/* Reasoning box */}
-          <div className="mt-6 rounded-xl border-l-4 border-teal-500 bg-slate-800/60 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-teal-400">
-              Why this specialist
+          {/* Reasoning box (Nurse-tone explanation) */}
+          <div className="mt-6 rounded-2xl border-l-4 border-teal-500 bg-slate-800/70 p-5">
+            <p className="text-xs font-bold uppercase tracking-wider text-teal-400">
+              Why this specialist is right for you
             </p>
-            <p className="mt-1.5 text-sm leading-relaxed text-slate-200">
+            <p className="mt-2 text-base leading-relaxed text-slate-100 font-medium">
               {match.reason}
             </p>
           </div>
 
           {/* Patient context recap */}
-          <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-slate-800 pt-5 text-xs text-slate-400">
-            <span className="inline-flex items-center gap-1.5 rounded-md bg-slate-800 px-2.5 py-1 text-slate-300">
+          <div className="mt-6 flex flex-wrap items-center gap-2.5 border-t border-slate-800 pt-5 text-xs text-slate-300">
+            <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-800 px-3 py-1.5 text-slate-200">
               <span>Patient:</span>
-              <strong className="text-white">{patientData.name}</strong>
+              <strong className="text-white font-semibold">{patientData.name}</strong>
               {patientData.isForFamilyMember && (
-                <span className="rounded bg-teal-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-teal-300 border border-teal-500/20">
+                <span className="rounded bg-teal-500/20 px-1.5 py-0.5 text-xs font-semibold text-teal-300 border border-teal-500/30">
                   Family Member
                 </span>
               )}
             </span>
-            <span className="rounded-md bg-slate-800 px-2.5 py-1 text-slate-300">
+            <span className="rounded-lg bg-slate-800 px-3 py-1.5 text-slate-200">
               Age {patientData.age} • {patientData.sex}
             </span>
-            <span className="rounded-md bg-slate-800 px-2.5 py-1 text-slate-300">
+            <span className="rounded-lg bg-slate-800 px-3 py-1.5 text-slate-200">
               HMO:{' '}
-              <strong className="text-teal-300">
+              <strong className="text-teal-300 font-semibold">
                 {patientData.hmoProvider || 'None (Cash)'}
               </strong>
             </span>
             {patientData.location && (
-              <span className="rounded-md bg-slate-800 px-2.5 py-1 text-slate-300">
+              <span className="rounded-lg bg-slate-800 px-3 py-1.5 text-slate-200">
                 📍 {patientData.location}
               </span>
             )}
@@ -142,12 +160,12 @@ export default function MatchResultView({
             href={findDoctorsUrl}
             className="w-full sm:flex-1 text-center rounded-xl bg-teal-600 px-8 py-4 text-base font-semibold text-white shadow-lg transition hover:bg-teal-500 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-teal-500/50"
           >
-            Find Doctors in this Sub-specialty →
+            Find Doctors in this Field →
           </a>
           <button
             type="button"
             onClick={onRestart}
-            className="w-full sm:w-auto rounded-xl border border-slate-700 bg-slate-800/60 px-6 py-4 text-sm font-medium text-slate-300 transition hover:border-slate-500 hover:text-white"
+            className="w-full sm:w-auto rounded-xl border border-slate-700 bg-slate-800/80 px-6 py-4 text-sm font-medium text-slate-300 transition hover:border-slate-500 hover:text-white"
           >
             ← Edit symptoms
           </button>
@@ -185,8 +203,8 @@ export default function MatchResultView({
               <span className="inline-block rounded-md bg-amber-500/15 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider text-amber-300">
                 Urgent Care Recommended
               </span>
-              <h2 className="mt-1 text-xl font-bold text-white">
-                Please seek immediate medical attention
+              <h2 className="mt-1 text-xl sm:text-2xl font-bold text-white">
+                Please seek prompt medical attention
               </h2>
               <p className="mt-3 text-base leading-relaxed text-slate-200">
                 {emergency.message}
@@ -217,7 +235,7 @@ export default function MatchResultView({
               </div>
             </div>
             <p className="mt-3 text-xs text-slate-400 leading-relaxed">
-              If the patient is experiencing worsening symptoms, difficulty breathing, or severe pain, please proceed directly to the nearest hospital Emergency Room.
+              If you or your family member are experiencing worsening symptoms, severe pain, or difficulty breathing, please go directly to the nearest hospital Emergency Room.
             </p>
           </div>
         </div>
@@ -227,7 +245,7 @@ export default function MatchResultView({
           <button
             type="button"
             onClick={onRestart}
-            className="rounded-xl border border-slate-700 bg-slate-800/80 px-6 py-3.5 text-sm font-medium text-slate-300 transition hover:border-slate-500 hover:text-white"
+            className="rounded-xl border border-slate-700 bg-slate-800/80 px-6 py-4 text-sm font-medium text-slate-300 transition hover:border-slate-500 hover:text-white"
           >
             ← Return to symptom check
           </button>
@@ -249,7 +267,7 @@ export default function MatchResultView({
 
     return (
       <form onSubmit={handleClarify} className="flex flex-col gap-6">
-        <div className="rounded-2xl border border-teal-500/20 bg-slate-900/80 p-7 shadow-xl backdrop-blur">
+        <div className="rounded-2xl border border-teal-500/20 bg-slate-900/80 p-6 sm:p-8 shadow-xl backdrop-blur">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-500/15 text-teal-400">
               <svg
@@ -268,7 +286,7 @@ export default function MatchResultView({
               </svg>
             </div>
             <div>
-              <p className="text-xs font-medium uppercase tracking-wider text-teal-400">
+              <p className="text-xs font-semibold uppercase tracking-wider text-teal-400">
                 Follow-up Question
               </p>
               <h2 className="text-lg font-semibold text-white">
@@ -277,14 +295,14 @@ export default function MatchResultView({
             </div>
           </div>
 
-          <div className="mt-5 rounded-xl border border-teal-500/30 bg-teal-500/5 p-4">
-            <p className="text-base font-medium text-white leading-relaxed">
+          <div className="mt-5 rounded-2xl border border-teal-500/30 bg-teal-500/10 p-5">
+            <p className="text-base font-semibold text-white leading-relaxed">
               &ldquo;{clarify.question}&rdquo;
             </p>
           </div>
 
           <div className="mt-5 flex flex-col gap-2">
-            <label htmlFor="clarify-answer" className="text-sm font-medium text-slate-300">
+            <label htmlFor="clarify-answer" className="text-sm font-medium text-slate-200">
               Your answer (English or Tagalog)
             </label>
             <textarea

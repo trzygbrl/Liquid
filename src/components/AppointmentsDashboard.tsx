@@ -351,13 +351,13 @@ export default function AppointmentsDashboard() {
                     </div>
 
                     {/* Right: Accept / Decline buttons — disabled while actioning */}
-                    <div className="flex shrink-0 gap-2 sm:mt-0.5">
+                    <div className="flex shrink-0 gap-2.5 sm:mt-0.5">
                       <button
                         id={`decline-appt-${appt.id}`}
                         onClick={() => handleAction(appt.id, 'decline')}
                         disabled={isActioning}
                         aria-label={`Decline appointment for ${patient?.name ?? 'patient'}`}
-                        className="rounded-lg border border-slate-700 px-3.5 py-2 text-xs font-semibold text-slate-400 transition hover:border-red-500/50 hover:text-red-400 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
+                        className="rounded-xl border border-slate-700 bg-slate-800/80 px-4 py-2.5 min-h-[44px] text-sm font-semibold text-slate-300 transition hover:border-red-500/60 hover:text-red-400 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {isActioning ? '…' : 'Decline'}
                       </button>
@@ -366,7 +366,7 @@ export default function AppointmentsDashboard() {
                         onClick={() => handleAction(appt.id, 'accept')}
                         disabled={isActioning}
                         aria-label={`Accept appointment for ${patient?.name ?? 'patient'}`}
-                        className="rounded-lg bg-indigo-600 px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-indigo-500 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60"
+                        className="rounded-xl bg-indigo-600 px-5 py-2.5 min-h-[44px] text-sm font-semibold text-white shadow-md transition hover:bg-indigo-500 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         {isActioning ? '…' : 'Accept'}
                       </button>

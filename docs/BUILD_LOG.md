@@ -29,6 +29,35 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-19 — Accessibility & plain-language review pass (Task 5.3)
+**Task:** 5.3
+**Owner:** Coding agent
+**What changed:** Conducted a comprehensive accessibility, low-literacy, and plain-language review pass across patient and doctor screens per PRD Section 8.7.
+- **AI "Nurse-Tone" Guidance (`/api/match`):**
+  - Updated Gemini system prompt with strict rules enforcing a warm, caring nurse explanation tone for the `reason` field rather than dense medical textbook prose.
+  - Mandated elimination of academic clinical jargon ("etiology", "pathology", "bilateral presentation", etc.) with natural English and conversational Tagalog mirroring.
+- **Plain-Language Specialty Taxonomy (`src/lib/specialtyHelpers.ts`):**
+  - Created a comprehensive plain-language dictionary covering all 33 medical specialties with friendly descriptions and Tagalog titles (e.g. Ophthalmology → "Eye Specialist & Eye Surgeon" / "Espesyalista sa Mata", Otolaryngology → "Ear, Nose & Throat (ENT) Specialist" / "Espesyalista sa Tainga, Ilong at Lalamunan").
+  - Integrated plain-language subtitles across doctor directory cards (`/patient/doctors`), recommendation screens (`MatchResultView`), and doctor profile headers (`/patient/doctors/[id]`).
+- **Typography & Readability Pass:**
+  - Upgraded unreadable micro-text (`text-[10px]`, `text-[11px]`) to legible `text-xs` (12px) and `text-sm` (14px).
+  - Enhanced text contrast across dark backgrounds: replaced faded `text-slate-500` with high-contrast `text-slate-300` and `text-slate-200`.
+- **Touch Target & Mobile Accessibility Pass:**
+  - Standardized all primary action buttons, segmented selectors, and form submission buttons to generous touch targets (min `h-12` / `py-4`).
+  - Upgraded 5-star review buttons in `review/page.tsx` to large `min-h-[48px] min-w-[48px]` touch targets with `text-4xl sm:text-5xl` icons.
+  - Upgraded consultation slot selection cards to `p-3.5 min-h-[56px]` with distinct active focus outlines.
+**Files touched:**
+- `src/lib/specialtyHelpers.ts` [NEW] — plain-language dictionary and Tagalog translations for 33 medical specialties.
+- `src/app/api/match/route.ts` [MODIFIED] — updated system prompt to enforce nurse-tone explanations without medical jargon.
+- `src/components/MatchResultView.tsx` [MODIFIED] — added plain-language specialty subtitles and accessible typography.
+- `src/app/patient/doctors/page.tsx` [MODIFIED] — added plain-language specialty subtitles and upgraded micro-text / contrast.
+- `src/app/patient/doctors/[id]/page.tsx` [MODIFIED] — added plain-language subtitles, improved slot button heights, and increased contrast.
+- `src/app/patient/appointments/[id]/confirmation/page.tsx` [MODIFIED] — upgraded font sizes and button tap targets.
+- `src/app/patient/appointments/[id]/review/page.tsx` [MODIFIED] — upgraded star buttons to large mobile tap targets and enhanced typography.
+- `src/components/AppointmentsDashboard.tsx` [MODIFIED] — upgraded accept/decline button heights and text contrast.
+- `src/components/ScheduleManager.tsx` [MODIFIED] — upgraded slot creation button touch targets.
+- `docs/BUILD_LOG.md` [MODIFIED] — logged build entry.
+
 ### 2026-08-19 — "Booking for a family member" toggle in intake flow (Task 5.2)
 **Task:** 5.2
 **Owner:** Coding agent
