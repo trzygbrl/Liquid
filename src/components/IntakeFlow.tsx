@@ -58,12 +58,12 @@ function StepDots({ step }: { step: 1 | 2 | 3 }) {
       {([1, 2, 3] as const).map((n) => (
         <span
           key={n}
-          className={`h-2 w-2 rounded-full transition-all duration-200 ${
+          className={`h-2.5 rounded-full transition-all duration-200 ${
             n === step
-              ? 'bg-teal-400 scale-125'
+              ? 'bg-violet-600 w-6'
               : n < step
-              ? 'bg-teal-600'
-              : 'bg-slate-700'
+              ? 'bg-violet-300 w-2.5'
+              : 'bg-slate-200 w-2.5'
           }`}
         />
       ))}
@@ -94,10 +94,10 @@ function ButtonGroup<T extends string | null>({
             id={`${idPrefix}-${key}`}
             type="button"
             onClick={() => onChange(opt.value)}
-            className={`min-w-[6rem] flex-1 rounded-xl border px-5 py-4 text-base font-medium transition active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-teal-500/40 ${
+            className={`min-w-[6.5rem] flex-1 rounded-2xl border px-5 py-3.5 text-sm font-semibold transition active:scale-[0.97] focus:outline-none ${
               isSelected
-                ? 'border-teal-500 bg-teal-500/15 text-teal-300'
-                : 'border-slate-700 bg-slate-800/60 text-slate-300 hover:border-slate-500 hover:text-white'
+                ? 'border-violet-600 bg-violet-50 text-violet-800 ring-2 ring-violet-500/20 shadow-sm'
+                : 'border-slate-200 bg-slate-50/70 text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900'
             }`}
           >
             {opt.label}
@@ -198,34 +198,27 @@ export default function IntakeFlow({ onComplete }: IntakeFlowProps) {
         setSex(prof.sex);
         setLocation(prof.location);
         setHmoProvider(prof.hmoProvider);
-
-        // Pre-fill location default for family member too
-        if (existing.location) {
-          setSavedFamilyData((prev) => ({ ...prev, location: existing.location }));
-        }
       }
+
       setPrefillLoading(false);
     }
+
     prefill();
   }, []);
 
-  // ── Toggle Handler between Myself and Family Member (Task 5.2)
+  // ── Switch between Myself and Family Member
   function handleTargetChange(target: ConsultationTarget) {
     if (target === consultationTarget) return;
 
     if (consultationTarget === 'myself') {
-      // Save current input values into savedUserProfile
       setSavedUserProfile({ name, age, sex, location, hmoProvider });
-      // Switch to family member inputs
       setName(savedFamilyData.name);
       setAge(savedFamilyData.age);
       setSex(savedFamilyData.sex);
-      setLocation(savedFamilyData.location || location);
+      setLocation(savedFamilyData.location);
       setHmoProvider(savedFamilyData.hmoProvider);
     } else {
-      // Save current input values into savedFamilyData
       setSavedFamilyData({ name, age, sex, location, hmoProvider });
-      // Restore user's personal profile
       setName(savedUserProfile.name);
       setAge(savedUserProfile.age);
       setSex(savedUserProfile.sex);
@@ -237,115 +230,112 @@ export default function IntakeFlow({ onComplete }: IntakeFlowProps) {
     setStepError(null);
   }
 
-  // ── Per-step validation helpers
-  function validateStep1(): string | null {
-    const isFamily = consultationTarget === 'family_member';
-    if (!name.trim()) {
-      return isFamily ? "Please enter your family member's full name." : 'Please enter your full name.';
-    }
-    const parsedAge = parseInt(age, 10);
-    if (!age || isNaN(parsedAge) || parsedAge < 1 || parsedAge > 129) {
-      return isFamily
-        ? "Please enter your family member's age (1–129)."
-        : 'Please enter your age (1–129).';
-    }
-    if (!sex) {
-      return isFamily ? "Please select your family member's sex." : 'Please select your sex.';
-    }
-    if (!location.trim()) {
-      return 'Please enter a city or province location.';
-    }
-    return null;
-  }
-
-  function validateStep2(): string | null {
-    if (hmoProvider === undefined) {
-      return consultationTarget === 'family_member'
-        ? "Please select your family member's HMO or choose \"None or Cash.\""
-        : 'Please select your HMO or choose "None or Cash."';
-    }
-    return null;
-  }
-
-  function validateStep3(): string | null {
-    if (symptomText.trim().length < 3) {
-      return 'Please tell us what you or your family member are feeling (at least a few words).';
-    }
-    return null;
-  }
-
-  // ── Navigation
-  function handleNext() {
+  // ── Validation per step
+  function validateStep(s: 1 | 2 | 3): boolean {
     setStepError(null);
-    const err = step === 1 ? validateStep1() : validateStep2();
-    if (err) {
-      setStepError(err);
-      return;
+
+    if (s === 1) {
+      if (!name.trim()) {
+        setStepError(
+          consultationTarget === 'family_member'
+            ? 'Please enter the family member’s name.'
+            : 'Please enter your name.'
+        );
+        return false;
+      }
+      const ageNum = parseInt(age, 10);
+      if (!age || isNaN(ageNum) || ageNum < 1 || ageNum > 129) {
+        setStepError('Please enter a valid age between 1 and 129.');
+        return false;
+      }
+      if (!sex) {
+        setStepError('Please select a sex.');
+        return false;
+      }
+      if (!location.trim()) {
+        setStepError('Please enter a location (city or province).');
+        return false;
+      }
+      return true;
     }
-    setStep((s) => (s === 1 ? 2 : 3) as 1 | 2 | 3);
+
+    if (s === 2) {
+      if (hmoProvider === undefined) {
+        setStepError('Please select an HMO option or choose "None or Cash".');
+        return false;
+      }
+      return true;
+    }
+
+    if (s === 3) {
+      if (!symptomText.trim() || symptomText.trim().length < 3) {
+        setStepError('Please describe what symptoms are being experienced.');
+        return false;
+      }
+      return true;
+    }
+
+    return true;
+  }
+
+  function handleNext() {
+    if (!validateStep(step)) return;
+    if (step < 3) setStep((s) => (s + 1) as 2 | 3);
   }
 
   function handleBack() {
     setStepError(null);
-    setStep((s) => (s === 3 ? 2 : 1) as 1 | 2 | 3);
+    if (step > 1) setStep((s) => (s - 1) as 1 | 2);
   }
 
-  // ── Final submit
   async function handleSubmit() {
-    setSubmitError(null);
-    const err = validateStep3();
-    if (err) {
-      setStepError(err);
-      return;
-    }
+    if (!validateStep(3)) return;
 
     setSubmitting(true);
+    setSubmitError(null);
 
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session) {
-      setSubmitError('Your session expired — please log in again.');
-      setSubmitting(false);
-      return;
-    }
-
-    const parsedAge = parseInt(age, 10);
-
-    // Only update the account owner's persistent profile if booking for self
-    if (consultationTarget === 'myself') {
-      const { error } = await supabase.from('patients').upsert({
-        id: session.user.id,
-        name: name.trim(),
-        age: parsedAge,
-        sex: sex as Sex,
-        location: location.trim(),
-        hmo_provider: hmoProvider === undefined ? null : hmoProvider,
-      });
-
-      if (error) {
-        setSubmitting(false);
-        setSubmitError(`Something went wrong saving your info: ${error.message}. Please try again.`);
-        return;
-      }
-    }
-
-    setSubmitting(false);
-
-    const completeData: IntakeCompleteData = {
+    const payload: IntakeCompleteData = {
       name: name.trim(),
-      age: parsedAge,
-      sex: sex as Sex,
+      age: parseInt(age, 10),
+      sex: sex!,
       location: location.trim(),
-      hmoProvider: hmoProvider === undefined ? null : hmoProvider,
+      hmoProvider: hmoProvider ?? null,
       symptomText: symptomText.trim(),
       isForFamilyMember: consultationTarget === 'family_member',
     };
 
-    if (onComplete) {
-      onComplete(completeData);
-    } else {
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (session && consultationTarget === 'myself') {
+        const { error: upsertError } = await supabase
+          .from('patients')
+          .upsert(
+            {
+              id: session.user.id,
+              name: payload.name,
+              age: payload.age,
+              sex: payload.sex,
+              location: payload.location,
+              hmo_provider: payload.hmoProvider,
+            },
+            { onConflict: 'id' }
+          );
+
+        if (upsertError) {
+          console.warn('[IntakeFlow] Profile save warning:', upsertError.message);
+        }
+      }
+
       setDone(true);
+      onComplete?.(payload);
+    } catch (err: any) {
+      console.error('[IntakeFlow] Submit error:', err);
+      setSubmitError('Unable to complete intake. Please try again.');
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -354,29 +344,20 @@ export default function IntakeFlow({ onComplete }: IntakeFlowProps) {
   if (prefillLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-600 border-t-teal-500" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-violet-600" />
       </div>
     );
   }
 
   if (done) {
     return (
-      <div className="rounded-2xl border border-teal-500/20 bg-slate-900/60 px-8 py-12 text-center">
-        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-teal-500/10">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-8 w-8 text-teal-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={1.5}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+      <div className="rounded-3xl border border-violet-100 bg-white p-8 text-center shadow-sm">
+        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-50 text-violet-600 text-2xl shadow-sm">
+          ✓
         </div>
-        <h2 className="text-xl font-semibold text-white">Got it — we're on it.</h2>
-        <p className="mt-3 text-sm leading-relaxed text-slate-400">
-          Your information has been saved. We're finding the right specialist for you now.
+        <h2 className="text-xl font-bold text-slate-900">Got it — we're on it.</h2>
+        <p className="mt-2 text-sm leading-relaxed text-slate-500">
+          Your information has been saved. We're matching you with the right specialist now.
         </p>
       </div>
     );
@@ -388,7 +369,7 @@ export default function IntakeFlow({ onComplete }: IntakeFlowProps) {
     <div className="flex flex-col gap-6">
       {/* ── Step indicator */}
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-slate-400">Step {step} of 3</span>
+        <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Step {step} of 3</span>
         <StepDots step={step} />
       </div>
 
@@ -396,15 +377,15 @@ export default function IntakeFlow({ onComplete }: IntakeFlowProps) {
       {step === 1 && (
         <div className="flex flex-col gap-6">
           <div>
-            <h2 className="text-xl font-semibold text-white">Let's start with a few basics</h2>
-            <p className="mt-1 text-sm text-slate-400">
-              This helps our AI navigation match the right pediatric, adult, or geriatric specialist.
+            <h2 className="text-xl font-bold text-slate-900">Let's start with a few basics</h2>
+            <p className="mt-1 text-xs text-slate-500">
+              This helps our clinical AI match the right pediatric, adult, or geriatric specialist.
             </p>
           </div>
 
           {/* ── "Who is this for?" Toggle (Task 5.2) ── */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-4">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 block mb-3">
+          <div className="rounded-3xl border border-slate-100 bg-slate-50/80 p-4 sm:p-5">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-3">
               Who is this consultation for?
             </span>
             <div className="grid grid-cols-2 gap-3">
@@ -412,10 +393,10 @@ export default function IntakeFlow({ onComplete }: IntakeFlowProps) {
                 id="intake-target-myself"
                 type="button"
                 onClick={() => handleTargetChange('myself')}
-                className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-3.5 text-sm font-semibold transition active:scale-[0.98] focus:outline-none ${
+                className={`flex items-center justify-center gap-2 rounded-2xl border px-4 py-3.5 text-sm font-bold transition active:scale-[0.98] focus:outline-none ${
                   !isFamily
-                    ? 'border-teal-500 bg-teal-500/20 text-teal-300 shadow-md ring-1 ring-teal-500/30'
-                    : 'border-slate-700 bg-slate-800/60 text-slate-300 hover:border-slate-600 hover:text-white'
+                    ? 'border-transparent bg-[#2A2338] text-white shadow-md'
+                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
                 }`}
               >
                 <span>👤 Myself</span>
@@ -425,10 +406,10 @@ export default function IntakeFlow({ onComplete }: IntakeFlowProps) {
                 id="intake-target-family"
                 type="button"
                 onClick={() => handleTargetChange('family_member')}
-                className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-3.5 text-sm font-semibold transition active:scale-[0.98] focus:outline-none ${
+                className={`flex items-center justify-center gap-2 rounded-2xl border px-4 py-3.5 text-sm font-bold transition active:scale-[0.98] focus:outline-none ${
                   isFamily
-                    ? 'border-teal-500 bg-teal-500/20 text-teal-300 shadow-md ring-1 ring-teal-500/30'
-                    : 'border-slate-700 bg-slate-800/60 text-slate-300 hover:border-slate-600 hover:text-white'
+                    ? 'border-transparent bg-[#2A2338] text-white shadow-md'
+                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
                 }`}
               >
                 <span>👨‍👩‍👧 A family member</span>
@@ -436,7 +417,7 @@ export default function IntakeFlow({ onComplete }: IntakeFlowProps) {
             </div>
 
             {isFamily && (
-              <div className="mt-3.5 rounded-xl border border-teal-500/20 bg-teal-500/10 p-3 text-xs leading-relaxed text-teal-200 flex items-start gap-2">
+              <div className="mt-3.5 rounded-2xl border border-violet-100 bg-violet-50/80 p-3 text-xs leading-relaxed text-violet-800 flex items-start gap-2">
                 <span className="text-sm">ℹ</span>
                 <span>
                   Enter the details of your family member (e.g. child or parent). Our AI will tailor specialty mapping specifically to their age and demographics.
@@ -447,7 +428,7 @@ export default function IntakeFlow({ onComplete }: IntakeFlowProps) {
 
           {/* Full name */}
           <div className="flex flex-col gap-2">
-            <label htmlFor="intake-name" className="text-sm font-medium text-slate-300">
+            <label htmlFor="intake-name" className="text-sm font-semibold text-slate-700">
               {isFamily ? "Family member's full name" : 'Your full name'}
             </label>
             <input
@@ -456,18 +437,18 @@ export default function IntakeFlow({ onComplete }: IntakeFlowProps) {
               placeholder={isFamily ? "e.g. Ramon Santos (Father) or Chloe Santos (Daughter)" : 'e.g. Maria Santos'}
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="rounded-xl border border-slate-600 bg-slate-800/60 px-5 py-4 text-base text-white placeholder-slate-500 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/30 transition"
+              className="rounded-2xl border border-slate-200 bg-slate-50/60 px-5 py-4 text-base text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20"
             />
           </div>
 
           {/* Age */}
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <label htmlFor="intake-age" className="text-sm font-medium text-slate-300">
+              <label htmlFor="intake-age" className="text-sm font-semibold text-slate-700">
                 {isFamily ? "Family member's age" : 'Your age'}
               </label>
               {isFamily && (
-                <span className="text-[11px] text-slate-400">
+                <span className="text-xs text-violet-600 font-medium">
                   Infants, children & seniors welcomed
                 </span>
               )}
@@ -480,13 +461,13 @@ export default function IntakeFlow({ onComplete }: IntakeFlowProps) {
               placeholder={isFamily ? 'e.g. 5 (for child) or 72 (for parent)' : 'e.g. 45'}
               value={age}
               onChange={(e) => setAge(e.target.value)}
-              className="rounded-xl border border-slate-600 bg-slate-800/60 px-5 py-4 text-base text-white placeholder-slate-500 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/30 transition [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              className="rounded-2xl border border-slate-200 bg-slate-50/60 px-5 py-4 text-base text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             />
           </div>
 
           {/* Sex — button group */}
           <div className="flex flex-col gap-2">
-            <span className="text-sm font-medium text-slate-300">
+            <span className="text-sm font-semibold text-slate-700">
               {isFamily ? "Family member's sex" : 'Your sex'}
             </span>
             <ButtonGroup
@@ -499,9 +480,9 @@ export default function IntakeFlow({ onComplete }: IntakeFlowProps) {
 
           {/* Location */}
           <div className="flex flex-col gap-2">
-            <label htmlFor="intake-location" className="text-sm font-medium text-slate-300">
+            <label htmlFor="intake-location" className="text-sm font-semibold text-slate-700">
               {isFamily ? 'City or Province' : 'Location'}
-              <span className="ml-1.5 text-xs font-normal text-slate-500">(city or province)</span>
+              <span className="ml-1.5 text-xs font-normal text-slate-400">(city or province)</span>
             </label>
             <input
               id="intake-location"
@@ -509,7 +490,7 @@ export default function IntakeFlow({ onComplete }: IntakeFlowProps) {
               placeholder="e.g. Angeles City, Pampanga"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              className="rounded-xl border border-slate-600 bg-slate-800/60 px-5 py-4 text-base text-white placeholder-slate-500 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/30 transition"
+              className="rounded-2xl border border-slate-200 bg-slate-50/60 px-5 py-4 text-base text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20"
             />
           </div>
         </div>
@@ -519,10 +500,10 @@ export default function IntakeFlow({ onComplete }: IntakeFlowProps) {
       {step === 2 && (
         <div className="flex flex-col gap-6">
           <div>
-            <h2 className="text-xl font-semibold text-white">
+            <h2 className="text-xl font-bold text-slate-900">
               {isFamily ? 'Does your family member have HMO coverage?' : 'Do you have HMO coverage?'}
             </h2>
-            <p className="mt-1 text-sm text-slate-400">
+            <p className="mt-1 text-xs text-slate-500">
               {isFamily
                 ? 'This helps us show doctors accredited with their HMO, or cash consultation rates.'
                 : 'This helps us show doctors who accept your HMO.'}
@@ -531,7 +512,7 @@ export default function IntakeFlow({ onComplete }: IntakeFlowProps) {
 
           {/* HMO button group */}
           <div className="flex flex-col gap-2">
-            <span className="text-sm font-medium text-slate-300">Select one</span>
+            <span className="text-sm font-semibold text-slate-700">Select one</span>
             <ButtonGroup
               options={HMO_OPTIONS}
               value={hmoProvider as string | null | undefined}
@@ -541,7 +522,7 @@ export default function IntakeFlow({ onComplete }: IntakeFlowProps) {
           </div>
 
           {hmoProvider === null && (
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-500 bg-slate-50 p-3 rounded-2xl border border-slate-200">
               No problem — we'll show you doctors with direct cash consultation rates.
             </p>
           )}
@@ -552,16 +533,16 @@ export default function IntakeFlow({ onComplete }: IntakeFlowProps) {
       {step === 3 && (
         <div className="flex flex-col gap-6">
           <div>
-            <h2 className="text-xl font-semibold text-white">
+            <h2 className="text-xl font-bold text-slate-900">
               {isFamily ? `What is ${name || 'your family member'} feeling?` : 'What are you feeling?'}
             </h2>
-            <p className="mt-1 text-sm text-slate-400">
+            <p className="mt-1 text-xs text-slate-500">
               Tell us in your own words (English or Tagalog).
             </p>
           </div>
 
           <div className="flex flex-col gap-2">
-            <label htmlFor="intake-symptoms" className="text-sm font-medium text-slate-300">
+            <label htmlFor="intake-symptoms" className="text-sm font-semibold text-slate-700">
               Describe symptoms
             </label>
             <textarea
@@ -574,12 +555,12 @@ export default function IntakeFlow({ onComplete }: IntakeFlowProps) {
                   ? `Halimbawa: "Masakit ang dibdib ng tatay ko at hirap huminga." o "May lagnat at ubo ang anak ko."\n\nYou can write in English or Tagalog.`
                   : `Sabihin mo lang kung ano ang nararamdaman mo. Halimbawa: "Malabo at namumula ang mata ko."\n\nYou can write in English or Tagalog.`
               }
-              className="rounded-xl border border-slate-600 bg-slate-800/60 px-5 py-4 text-base text-white placeholder-slate-500 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/30 transition resize-none leading-relaxed"
+              className="rounded-2xl border border-slate-200 bg-slate-50/60 px-5 py-4 text-base text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20 resize-none leading-relaxed"
             />
           </div>
 
           {submitError && (
-            <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-5 py-3.5 text-sm text-red-400">
+            <p className="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-3.5 text-xs font-medium text-rose-700">
               {submitError}
             </p>
           )}
@@ -588,20 +569,20 @@ export default function IntakeFlow({ onComplete }: IntakeFlowProps) {
 
       {/* ── Per-step inline validation error */}
       {stepError && (
-        <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-5 py-3.5 text-sm text-red-400">
+        <p className="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-3.5 text-xs font-medium text-rose-700">
           {stepError}
         </p>
       )}
 
       {/* ── Navigation buttons ─────────────────────────────────────────── */}
-      <div className={`flex items-center gap-3 ${step > 1 ? 'justify-between' : 'justify-end'}`}>
+      <div className={`flex items-center gap-3 pt-2 ${step > 1 ? 'justify-between' : 'justify-end'}`}>
         {step > 1 && (
           <button
             id="intake-back"
             type="button"
             onClick={handleBack}
             disabled={submitting}
-            className="text-sm font-medium text-slate-400 hover:text-white transition disabled:opacity-50"
+            className="text-sm font-bold text-slate-500 hover:text-slate-900 transition disabled:opacity-50"
           >
             ← Back
           </button>

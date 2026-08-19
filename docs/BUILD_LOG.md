@@ -29,6 +29,53 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-19 — Visual & design consistency pass (Task 5.4)
+**Task:** 5.4
+**Owner:** Coding agent
+**What changed:** Unified the application under a single, ultra-premium healthcare design system directly inspired by modern wellness UI aesthetics.
+- **Global Design System Foundation (`src/app/globals.css`):**
+  - Configured custom CSS variables and utility tokens:
+    - **Canvas:** Soft warm-tinted neutral background (`#F8F7FA` / `#FAF8FD`).
+    - **Surfaces & Cards:** Crisp elevated white cards (`bg-white`), ultra-smooth rounded corners (`rounded-3xl` / 24px–28px), subtle feather drop-shadows (`shadow-[0_8px_30px_rgb(0,0,0,0.03)]`), and delicate borders (`border border-slate-100`).
+    - **Midnight Obsidian Actions:** Deep dark purple-black CTA buttons and active state chips (`bg-[#2A2338]` / `hover:bg-[#1E192C]`, white text, `min-h-[48px]`, `rounded-2xl`).
+    - **Royal Violet Accents:** Hero card gradients (`bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700`), badges, and brand highlights (`bg-violet-50 text-violet-700`).
+    - **Form Inputs:** Smooth `rounded-2xl` inputs with soft background (`bg-slate-50/60`), clear focus rings, and high contrast typography.
+- **Patient Portal Overhaul:**
+  - `src/app/page.tsx`: Transformed starter page into an ultra-clean gateway portal landing page with hero gradient, feature cards, and quick navigation.
+  - `src/app/patient/auth/page.tsx` & `src/components/AuthForm.tsx`: Restyled patient login & registration with pure white cards, rounded inputs, and `#2A2338` action buttons.
+  - `src/app/patient/dashboard/page.tsx`: Violet gradient AI symptom checker hero card, high-contrast appointment list, and clean stat cards.
+  - `src/components/IntakeFlow.tsx` & `src/app/patient/intake/page.tsx`: Violet step indicators, midnight obsidian "Who is this for?" toggle, clean 2-step inputs, and light container.
+  - `src/components/MatchResultView.tsx`: Modern lay recommendation payoff card, soft violet nurse reasoning box (`bg-violet-50/80 border-l-4 border-violet-600`), and warm amber emergency advisory card.
+  - `src/app/patient/doctors/page.tsx`: Elevated doctor directory cards, clean filter pills, HMO badges, and direct booking triggers.
+  - `src/app/patient/doctors/[id]/page.tsx`: Hero doctor profile, modern calendar time slot chips (inspo active `#2A2338` and available light chips), and verified reviews breakdown.
+  - `src/app/patient/appointments/[id]/confirmation/page.tsx`: High-polish booking confirmation payoff card with violet checkmark.
+  - `src/app/patient/appointments/[id]/review/page.tsx`: Light verified review submission page with golden interactive star buttons and clean feedback cards.
+- **Doctor Portal Overhaul:**
+  - `src/app/doctor/auth/page.tsx`: Unified light authentication card.
+  - `src/app/doctor/profile-setup/page.tsx`: Clean multi-section onboarding form with violet accents and `#2A2338` submit buttons.
+  - `src/app/doctor/dashboard/page.tsx`: Clean light header with portal badge and structured layout.
+  - `src/components/AppointmentsDashboard.tsx`: Pure white cards for pending requests and upcoming confirmed consultations with `#2A2338` accept buttons.
+  - `src/components/ScheduleManager.tsx`: Elevated schedule slot creator and categorized upcoming slots list.
+**Files touched:**
+- `src/app/globals.css` [MODIFIED] — added CSS design tokens for canvas, obsidian actions, and violet accents.
+- `src/app/page.tsx` [MODIFIED] — built portal gateway landing page.
+- `src/components/AuthForm.tsx` [MODIFIED] — styled form inputs and action buttons.
+- `src/app/patient/auth/page.tsx` [MODIFIED] — light canvas and white card.
+- `src/app/doctor/auth/page.tsx` [MODIFIED] — light canvas and white card.
+- `src/app/patient/dashboard/page.tsx` [MODIFIED] — hero gradient and light card layout.
+- `src/components/IntakeFlow.tsx` [MODIFIED] — light intake steps, toggle, inputs, and buttons.
+- `src/app/patient/intake/page.tsx` [MODIFIED] — light canvas and layout.
+- `src/components/MatchResultView.tsx` [MODIFIED] — light recommendation payoff and nurse box.
+- `src/app/patient/doctors/page.tsx` [MODIFIED] — light directory cards and filters.
+- `src/app/patient/doctors/[id]/page.tsx` [MODIFIED] — hero card, schedule slot chips, reviews.
+- `src/app/patient/appointments/[id]/confirmation/page.tsx` [MODIFIED] — confirmation card.
+- `src/app/patient/appointments/[id]/review/page.tsx` [MODIFIED] — review submission card.
+- `src/app/doctor/dashboard/page.tsx` [MODIFIED] — doctor dashboard container.
+- `src/components/AppointmentsDashboard.tsx` [MODIFIED] — pending and confirmed appointment cards.
+- `src/components/ScheduleManager.tsx` [MODIFIED] — slot creation form and upcoming slots grid.
+- `src/app/doctor/profile-setup/page.tsx` [MODIFIED] — doctor profile setup form.
+- `docs/BUILD_LOG.md` [MODIFIED] — logged build entry.
+
 ### 2026-08-19 — Accessibility & plain-language review pass (Task 5.3)
 **Task:** 5.3
 **Owner:** Coding agent

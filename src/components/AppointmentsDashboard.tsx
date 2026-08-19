@@ -256,44 +256,45 @@ export default function AppointmentsDashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-600 border-t-indigo-500" />
+      <div className="flex items-center justify-center py-16">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-200 border-t-violet-600" />
       </div>
     );
   }
 
   if (loadError) {
     return (
-      <div className="mt-8 rounded-xl border border-red-500/30 bg-red-500/10 px-6 py-4 text-sm text-red-400">
+      <div className="rounded-3xl border border-rose-200 bg-rose-50 px-6 py-4 text-xs font-medium text-rose-700">
         {loadError}
       </div>
     );
   }
 
   return (
-    <div className="mt-8 flex flex-col gap-8">
+    <div className="flex flex-col gap-8">
 
-      {/* ── Pending Appointments ──────────────────────────────────────────────
-          Shown first so decisions needing a response are the first thing the
-          doctor sees (per task brief and Assumption 1). Oldest created_at first
-          (FIFO) per Assumption 10.
-      ──────────────────────────────────────────────────────────────────────── */}
-      <section>
-        <h2 className="mb-4 text-base font-semibold text-white">
-          Pending appointments
-          {pendingAppts.length > 0 && (
-            <span className="ml-2 rounded-full bg-amber-500/20 px-2 py-0.5 text-xs font-medium text-amber-400">
-              {pendingAppts.length}
-            </span>
-          )}
-        </h2>
+      {/* ── Pending Appointments ────────────────────────────────────────────── */}
+      <section className="rounded-3xl border border-slate-100 bg-white p-6 sm:p-7 shadow-[0_8px_30px_rgb(0,0,0,0.03)]">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-5">
+          <div className="flex items-center gap-2.5">
+            <h2 className="text-lg font-bold text-slate-900">
+              Pending Consultation Requests
+            </h2>
+            {pendingAppts.length > 0 && (
+              <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-bold text-amber-800 border border-amber-200">
+                {pendingAppts.length} new
+              </span>
+            )}
+          </div>
+          <span className="text-xs text-slate-400 font-medium">Requires your review</span>
+        </div>
 
         {pendingAppts.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-slate-700 bg-slate-900/40 px-6 py-10 text-center">
-            <p className="text-sm text-slate-500">No pending appointments — you're all caught up.</p>
+          <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 px-6 py-10 text-center">
+            <p className="text-xs font-medium text-slate-500">No pending appointment requests — you're all caught up!</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3.5">
             {pendingAppts.map((appt) => {
               const isActioning = actioning.has(appt.id);
               const slot = appt.schedule_slots;
@@ -302,7 +303,7 @@ export default function AppointmentsDashboard() {
               return (
                 <div
                   key={appt.id}
-                  className="rounded-xl border border-amber-500/20 bg-slate-900/60 px-5 py-4"
+                  className="rounded-2xl border border-amber-200/80 bg-amber-50/40 p-5 transition hover:bg-amber-50/60"
                 >
                   {/* Top row: patient info + requested slot */}
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -310,25 +311,24 @@ export default function AppointmentsDashboard() {
                     {/* Left: patient chip, symptom, requested slot */}
                     <div className="flex min-w-0 flex-col gap-1.5">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-sm font-semibold text-white">
+                        <p className="text-sm font-bold text-slate-900">
                           {patient?.name ?? '—'}
                         </p>
-                        {/* Age / Sex — Assumption 6: name, age, sex shown; location/hmo_provider intentionally omitted */}
                         {(patient?.age || patient?.sex) && (
-                          <span className="rounded-full border border-slate-700 px-2 py-0.5 text-xs text-slate-400">
+                          <span className="rounded-full bg-white border border-slate-200/80 px-2.5 py-0.5 text-xs text-slate-600 font-medium shadow-sm">
                             {[patient.age ? `${patient.age} y/o` : null, fmtSex(patient.sex)]
                               .filter(Boolean)
                               .join(' · ')}
                           </span>
                         )}
-                        <span className="rounded-full border border-amber-500/30 bg-amber-500/15 px-2.5 py-0.5 text-xs font-medium text-amber-400">
-                          Pending
+                        <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-800 border border-amber-200">
+                          Pending Review
                         </span>
                       </div>
 
                       {appt.symptom_summary && (
-                        <p className="text-sm text-slate-300 leading-snug">
-                          <span className="text-xs font-medium uppercase tracking-wide text-slate-500 mr-1">
+                        <p className="text-xs text-slate-700 leading-snug font-medium">
+                          <span className="font-bold uppercase tracking-wide text-slate-500 mr-1 text-[11px]">
                             Symptoms:
                           </span>
                           {appt.symptom_summary}
@@ -337,27 +337,26 @@ export default function AppointmentsDashboard() {
 
                       {/* Requested slot details */}
                       {slot ? (
-                        <p className="text-xs text-slate-400">
-                          <span className="text-slate-500">Requested slot: </span>
-                          {fmtDate(slot.date)}&nbsp;·&nbsp;
-                          {fmt24to12(slot.start_time)}–{fmt24to12(slot.end_time)}
+                        <p className="text-xs text-slate-500 font-medium">
+                          <span>Requested slot: </span>
+                          <strong className="text-slate-900 font-bold">{fmtDate(slot.date)}&nbsp;·&nbsp;{fmt24to12(slot.start_time)}–{fmt24to12(slot.end_time)}</strong>
                           {slot.clinics?.name && (
-                            <>&nbsp;·&nbsp;<span className="text-slate-400">{slot.clinics.name}</span></>
+                            <>&nbsp;·&nbsp;<span className="text-slate-600">{slot.clinics.name}</span></>
                           )}
                         </p>
                       ) : (
-                        <p className="text-xs text-slate-500">Slot details unavailable</p>
+                        <p className="text-xs text-slate-400 italic">Slot details unavailable</p>
                       )}
                     </div>
 
-                    {/* Right: Accept / Decline buttons — disabled while actioning */}
+                    {/* Right: Accept / Decline buttons */}
                     <div className="flex shrink-0 gap-2.5 sm:mt-0.5">
                       <button
                         id={`decline-appt-${appt.id}`}
                         onClick={() => handleAction(appt.id, 'decline')}
                         disabled={isActioning}
                         aria-label={`Decline appointment for ${patient?.name ?? 'patient'}`}
-                        className="rounded-xl border border-slate-700 bg-slate-800/80 px-4 py-2.5 min-h-[44px] text-sm font-semibold text-slate-300 transition hover:border-red-500/60 hover:text-red-400 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
+                        className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 min-h-[44px] text-xs font-bold text-slate-700 transition hover:border-rose-300 hover:text-rose-600 hover:bg-rose-50/50 shadow-sm active:scale-[0.98] disabled:opacity-50"
                       >
                         {isActioning ? '…' : 'Decline'}
                       </button>
@@ -366,9 +365,9 @@ export default function AppointmentsDashboard() {
                         onClick={() => handleAction(appt.id, 'accept')}
                         disabled={isActioning}
                         aria-label={`Accept appointment for ${patient?.name ?? 'patient'}`}
-                        className="rounded-xl bg-indigo-600 px-5 py-2.5 min-h-[44px] text-sm font-semibold text-white shadow-md transition hover:bg-indigo-500 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60"
+                        className="rounded-2xl bg-[#2A2338] px-5 py-2.5 min-h-[44px] text-xs font-bold text-white shadow-sm transition hover:bg-[#1E192C] active:scale-[0.98] disabled:opacity-50"
                       >
-                        {isActioning ? '…' : 'Accept'}
+                        {isActioning ? '…' : 'Accept Appointment'}
                       </button>
                     </div>
                   </div>
@@ -379,20 +378,19 @@ export default function AppointmentsDashboard() {
         )}
       </section>
 
-      {/* ── Confirmed / Upcoming Appointments ────────────────────────────────
-          Read-only reference list. Client-side filtered to slot.date >= today,
-          sorted soonest first (Assumptions 5 and 10). No action buttons per
-          Assumption 2 (completed/declined/cancelled out of scope for this task).
-      ──────────────────────────────────────────────────────────────────────── */}
-      <section>
-        <h2 className="mb-4 text-base font-semibold text-white">Upcoming confirmed appointments</h2>
+      {/* ── Confirmed / Upcoming Appointments ──────────────────────────────── */}
+      <section className="rounded-3xl border border-slate-100 bg-white p-6 sm:p-7 shadow-[0_8px_30px_rgb(0,0,0,0.03)]">
+        <div className="border-b border-slate-100 pb-4 mb-5">
+          <h2 className="text-lg font-bold text-slate-900">Upcoming Confirmed Consultations</h2>
+          <p className="text-xs text-slate-400 mt-0.5 font-medium">Scheduled patient appointments for your practice.</p>
+        </div>
 
         {confirmedAppts.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-slate-700 bg-slate-900/40 px-6 py-10 text-center">
-            <p className="text-sm text-slate-500">No upcoming confirmed appointments.</p>
+          <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 px-6 py-10 text-center">
+            <p className="text-xs font-medium text-slate-500">No upcoming confirmed appointments.</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2.5">
             {confirmedAppts.map((appt) => {
               const slot = appt.schedule_slots;
               const patient = appt.patients;
@@ -400,16 +398,16 @@ export default function AppointmentsDashboard() {
               return (
                 <div
                   key={appt.id}
-                  className="flex items-center justify-between gap-4 rounded-xl border border-slate-700/60 bg-slate-900/60 px-5 py-3.5"
+                  className="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-slate-50/70 px-5 py-3.5"
                 >
                   {/* Left: patient name + slot date/time/clinic */}
                   <div className="flex min-w-0 flex-col gap-0.5">
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium text-white">
+                      <p className="text-sm font-bold text-slate-900">
                         {patient?.name ?? '—'}
                       </p>
                       {(patient?.age || patient?.sex) && (
-                        <span className="rounded-full border border-slate-700 px-2 py-0.5 text-xs text-slate-400">
+                        <span className="rounded-full bg-white border border-slate-200 px-2 py-0.5 text-xs text-slate-600 font-medium">
                           {[patient.age ? `${patient.age} y/o` : null, fmtSex(patient.sex)]
                             .filter(Boolean)
                             .join(' · ')}
@@ -417,20 +415,19 @@ export default function AppointmentsDashboard() {
                       )}
                     </div>
                     {slot ? (
-                      <p className="truncate text-xs text-slate-400">
-                        {fmtDate(slot.date)}&nbsp;·&nbsp;
-                        {fmt24to12(slot.start_time)}–{fmt24to12(slot.end_time)}
+                      <p className="truncate text-xs text-slate-500 font-medium">
+                        <strong className="text-slate-800 font-semibold">{fmtDate(slot.date)}&nbsp;·&nbsp;{fmt24to12(slot.start_time)}–{fmt24to12(slot.end_time)}</strong>
                         {slot.clinics?.name && (
                           <>&nbsp;·&nbsp;{slot.clinics.name}</>
                         )}
                       </p>
                     ) : (
-                      <p className="text-xs text-slate-500">Slot details unavailable</p>
+                      <p className="text-xs text-slate-400 italic">Slot details unavailable</p>
                     )}
                   </div>
 
-                  {/* Right: confirmed badge — no action buttons on this list */}
-                  <span className="shrink-0 rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-0.5 text-xs font-medium text-emerald-400">
+                  {/* Right: confirmed badge */}
+                  <span className="shrink-0 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800">
                     Confirmed
                   </span>
                 </div>

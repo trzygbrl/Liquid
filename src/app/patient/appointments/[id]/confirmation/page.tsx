@@ -176,10 +176,10 @@ function ConfirmationContent() {
   // ─── Loading ─────────────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-950">
-        <div className="flex items-center gap-3 text-slate-400">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-600 border-t-teal-400" />
-          <span className="text-sm">Loading your booking confirmation…</span>
+      <main className="flex min-h-screen items-center justify-center bg-[#F8F7FA]">
+        <div className="flex items-center gap-3 text-slate-500">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-violet-200 border-t-violet-600" />
+          <span className="text-sm font-medium">Loading your booking confirmation…</span>
         </div>
       </main>
     );
@@ -188,27 +188,27 @@ function ConfirmationContent() {
   // ─── Not found / unauthorized ─────────────────────────────────────────────────
   if (notFound || !data) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-slate-950 px-4 py-12 text-center">
-        <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900/60 p-8">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-slate-800 text-slate-400">
+      <main className="flex min-h-screen flex-col items-center justify-center bg-[#F8F7FA] px-4 py-12 text-center">
+        <div className="w-full max-w-md rounded-3xl border border-slate-100 bg-white p-8 shadow-sm">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
             <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h1 className="mt-4 text-lg font-bold text-white">Appointment Not Found</h1>
-          <p className="mt-2 text-sm text-slate-400">
+          <h1 className="mt-4 text-lg font-bold text-slate-900">Appointment Not Found</h1>
+          <p className="mt-2 text-xs text-slate-500 leading-relaxed">
             This confirmation link may have expired, or the appointment doesn&apos;t belong to your account.
           </p>
           <div className="mt-6 flex flex-col gap-3">
             <a
               href="/patient/doctors"
-              className="rounded-xl bg-teal-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-teal-500"
+              className="rounded-2xl bg-[#2A2338] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#1E192C]"
             >
               Browse Doctors
             </a>
             <a
               href="/patient/dashboard"
-              className="rounded-xl border border-slate-700 bg-slate-800/60 px-6 py-3 text-xs font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white"
+              className="rounded-2xl border border-slate-200 bg-white px-6 py-3 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
             >
               Go to Dashboard
             </a>
@@ -225,81 +225,75 @@ function ConfirmationContent() {
   const formattedDate = data.slotDate ? fmtDateLong(data.slotDate) : null;
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-slate-950 px-4 py-12 sm:px-6">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-[#F8F7FA] px-4 py-12 sm:px-6">
       <div className="w-full max-w-lg">
 
         {/* Success Card */}
-        <div className="rounded-2xl border border-teal-500/40 bg-slate-900/90 p-8 shadow-2xl backdrop-blur text-center">
+        <div className="rounded-3xl border border-slate-100 bg-white p-8 sm:p-9 shadow-[0_8px_30px_rgb(0,0,0,0.04)] text-center">
 
           {/* Checkmark Icon */}
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-teal-500/20 ring-4 ring-teal-500/10">
-            <svg className="h-8 w-8 text-teal-400" viewBox="0 0 20 20" fill="currentColor">
-              <path
-                fillRule="evenodd"
-                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                clipRule="evenodd"
-              />
-            </svg>
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-50 text-violet-600 text-3xl shadow-sm">
+            ✓
           </div>
 
           {/* Status pill */}
-          <span className="mt-4 inline-block rounded-md bg-teal-500/15 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-teal-300 border border-teal-500/20">
+          <span className="mt-4 inline-block rounded-full bg-violet-50 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-violet-700 border border-violet-100">
             Appointment Requested
           </span>
 
           {/* Headline */}
-          <h1 className="mt-2 text-2xl font-bold text-white">
-            You&apos;re all set.
+          <h1 className="mt-2 text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            You&apos;re all set!
           </h1>
-          <p className="mt-2 text-sm leading-relaxed text-slate-300">
+          <p className="mt-2 text-xs leading-relaxed text-slate-500">
             Your appointment request has been sent to{' '}
-            <span className="font-semibold text-white">{data.doctorName}</span>.
+            <span className="font-bold text-slate-900">{data.doctorName}</span>.
             <br />
-            You&apos;ll be notified once it&apos;s confirmed.
+            You&apos;ll be notified once confirmed by the clinic.
           </p>
 
           {/* Appointment Details */}
-          <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-800/60 p-6 text-left space-y-3.5">
+          <div className="mt-6 rounded-2xl border border-slate-100 bg-slate-50/80 p-5 sm:p-6 text-left space-y-3.5 text-xs">
 
             {/* Doctor */}
             <div className="flex items-start justify-between gap-3">
-              <span className="flex-shrink-0 text-sm text-slate-300">Doctor</span>
-              <span className="text-sm font-bold text-white text-right">{data.doctorName}</span>
+              <span className="flex-shrink-0 text-slate-500 font-medium">Doctor</span>
+              <span className="text-sm font-bold text-slate-900 text-right">{data.doctorName}</span>
             </div>
 
             {/* Date */}
             {formattedDate && (
-              <div className="flex items-start justify-between gap-3 border-t border-slate-700/60 pt-3.5">
-                <span className="flex-shrink-0 text-sm text-slate-300">Date</span>
-                <span className="text-sm font-semibold text-white text-right">{formattedDate}</span>
+              <div className="flex items-start justify-between gap-3 border-t border-slate-200/60 pt-3.5">
+                <span className="flex-shrink-0 text-slate-500 font-medium">Date</span>
+                <span className="text-sm font-bold text-slate-900 text-right">{formattedDate}</span>
               </div>
             )}
 
             {/* Time */}
             {timeRange && (
-              <div className="flex items-start justify-between gap-3 border-t border-slate-700/60 pt-3.5">
-                <span className="flex-shrink-0 text-sm text-slate-300">Time</span>
-                <span className="text-sm font-semibold text-white text-right">{timeRange}</span>
+              <div className="flex items-start justify-between gap-3 border-t border-slate-200/60 pt-3.5">
+                <span className="flex-shrink-0 text-slate-500 font-medium">Time</span>
+                <span className="text-sm font-bold text-slate-900 text-right">{timeRange}</span>
               </div>
             )}
 
             {/* Clinic */}
             {data.clinicName && (
-              <div className="flex items-start justify-between gap-3 border-t border-slate-700/60 pt-3.5">
-                <span className="flex-shrink-0 text-sm text-slate-300">Clinic</span>
-                <span className="text-sm font-semibold text-white text-right">
+              <div className="flex items-start justify-between gap-3 border-t border-slate-200/60 pt-3.5">
+                <span className="flex-shrink-0 text-slate-500 font-medium">Clinic</span>
+                <span className="text-sm font-bold text-slate-900 text-right">
                   {data.clinicName}
                   {data.clinicLocation && (
-                    <span className="block font-normal text-xs text-slate-400 mt-0.5">{data.clinicLocation}</span>
+                    <span className="block font-normal text-xs text-slate-500 mt-0.5">{data.clinicLocation}</span>
                   )}
                 </span>
               </div>
             )}
 
             {/* Status */}
-            <div className="flex items-start justify-between gap-3 border-t border-slate-700/60 pt-3.5">
-              <span className="flex-shrink-0 text-sm text-slate-300">Status</span>
-              <span className="text-xs font-semibold text-amber-300 bg-amber-500/15 border border-amber-500/30 px-3 py-1 rounded-full capitalize">
+            <div className="flex items-start justify-between gap-3 border-t border-slate-200/60 pt-3.5">
+              <span className="flex-shrink-0 text-slate-500 font-medium">Status</span>
+              <span className="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full capitalize">
                 {data.status}
               </span>
             </div>
@@ -310,13 +304,13 @@ function ConfirmationContent() {
             <a
               id="view-appointments-link"
               href="/patient/dashboard"
-              className="w-full rounded-xl bg-teal-600 px-6 py-4 text-base font-semibold text-white shadow-lg transition hover:bg-teal-500 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-teal-500/50"
+              className="w-full rounded-2xl bg-[#2A2338] px-6 py-4 text-base font-semibold text-white shadow-md transition hover:bg-[#1E192C] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-violet-500/50"
             >
-              View my appointments →
+              View My Appointments →
             </a>
             <a
               href="/patient/doctors"
-              className="w-full rounded-xl border border-slate-700 bg-slate-800/80 px-6 py-3.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white"
+              className="w-full rounded-2xl border border-slate-200 bg-white px-6 py-3.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 shadow-sm"
             >
               Browse more doctors
             </a>
@@ -324,9 +318,9 @@ function ConfirmationContent() {
         </div>
 
         {/* Footer note */}
-        <p className="mt-5 text-center text-xs text-slate-500">
-          Appointment ID:{' '}
-          <span className="font-mono text-slate-400">{appointmentId}</span>
+        <p className="mt-5 text-center text-xs text-slate-400">
+          Appointment Reference:{' '}
+          <span className="font-mono text-slate-600">{appointmentId}</span>
         </p>
       </div>
     </main>
@@ -340,10 +334,10 @@ export default function AppointmentConfirmationPage() {
     <RequireRole role="patient">
       <Suspense
         fallback={
-          <main className="flex min-h-screen items-center justify-center bg-slate-950">
-            <div className="flex items-center gap-3 text-slate-400">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-600 border-t-teal-400" />
-              <span className="text-sm">Loading confirmation…</span>
+          <main className="flex min-h-screen items-center justify-center bg-[#F8F7FA]">
+            <div className="flex items-center gap-3 text-slate-500">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-violet-200 border-t-violet-600" />
+              <span className="text-sm font-medium">Loading confirmation…</span>
             </div>
           </main>
         }

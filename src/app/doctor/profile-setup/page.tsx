@@ -181,224 +181,236 @@ function ProfileSetupForm() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-600 border-t-indigo-500" />
+      <div className="flex min-h-screen items-center justify-center bg-[#F8F7FA]">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-200 border-t-violet-600" />
       </div>
     );
   }
 
   return (
-    <main className="flex min-h-screen flex-col bg-slate-950 px-6 py-10">
-      {/* Header */}
-      <div className="border-b border-slate-800 pb-6 mb-8">
-        <span className="text-lg font-bold text-white">
-          <span className="text-indigo-400">Civic</span>Access
-        </span>
-        <h1 className="mt-1 text-2xl font-semibold text-white">Set up your doctor profile</h1>
-        <p className="mt-1 text-sm text-slate-400">
-          This is a one-time step. You&apos;ll land on your dashboard every time after this.
-        </p>
-      </div>
-
-      <form onSubmit={handleSubmit} className="flex w-full max-w-lg flex-col gap-5">
-
-        {/* ── Doctor details ──────────────────────────────────────── */}
-
-        {/* Full name */}
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="doctor-name" className="text-sm font-medium text-slate-300">
-            Full name <span className="text-red-400">*</span>
-          </label>
-          <input
-            id="doctor-name"
-            type="text"
-            placeholder="Dr. Maria Santos"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            className="rounded-lg border border-slate-600 bg-slate-800/60 px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition"
-          />
-        </div>
-
-        {/* Credential file */}
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="doctor-credentials" className="text-sm font-medium text-slate-300">
-            Credential file
-            <span className="ml-1.5 text-xs font-normal text-slate-500">(optional)</span>
-          </label>
-          <input
-            id="doctor-credentials"
-            type="file"
-            accept=".pdf,.jpg,.jpeg,.png"
-            onChange={handleFileChange}
-            className="block w-full text-sm text-slate-400
-              file:mr-4 file:rounded-lg file:border-0
-              file:bg-slate-700 file:px-4 file:py-2 file:text-sm
-              file:font-medium file:text-slate-200
-              hover:file:bg-slate-600 file:cursor-pointer file:transition"
-          />
-          {credentialFileName && (
-            <p className="text-xs text-slate-400">Selected: <span className="text-white">{credentialFileName}</span></p>
-          )}
-          <p className="text-xs text-slate-500">
-            Demo mode — only the filename is stored. No actual file is uploaded anywhere.
+    <main className="flex min-h-screen flex-col bg-[#F8F7FA] px-4 py-10 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-xl">
+        {/* Header */}
+        <div className="border-b border-slate-200/80 pb-6 mb-8">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-sm font-extrabold text-slate-900">
+              Civic<span className="text-violet-600">Access</span>
+            </span>
+            <span className="rounded-full bg-violet-50 px-2.5 py-0.5 text-xs font-bold text-violet-700 border border-violet-100">
+              Doctor Onboarding
+            </span>
+          </div>
+          <h1 className="mt-1 text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Set up your practitioner profile</h1>
+          <p className="mt-1 text-xs text-slate-500">
+            This is a one-time setup. Once completed, your profile and clinics will be visible in the directory.
           </p>
         </div>
 
-        {/* Specialty */}
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="doctor-specialty" className="text-sm font-medium text-slate-300">
-            Specialty <span className="text-red-400">*</span>
-          </label>
-          <select
-            id="doctor-specialty"
-            value={specialty}
-            onChange={(e) => handleSpecialtyChange(e.target.value)}
-            required
-            className="rounded-lg border border-slate-600 bg-slate-800/60 px-4 py-2.5 text-sm text-white outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition disabled:opacity-50"
-          >
-            <option value="">Select specialty</option>
-            {specialties.map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
-          {specialties.length === 0 && !error && (
-            <p className="text-xs text-amber-400">
-              No specialties found — make sure the taxonomy table has been seeded.
-            </p>
-          )}
-        </div>
+        {/* Card */}
+        <div className="rounded-3xl border border-slate-100 bg-white p-7 sm:p-9 shadow-[0_8px_30px_rgb(0,0,0,0.03)]">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
 
-        {/* Sub-specialty — hidden when the selected specialty has no taxonomy entries
-             (e.g. 'General Practice'). In that case sub_specialty is submitted as null. */}
-        {!isGeneralPractice && (
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="doctor-sub-specialty" className="text-sm font-medium text-slate-300">
-              Sub-specialty{' '}
-              {specialty && subSpecialties.length > 0 ? (
-                <span className="text-red-400">*</span>
-              ) : (
-                <span className="ml-1.5 text-xs font-normal text-slate-500">(optional)</span>
+            {/* ── Doctor details ──────────────────────────────────────── */}
+            <div className="border-b border-slate-100 pb-4">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-violet-700">Practitioner Details</h2>
+            </div>
+
+            {/* Full name */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="doctor-name" className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                Full name <span className="text-rose-500">*</span>
+              </label>
+              <input
+                id="doctor-name"
+                type="text"
+                placeholder="Dr. Maria Santos, MD"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20"
+              />
+            </div>
+
+            {/* Credential file */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="doctor-credentials" className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                Credential File (License or Certificate)
+                <span className="ml-1.5 text-xs font-normal text-slate-400 normal-case">(optional)</span>
+              </label>
+              <input
+                id="doctor-credentials"
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png"
+                onChange={handleFileChange}
+                className="block w-full text-xs text-slate-500
+                  file:mr-4 file:rounded-xl file:border-0
+                  file:bg-slate-100 file:px-4 file:py-2.5 file:text-xs
+                  file:font-bold file:text-slate-700
+                  hover:file:bg-slate-200 file:cursor-pointer file:transition"
+              />
+              {credentialFileName && (
+                <p className="text-xs text-violet-700 font-medium">Selected: <span>{credentialFileName}</span></p>
               )}
-            </label>
-            <select
-              id="doctor-sub-specialty"
-              value={subSpecialty}
-              onChange={(e) => setSubSpecialty(e.target.value)}
-              required={subSpecialties.length > 0}
-              disabled={!specialty}
-              className="rounded-lg border border-slate-600 bg-slate-800/60 px-4 py-2.5 text-sm text-white outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              <p className="text-xs text-slate-400">
+                Demo mode — only the filename is stored. No actual file is uploaded.
+              </p>
+            </div>
+
+            {/* Specialty */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="doctor-specialty" className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                Primary Specialty <span className="text-rose-500">*</span>
+              </label>
+              <select
+                id="doctor-specialty"
+                value={specialty}
+                onChange={(e) => handleSpecialtyChange(e.target.value)}
+                required
+                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20 disabled:opacity-50"
+              >
+                <option value="">Select specialty</option>
+                {specialties.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+              {specialties.length === 0 && !error && (
+                <p className="text-xs text-amber-700 bg-amber-50 p-2.5 rounded-xl border border-amber-200">
+                  No specialties found — make sure taxonomy is loaded.
+                </p>
+              )}
+            </div>
+
+            {/* Sub-specialty */}
+            {!isGeneralPractice && (
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="doctor-sub-specialty" className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                  Sub-specialty{' '}
+                  {specialty && subSpecialties.length > 0 ? (
+                    <span className="text-rose-500">*</span>
+                  ) : (
+                    <span className="ml-1.5 text-xs font-normal text-slate-400 normal-case">(optional)</span>
+                  )}
+                </label>
+                <select
+                  id="doctor-sub-specialty"
+                  value={subSpecialty}
+                  onChange={(e) => setSubSpecialty(e.target.value)}
+                  required={subSpecialties.length > 0}
+                  disabled={!specialty}
+                  className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <option value="">
+                    {specialty ? 'Select sub-specialty' : 'Pick a specialty first'}
+                  </option>
+                  {subSpecialties.map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            {isGeneralPractice && (
+              <p className="text-xs text-slate-500 -mt-1">
+                General Practice has no sub-specialty — this field will be left blank.
+              </p>
+            )}
+
+            {/* ── Clinic details ──────────────────────────────────────── */}
+
+            <div className="mt-3 border-t border-slate-100 pt-5">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-violet-700">Primary Practice Clinic</h2>
+              <p className="mt-1 text-xs text-slate-400 font-medium">
+                You&apos;ll be able to add more clinics later in your dashboard.
+              </p>
+            </div>
+
+            {/* Clinic / practice name */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="clinic-name" className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                Clinic / Hospital Name <span className="text-rose-500">*</span>
+              </label>
+              <input
+                id="clinic-name"
+                type="text"
+                placeholder="e.g. Angeles University Foundation Medical Center"
+                value={clinicName}
+                onChange={(e) => setClinicName(e.target.value)}
+                required
+                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20"
+              />
+            </div>
+
+            {/* Room / suite details */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="clinic-room" className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                Room / Suite Details
+                <span className="ml-1.5 text-xs font-normal text-slate-400 normal-case">(optional)</span>
+              </label>
+              <input
+                id="clinic-room"
+                type="text"
+                placeholder="e.g. 3rd Floor, Suite 210"
+                value={roomDetails}
+                onChange={(e) => setRoomDetails(e.target.value)}
+                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20"
+              />
+            </div>
+
+            {/* Clinic location */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="clinic-location" className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                City / Province Location <span className="text-rose-500">*</span>
+              </label>
+              <input
+                id="clinic-location"
+                type="text"
+                placeholder="e.g. MacArthur Highway, Angeles City, Pampanga"
+                value={clinicLocation}
+                onChange={(e) => setClinicLocation(e.target.value)}
+                required
+                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20"
+              />
+            </div>
+
+            {/* Consultation fee */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="clinic-fee" className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                Consultation Fee (PHP) <span className="text-rose-500">*</span>
+              </label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">₱</span>
+                <input
+                  id="clinic-fee"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="500.00"
+                  value={consultationFee}
+                  onChange={(e) => setConsultationFee(e.target.value)}
+                  required
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50/60 py-3.5 pl-8 pr-4 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20"
+                />
+              </div>
+            </div>
+
+            {/* Error */}
+            {error && (
+              <p className="rounded-2xl bg-rose-50 border border-rose-200 px-4 py-3 text-xs font-medium text-rose-700">
+                {error}
+              </p>
+            )}
+
+            {/* Submit */}
+            <button
+              id="doctor-profile-submit"
+              type="submit"
+              disabled={submitting}
+              className="mt-2 min-h-[48px] rounded-2xl bg-[#2A2338] px-6 py-4 text-base font-semibold text-white shadow-sm transition hover:bg-[#1E192C] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-violet-500/50"
             >
-              <option value="">
-                {specialty ? 'Select sub-specialty' : 'Pick a specialty first'}
-              </option>
-              {subSpecialties.map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
-          </div>
-        )}
-        {isGeneralPractice && (
-          <p className="text-xs text-slate-500 -mt-1">
-            General Practice has no sub-specialty — this field will be left blank.
-          </p>
-        )}
-
-        {/* ── Clinic details ──────────────────────────────────────── */}
-
-        <div className="mt-2 border-t border-slate-800 pt-5">
-          <p className="mb-4 text-sm font-semibold text-slate-300">Your first clinic</p>
-          <p className="mb-5 -mt-2 text-xs text-slate-500">
-            You&apos;ll be able to add more clinics later. This sets up your primary practice location.
-          </p>
+              {submitting ? 'Saving profile…' : 'Save profile and continue →'}
+            </button>
+          </form>
         </div>
-
-        {/* Clinic / practice name */}
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="clinic-name" className="text-sm font-medium text-slate-300">
-            Clinic / practice name <span className="text-red-400">*</span>
-          </label>
-          <input
-            id="clinic-name"
-            type="text"
-            placeholder="e.g. Angeles University Foundation Medical Center"
-            value={clinicName}
-            onChange={(e) => setClinicName(e.target.value)}
-            required
-            className="rounded-lg border border-slate-600 bg-slate-800/60 px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition"
-          />
-        </div>
-
-        {/* Room / suite details */}
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="clinic-room" className="text-sm font-medium text-slate-300">
-            Room / suite details
-            <span className="ml-1.5 text-xs font-normal text-slate-500">(optional)</span>
-          </label>
-          <input
-            id="clinic-room"
-            type="text"
-            placeholder="e.g. 3rd Floor, Suite 210"
-            value={roomDetails}
-            onChange={(e) => setRoomDetails(e.target.value)}
-            className="rounded-lg border border-slate-600 bg-slate-800/60 px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition"
-          />
-        </div>
-
-        {/* Clinic location */}
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="clinic-location" className="text-sm font-medium text-slate-300">
-            Clinic location <span className="text-red-400">*</span>
-          </label>
-          <input
-            id="clinic-location"
-            type="text"
-            placeholder="e.g. MacArthur Highway, Angeles City, Pampanga"
-            value={clinicLocation}
-            onChange={(e) => setClinicLocation(e.target.value)}
-            required
-            className="rounded-lg border border-slate-600 bg-slate-800/60 px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition"
-          />
-        </div>
-
-        {/* Consultation fee */}
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="clinic-fee" className="text-sm font-medium text-slate-300">
-            Consultation fee (PHP) <span className="text-red-400">*</span>
-          </label>
-          <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-slate-400">₱</span>
-            <input
-              id="clinic-fee"
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="500.00"
-              value={consultationFee}
-              onChange={(e) => setConsultationFee(e.target.value)}
-              required
-              className="w-full rounded-lg border border-slate-600 bg-slate-800/60 py-2.5 pl-8 pr-4 text-sm text-white placeholder-slate-500 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition"
-            />
-          </div>
-        </div>
-
-        {/* Error */}
-        {error && (
-          <p className="rounded-lg bg-red-500/10 border border-red-500/30 px-4 py-2.5 text-sm text-red-400">
-            {error}
-          </p>
-        )}
-
-        {/* Submit */}
-        <button
-          id="doctor-profile-submit"
-          type="submit"
-          disabled={submitting}
-          className="mt-1 rounded-lg bg-indigo-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-indigo-500 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-        >
-          {submitting ? 'Saving…' : 'Save profile and continue →'}
-        </button>
-      </form>
+      </div>
     </main>
   );
 }
