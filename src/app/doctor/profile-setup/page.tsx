@@ -7,6 +7,15 @@ import { supabase } from '@/lib/supabaseClient';
 
 type TaxonomyRow = { specialty: string; sub_specialty: string };
 
+interface ClinicFormRow {
+  name: string;
+  roomDetails: string;
+  location: string;
+  consultationFee: string;
+}
+
+const BLANK_CLINIC: ClinicFormRow = { name: '', roomDetails: '', location: '', consultationFee: '' };
+
 function ProfileSetupForm() {
   const router = useRouter();
   const [taxonomy, setTaxonomy] = useState<TaxonomyRow[]>([]);
@@ -18,11 +27,9 @@ function ProfileSetupForm() {
   const [specialty, setSpecialty] = useState('');
   const [subSpecialty, setSubSpecialty] = useState('');
 
-  // Clinic fields
-  const [clinicName, setClinicName] = useState('');
-  const [roomDetails, setRoomDetails] = useState('');
-  const [clinicLocation, setClinicLocation] = useState('');
-  const [consultationFee, setConsultationFee] = useState('');
+  // Clinic fields -- a repeatable list so a doctor can register more than
+  // one practice location right from onboarding, not just the dashboard.
+  const [clinics, setClinics] = useState<ClinicFormRow[]>([{ ...BLANK_CLINIC }]);
 
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -102,6 +109,18 @@ function ProfileSetupForm() {
     if (file) setCredentialFileName(file.name);
   }
 
+  function updateClinicField(index: number, field: keyof ClinicFormRow, value: string) {
+    setClinics((prev) => prev.map((c, i) => (i === index ? { ...c, [field]: value } : c)));
+  }
+
+  function addClinicRow() {
+    setClinics((prev) => [...prev, { ...BLANK_CLINIC }]);
+  }
+
+  function removeClinicRow(index: number) {
+    setClinics((prev) => prev.filter((_, i) => i !== index));
+  }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
@@ -109,19 +128,26 @@ function ProfileSetupForm() {
     // Sub-specialty is only required when the selected specialty has taxonomy entries.
     // Specialties like 'General Practice' have no sub-specialties and submit sub_specialty = null.
     const subSpecialtyRequired = !isGeneralPractice;
-    if (!name.trim() || !specialty || (subSpecialtyRequired && !subSpecialty) || !clinicName.trim() || !clinicLocation.trim() || !consultationFee) {
+    if (!name.trim() || !specialty || (subSpecialtyRequired && !subSpecialty)) {
       setError(
         subSpecialtyRequired
-          ? 'Please fill in your name, specialty, sub-specialty, clinic name, clinic location, and consultation fee.'
-          : 'Please fill in your name, specialty, clinic name, clinic location, and consultation fee.'
+          ? 'Please fill in your name, specialty, and sub-specialty.'
+          : 'Please fill in your name and specialty.'
       );
       return;
     }
 
-    const parsedFee = parseFloat(consultationFee);
-    if (Number.isNaN(parsedFee) || parsedFee < 0) {
-      setError('Consultation fee must be a positive number.');
-      return;
+    for (let i = 0; i < clinics.length; i++) {
+      const clinic = clinics[i];
+      if (!clinic.name.trim() || !clinic.location.trim() || !clinic.consultationFee) {
+        setError(`Please fill in the name, location, and consultation fee for clinic #${i + 1}.`);
+        return;
+      }
+      const fee = parseFloat(clinic.consultationFee);
+      if (Number.isNaN(fee) || fee < 0) {
+        setError(`Consultation fee for clinic #${i + 1} must be a positive number.`);
+        return;
+      }
     }
 
     setSubmitting(true);
@@ -159,13 +185,15 @@ function ProfileSetupForm() {
       return;
     }
 
-    const { error: clinicError } = await supabase.from('clinics').insert({
-      doctor_id: session.user.id,
-      name: clinicName.trim(),
-      room_details: roomDetails.trim() || null,
-      location: clinicLocation.trim(),
-      consultation_fee: parsedFee,
-    });
+    const { error: clinicError } = await supabase.from('clinics').insert(
+      clinics.map((c) => ({
+        doctor_id: session.user.id,
+        name: c.name.trim(),
+        room_details: c.roomDetails.trim() || null,
+        location: c.location.trim(),
+        consultation_fee: parseFloat(c.consultationFee),
+      }))
+    );
 
     setSubmitting(false);
 
@@ -317,80 +345,110 @@ function ProfileSetupForm() {
             {/* ── Clinic details ──────────────────────────────────────── */}
 
             <div className="mt-3 border-t border-slate-100 pt-5">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-violet-700">Primary Practice Clinic</h2>
+              <h2 className="text-sm font-bold uppercase tracking-wider text-violet-700">Practice Clinics</h2>
               <p className="mt-1 text-xs text-slate-400 font-medium">
-                You&apos;ll be able to add more clinics later in your dashboard.
+                Add every location you practice at. You can also add, edit, or remove clinics later from your dashboard.
               </p>
             </div>
 
-            {/* Clinic / practice name */}
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="clinic-name" className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                Clinic / Hospital Name <span className="text-rose-500">*</span>
-              </label>
-              <input
-                id="clinic-name"
-                type="text"
-                placeholder="e.g. Angeles University Foundation Medical Center"
-                value={clinicName}
-                onChange={(e) => setClinicName(e.target.value)}
-                required
-                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20"
-              />
-            </div>
+            {clinics.map((clinic, index) => (
+              <div
+                key={index}
+                className="flex flex-col gap-4 rounded-2xl border border-slate-100 bg-slate-50/50 p-4"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Clinic #{index + 1}
+                  </span>
+                  {clinics.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeClinicRow(index)}
+                      className="text-xs font-bold text-rose-600 hover:text-rose-800 transition"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
 
-            {/* Room / suite details */}
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="clinic-room" className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                Room / Suite Details
-                <span className="ml-1.5 text-xs font-normal text-slate-400 normal-case">(optional)</span>
-              </label>
-              <input
-                id="clinic-room"
-                type="text"
-                placeholder="e.g. 3rd Floor, Suite 210"
-                value={roomDetails}
-                onChange={(e) => setRoomDetails(e.target.value)}
-                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20"
-              />
-            </div>
+                {/* Clinic / practice name */}
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor={`clinic-name-${index}`} className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                    Clinic / Hospital Name <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    id={`clinic-name-${index}`}
+                    type="text"
+                    placeholder="e.g. Angeles University Foundation Medical Center"
+                    value={clinic.name}
+                    onChange={(e) => updateClinicField(index, 'name', e.target.value)}
+                    required
+                    className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
+                  />
+                </div>
 
-            {/* Clinic location */}
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="clinic-location" className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                City / Province Location <span className="text-rose-500">*</span>
-              </label>
-              <input
-                id="clinic-location"
-                type="text"
-                placeholder="e.g. MacArthur Highway, Angeles City, Pampanga"
-                value={clinicLocation}
-                onChange={(e) => setClinicLocation(e.target.value)}
-                required
-                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20"
-              />
-            </div>
+                {/* Room / suite details */}
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor={`clinic-room-${index}`} className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                    Room / Suite Details
+                    <span className="ml-1.5 text-xs font-normal text-slate-400 normal-case">(optional)</span>
+                  </label>
+                  <input
+                    id={`clinic-room-${index}`}
+                    type="text"
+                    placeholder="e.g. 3rd Floor, Suite 210"
+                    value={clinic.roomDetails}
+                    onChange={(e) => updateClinicField(index, 'roomDetails', e.target.value)}
+                    className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
+                  />
+                </div>
 
-            {/* Consultation fee */}
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="clinic-fee" className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                Consultation Fee (PHP) <span className="text-rose-500">*</span>
-              </label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">₱</span>
-                <input
-                  id="clinic-fee"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="500.00"
-                  value={consultationFee}
-                  onChange={(e) => setConsultationFee(e.target.value)}
-                  required
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50/60 py-3.5 pl-8 pr-4 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20"
-                />
+                {/* Clinic location */}
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor={`clinic-location-${index}`} className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                    City / Province Location <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    id={`clinic-location-${index}`}
+                    type="text"
+                    placeholder="e.g. MacArthur Highway, Angeles City, Pampanga"
+                    value={clinic.location}
+                    onChange={(e) => updateClinicField(index, 'location', e.target.value)}
+                    required
+                    className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
+                  />
+                </div>
+
+                {/* Consultation fee */}
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor={`clinic-fee-${index}`} className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                    Consultation Fee (PHP) <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">₱</span>
+                    <input
+                      id={`clinic-fee-${index}`}
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="500.00"
+                      value={clinic.consultationFee}
+                      onChange={(e) => updateClinicField(index, 'consultationFee', e.target.value)}
+                      required
+                      className="w-full rounded-2xl border border-slate-200 bg-white py-3.5 pl-8 pr-4 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
+            ))}
+
+            <button
+              type="button"
+              onClick={addClinicRow}
+              className="self-start text-xs font-bold text-violet-700 hover:text-violet-900 transition"
+            >
+              + Add another clinic
+            </button>
 
             {/* Error */}
             {error && (

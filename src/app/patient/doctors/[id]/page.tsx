@@ -350,7 +350,7 @@ function DoctorDetailPageContent() {
           <div className="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-violet-400/15 blur-3xl pointer-events-none animate-pulse-gentle" />
           <div className="absolute -left-16 -bottom-16 h-56 w-56 rounded-full bg-indigo-300/15 blur-3xl pointer-events-none" />
 
-          <div className="relative z-10 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
+          <div className="relative z-10 flex flex-col sm:flex-row sm:items-stretch sm:justify-between gap-6">
             <div className="flex-1">
               <div className="flex flex-wrap items-center gap-2.5">
                 <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">

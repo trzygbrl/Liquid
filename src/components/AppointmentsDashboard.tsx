@@ -76,6 +76,13 @@ export default function AppointmentsDashboard() {
   // Track which appointment ids currently have an in-flight accept/decline request
   const [actioning, setActioning] = useState<Set<string>>(new Set());
 
+  // Which appointment's inline "reason for declining" panel is open, and
+  // its in-progress text (declining requires a reason -- see migration
+  // 0007_appointment_status_reason.sql).
+  const [decliningId, setDecliningId] = useState<string | null>(null);
+  const [declineReason, setDeclineReason] = useState('');
+  const [declineError, setDeclineError] = useState<string | null>(null);
+
   // ── Fetch helper — called on init and on realtime events
   const fetchAppointments = useCallback(async (uid: string) => {
     const today = todayISO();
@@ -189,10 +196,12 @@ export default function AppointmentsDashboard() {
     };
   }, [fetchAppointments]);
 
-  // ── Accept / Decline handler
+  // ── Accept / Decline handler. `reason` is required for 'decline' (enforced
+  // by migration 0007_appointment_status_reason.sql's check constraint).
   async function handleAction(
     appointmentId: string,
-    action: 'accept' | 'decline'
+    action: 'accept' | 'decline',
+    reason?: string
   ) {
     const newStatus: AppointmentStatus = action === 'accept' ? 'confirmed' : 'declined';
 
@@ -223,7 +232,7 @@ export default function AppointmentsDashboard() {
     // double-apply. If count === 0, someone already actioned it — re-fetch reconciles.
     const { data: updatedRows, error } = await supabase
       .from('appointments')
-      .update({ status: newStatus })
+      .update({ status: newStatus, ...(action === 'decline' ? { status_reason: reason } : {}) })
       .eq('id', appointmentId)
       .eq('status', 'pending')
       .select('id');
@@ -250,6 +259,26 @@ export default function AppointmentsDashboard() {
     // Re-fetch to reconcile: reflects the trigger-driven slot status change and
     // the correct post-action appointment state from the DB.
     await fetchAppointments(session.user.id);
+
+    if (action === 'decline' && !error) {
+      setDecliningId(null);
+      setDeclineReason('');
+      setDeclineError(null);
+    }
+  }
+
+  function handleDeclineClick(appointmentId: string) {
+    setDecliningId(appointmentId);
+    setDeclineReason('');
+    setDeclineError(null);
+  }
+
+  function handleDeclineConfirm(appointmentId: string) {
+    if (declineReason.trim().length < 3) {
+      setDeclineError('Please provide a brief reason (at least a few words) for the patient.');
+      return;
+    }
+    handleAction(appointmentId, 'decline', declineReason.trim());
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -353,7 +382,7 @@ export default function AppointmentsDashboard() {
                     <div className="flex shrink-0 gap-2.5 sm:mt-0.5">
                       <button
                         id={`decline-appt-${appt.id}`}
-                        onClick={() => handleAction(appt.id, 'decline')}
+                        onClick={() => handleDeclineClick(appt.id)}
                         disabled={isActioning}
                         aria-label={`Decline appointment for ${patient?.name ?? 'patient'}`}
                         className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 min-h-[44px] text-xs font-bold text-slate-700 transition hover:border-rose-300 hover:text-rose-600 hover:bg-rose-50/50 shadow-sm active:scale-[0.98] disabled:opacity-50"
@@ -371,6 +400,45 @@ export default function AppointmentsDashboard() {
                       </button>
                     </div>
                   </div>
+
+                  {/* Inline reason panel — declining requires a reason (visible to the patient) */}
+                  {decliningId === appt.id && (
+                    <div className="mt-4 rounded-2xl border border-rose-200 bg-white p-4">
+                      <label htmlFor={`decline-reason-${appt.id}`} className="block text-xs font-bold text-slate-700 mb-1.5">
+                        Reason for declining (shown to the patient)
+                      </label>
+                      <textarea
+                        id={`decline-reason-${appt.id}`}
+                        rows={2}
+                        value={declineReason}
+                        onChange={(e) => setDeclineReason(e.target.value)}
+                        placeholder="e.g. Fully booked at this clinic for the requested date — please pick another slot."
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-rose-400 focus:bg-white focus:ring-2 focus:ring-rose-500/20 resize-none"
+                      />
+                      {declineError && (
+                        <p className="mt-1.5 text-xs font-medium text-rose-700">{declineError}</p>
+                      )}
+                      <div className="mt-3 flex items-center gap-2.5">
+                        <button
+                          id={`decline-confirm-${appt.id}`}
+                          type="button"
+                          onClick={() => handleDeclineConfirm(appt.id)}
+                          disabled={isActioning}
+                          className="rounded-2xl bg-rose-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-rose-700 disabled:opacity-50"
+                        >
+                          {isActioning ? '…' : 'Confirm Decline'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDecliningId(null)}
+                          disabled={isActioning}
+                          className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50"
+                        >
+                          Nevermind
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}

@@ -72,7 +72,19 @@ function IntakePageContent() {
     }
   }
 
+  // Returns to the symptoms step with prior answers intact -- patientData is
+  // deliberately left alone so <IntakeFlow> below re-seeds from it and jumps
+  // straight to Step 3 instead of a blank Step 1.
+  function handleEditSymptoms() {
+    setMatchResult(null);
+    setConversationHistory([]);
+    setApiError(null);
+    setState('intake');
+  }
+
+  // Full reset back to a blank Step 1.
   function handleRestart() {
+    setPatientData(null);
     setMatchResult(null);
     setConversationHistory([]);
     setApiError(null);
@@ -130,7 +142,11 @@ function IntakePageContent() {
         {/* Main Card Container */}
         <div className="rounded-3xl border border-slate-100 bg-white p-7 sm:p-9 shadow-[0_8px_30px_rgb(0,0,0,0.03)]">
           {state === 'intake' && (
-            <IntakeFlow onComplete={handleIntakeComplete} />
+            <IntakeFlow
+              onComplete={handleIntakeComplete}
+              initialData={patientData}
+              initialStep={patientData ? 3 : 1}
+            />
           )}
 
           {state === 'matching' && (
@@ -152,6 +168,7 @@ function IntakePageContent() {
               result={matchResult}
               patientData={patientData}
               onClarifySubmit={handleClarifySubmit}
+              onEditSymptoms={handleEditSymptoms}
               onRestart={handleRestart}
               isLoadingClarification={loadingClarify}
             />
