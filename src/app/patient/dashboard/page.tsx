@@ -71,6 +71,45 @@ export default function PatientDashboardPage() {
           </a>
         </div>
 
+        {/* Entry card — links to the full doctor directory */}
+        <div className="mt-4">
+          <a
+            id="patient-browse-doctors"
+            href="/patient/doctors"
+            className="group flex items-start gap-5 rounded-2xl border border-slate-800 bg-slate-900/60 p-7 transition hover:border-slate-700 hover:bg-slate-900/80"
+          >
+            {/* Icon */}
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-slate-500/10 transition group-hover:bg-slate-500/20">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-7 w-7 text-slate-300"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={1.5}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"
+                />
+              </svg>
+            </div>
+
+            {/* Text */}
+            <div className="flex-1 min-w-0">
+              <h2 className="text-lg font-semibold text-white">Browse all doctors</h2>
+              <p className="mt-1 text-sm leading-relaxed text-slate-400">
+                Already know who or what you&apos;re looking for? Search the full directory
+                directly.
+              </p>
+              <p className="mt-3 text-sm font-medium text-slate-300 group-hover:text-white transition">
+                View directory →
+              </p>
+            </div>
+          </a>
+        </div>
+
       </main>
     </RequireRole>
   );

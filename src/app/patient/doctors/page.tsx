@@ -15,8 +15,11 @@ import {
 function DoctorListContent() {
   const searchParams = useSearchParams();
 
-  // Query parameters from Task 3.4
-  const initialSpecialty = searchParams.get('specialty') || 'Ophthalmology';
+  // Query parameters from Task 3.4. No `specialty` param means "browse all
+  // doctors" mode (reached from the dashboard's directory link) rather than
+  // the AI-intake-driven ranked-match flow.
+  const specialtyParam = searchParams.get('specialty');
+  const browseAll = !specialtyParam;
   const initialSubSpecialty = searchParams.get('sub_specialty') || null;
   const initialHmo = searchParams.get('hmo') || null;
 
@@ -27,6 +30,11 @@ function DoctorListContent() {
   const [showAllHmo, setShowAllHmo] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Browse-all-mode-only filters (specialty-mode uses the sub-specialty
+  // pills below instead, fed by specialtyParam).
+  const [search, setSearch] = useState('');
+  const [specialtyFilter, setSpecialtyFilter] = useState('all');
 
   // Sync state if searchParams change
   useEffect(() => {
@@ -41,20 +49,25 @@ function DoctorListContent() {
       setError(null);
 
       try {
-        // 1. Fetch sub-specialty list for filter pills
-        const { data: taxonomyRows } = await supabase
-          .from('specialty_taxonomy')
-          .select('sub_specialty')
-          .eq('specialty', initialSpecialty)
-          .order('sub_specialty');
+        // 1. Fetch sub-specialty list for filter pills (specialty mode only —
+        // browse-all mode filters by specialty itself via a dropdown instead)
+        if (specialtyParam) {
+          const { data: taxonomyRows } = await supabase
+            .from('specialty_taxonomy')
+            .select('sub_specialty')
+            .eq('specialty', specialtyParam)
+            .order('sub_specialty');
 
-        if (taxonomyRows) {
-          const subs = Array.from(new Set(taxonomyRows.map((r) => r.sub_specialty)));
-          setAvailableSubSpecialties(subs);
+          if (taxonomyRows) {
+            const subs = Array.from(new Set(taxonomyRows.map((r) => r.sub_specialty)));
+            setAvailableSubSpecialties(subs);
+          }
+        } else {
+          setAvailableSubSpecialties([]);
         }
 
         // 2. Fetch doctors with clinics, slots, and reviews
-        const { data: doctorRows, error: docError } = await supabase
+        let doctorQuery = supabase
           .from('doctors')
           .select(
             `
@@ -84,8 +97,11 @@ function DoctorListContent() {
               rating
             )
           `
-          )
-          .eq('specialty', initialSpecialty);
+          );
+        if (specialtyParam) {
+          doctorQuery = doctorQuery.eq('specialty', specialtyParam);
+        }
+        const { data: doctorRows, error: docError } = await doctorQuery;
 
         if (docError) {
           throw docError;
@@ -115,18 +131,46 @@ function DoctorListContent() {
     }
 
     loadData();
-  }, [initialSpecialty]);
+  }, [specialtyParam]);
+
+  // Distinct specialties present in the fetched set, for the browse-all
+  // mode's specialty dropdown.
+  const availableSpecialties = useMemo(() => {
+    if (!browseAll) return [];
+    return Array.from(new Set(doctors.map((d) => d.specialty))).sort();
+  }, [browseAll, doctors]);
+
+  // Browse-all mode applies free-text + specialty-dropdown filtering
+  // client-side; specialty mode is already filtered server-side.
+  const visibleDoctors = useMemo(() => {
+    if (!browseAll) return doctors;
+    const query = search.trim().toLowerCase();
+    return doctors.filter((d) => {
+      if (specialtyFilter !== 'all' && d.specialty !== specialtyFilter) return false;
+      if (!query) return true;
+      const haystack = [
+        d.name,
+        d.specialty,
+        d.sub_specialty ?? '',
+        ...d.clinics.map((c) => c.name),
+        ...d.clinics.map((c) => c.location),
+      ]
+        .join(' ')
+        .toLowerCase();
+      return haystack.includes(query);
+    });
+  }, [browseAll, doctors, search, specialtyFilter]);
 
   // Execute deterministic ranking algorithm (PRD 8.4) & HMO intelligence check (PRD 8.3)
   const { ranked, hasHmoMismatch, totalCount, exactMatchCount, coveredCount } = useMemo(() => {
     return rankDoctors(
-      doctors,
-      initialSpecialty,
+      visibleDoctors,
+      specialtyParam ?? '',
       selectedSubSpecialty,
       patientHmo,
       showAllHmo
     );
-  }, [doctors, initialSpecialty, selectedSubSpecialty, patientHmo, showAllHmo]);
+  }, [visibleDoctors, specialtyParam, selectedSubSpecialty, patientHmo, showAllHmo]);
 
   return (
     <main className="flex min-h-screen flex-col bg-slate-950 px-4 py-8 sm:px-6 lg:px-8">
@@ -135,40 +179,46 @@ function DoctorListContent() {
         <div className="mb-6 flex flex-col gap-2 border-b border-slate-800 pb-6">
           <div className="flex items-center justify-between">
             <a
-              href="/patient/intake"
+              href={browseAll ? '/patient/dashboard' : '/patient/intake'}
               className="inline-flex items-center gap-1.5 text-xs font-medium text-teal-400 transition hover:text-teal-300"
             >
-              ← Back to symptom check
+              ← {browseAll ? 'Back to dashboard' : 'Back to symptom check'}
             </a>
             <span className="text-xs text-slate-500">CivicAccess Clinical Directory</span>
           </div>
 
           <h1 className="mt-1 text-2xl font-bold text-white sm:text-3xl">
-            {selectedSubSpecialty
-              ? `${initialSpecialty} Specialists — ${selectedSubSpecialty}`
-              : `All ${initialSpecialty} Specialists`}
+            {browseAll
+              ? 'All Doctors'
+              : selectedSubSpecialty
+                ? `${specialtyParam} Specialists — ${selectedSubSpecialty}`
+                : `All ${specialtyParam} Specialists`}
           </h1>
           <p className="text-sm text-slate-400">
-            Ranked by clinical sub-specialty match, HMO coverage, and next available consultation.
+            {browseAll
+              ? 'Browse the full directory, or search by doctor, specialty, or clinic.'
+              : 'Ranked by clinical sub-specialty match, HMO coverage, and next available consultation.'}
           </p>
 
-          {/* Active search recap pills */}
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-            <span className="rounded-md border border-slate-800 bg-slate-900/80 px-2.5 py-1 text-slate-300">
-              Specialty: <strong className="text-white">{initialSpecialty}</strong>
-            </span>
-            {selectedSubSpecialty && (
-              <span className="rounded-md border border-teal-500/30 bg-teal-500/10 px-2.5 py-1 text-teal-300 font-medium">
-                Sub-specialty: {selectedSubSpecialty}
+          {/* Active search recap pills (specialty mode only) */}
+          {!browseAll && (
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+              <span className="rounded-md border border-slate-800 bg-slate-900/80 px-2.5 py-1 text-slate-300">
+                Specialty: <strong className="text-white">{specialtyParam}</strong>
               </span>
-            )}
-            <span className="rounded-md border border-slate-800 bg-slate-900/80 px-2.5 py-1 text-slate-300">
-              Your HMO:{' '}
-              <strong className={patientHmo ? 'text-teal-300' : 'text-slate-400'}>
-                {patientHmo || 'None (Cash Rates)'}
-              </strong>
-            </span>
-          </div>
+              {selectedSubSpecialty && (
+                <span className="rounded-md border border-teal-500/30 bg-teal-500/10 px-2.5 py-1 text-teal-300 font-medium">
+                  Sub-specialty: {selectedSubSpecialty}
+                </span>
+              )}
+              <span className="rounded-md border border-slate-800 bg-slate-900/80 px-2.5 py-1 text-slate-300">
+                Your HMO:{' '}
+                <strong className={patientHmo ? 'text-teal-300' : 'text-slate-400'}>
+                  {patientHmo || 'None (Cash Rates)'}
+                </strong>
+              </span>
+            </div>
+          )}
         </div>
 
         {/* HMO Intelligence Mismatch Banner (PRD Section 8.3) */}
@@ -201,37 +251,62 @@ function DoctorListContent() {
 
         {/* Filter & Control Bar */}
         <div className="mb-6 flex flex-col gap-4 rounded-xl border border-slate-800 bg-slate-900/60 p-4 sm:flex-row sm:items-center sm:justify-between">
-          {/* Sub-specialty filter pills */}
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="mr-1 text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Filter:
-            </span>
-            <button
-              type="button"
-              onClick={() => setSelectedSubSpecialty(null)}
-              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
-                selectedSubSpecialty === null
-                  ? 'bg-teal-500 text-slate-950 font-semibold shadow'
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'
-              }`}
-            >
-              All Sub-specialties
-            </button>
-            {availableSubSpecialties.map((sub) => (
+          {browseAll ? (
+            /* Browse-all mode: free-text search + specialty dropdown */
+            <div className="flex flex-1 flex-col gap-3 sm:flex-row">
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by doctor, specialty, or clinic..."
+                className="flex-1 rounded-lg border border-slate-700 bg-slate-900/60 px-3 py-2 text-sm text-white placeholder-slate-500 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/30 transition"
+              />
+              <select
+                value={specialtyFilter}
+                onChange={(e) => setSpecialtyFilter(e.target.value)}
+                className="rounded-lg border border-slate-700 bg-slate-900/60 px-3 py-2 text-sm text-white outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/30 transition sm:w-64"
+              >
+                <option value="all">All specialties</option>
+                {availableSpecialties.map((specialty) => (
+                  <option key={specialty} value={specialty}>
+                    {specialty}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            /* Sub-specialty filter pills */
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="mr-1 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                Filter:
+              </span>
               <button
-                key={sub}
                 type="button"
-                onClick={() => setSelectedSubSpecialty(sub)}
+                onClick={() => setSelectedSubSpecialty(null)}
                 className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
-                  selectedSubSpecialty?.toLowerCase() === sub.toLowerCase()
+                  selectedSubSpecialty === null
                     ? 'bg-teal-500 text-slate-950 font-semibold shadow'
                     : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'
                 }`}
               >
-                {sub}
+                All Sub-specialties
               </button>
-            ))}
-          </div>
+              {availableSubSpecialties.map((sub) => (
+                <button
+                  key={sub}
+                  type="button"
+                  onClick={() => setSelectedSubSpecialty(sub)}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                    selectedSubSpecialty?.toLowerCase() === sub.toLowerCase()
+                      ? 'bg-teal-500 text-slate-950 font-semibold shadow'
+                      : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'
+                  }`}
+                >
+                  {sub}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* HMO coverage toggle (if patient has HMO) */}
           {patientHmo && (
@@ -285,6 +360,8 @@ function DoctorListContent() {
               onClick={() => {
                 setSelectedSubSpecialty(null);
                 setShowAllHmo(true);
+                setSearch('');
+                setSpecialtyFilter('all');
               }}
               className="mt-4 rounded-xl bg-slate-800 px-4 py-2 text-xs font-semibold text-white transition hover:bg-slate-700"
             >

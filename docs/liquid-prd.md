@@ -13,6 +13,8 @@ Track every scope decision or major edit here — newest on top. This is separat
 
 | Date | Change | Reason |
 |---|---|---|
+| 2026-08-19 | Seed data expanded from a single seeded specialty (Ophthalmology) to a deterministic mock dataset covering the full specialty roster: 202 doctors across 33 specialties, 425 clinics, 5,584 schedule slots, with fee/credential complexity scaled per specialty (`scripts/gen_seed.mjs`). | Section 10's MUST-HAVE only required "one fully fleshed-out specialty" for the demo; the fuller dataset makes the ranking (8.4) and HMO-mismatch (8.3) logic demonstrable across many specialties instead of just one. |
+| 2026-08-19 | A second, independent migration (`0005_nullable_sub_specialty.sql`, trigger-based) was built on a parallel branch solving the same `sub_specialty`-nullability problem as `0003_nullable_subspecialty.sql` (the `specialties`-table design referenced in Section 8.5 below) — the two were never reconciled before merging. The trigger-based design is what's currently live on the shared Supabase project; Section 8.5's reference to migration `0003` is stale until the team picks one. | Parallel branch work collided on the same problem; flagged rather than silently resolved so the team makes the call (full detail in `docs/BUILD_LOG.md`, "Branch integration" entry). |
 | 2026-08-18 | `doctors.sub_specialty` made nullable. New `public.specialties` lookup table added with a second FK on `doctors.specialty` to close the Postgres MATCH SIMPLE gap. Profile-setup form updated: sub-specialty field is hidden/optional when the selected specialty has no taxonomy entries; form submits `sub_specialty = NULL` for general practitioners. | General practitioners have a specialty (e.g. "General Practice") but no sub-specialty — the previous NOT NULL constraint incorrectly excluded them. |
 | _(today)_ | Expanded scope to support doctors practicing at multiple clinics, location-specific consultation fees, and emergency schedule blocking (e.g., sudden leaves). Booking flow updated to require clinic selection. | To align with the Philippine medical context where doctors rotate across multiple hospitals/MABs, charge different rates per location, and frequently adjust schedules for emergencies. |
 | _(today)_ | Major repositioning per mentor review: reframed as an AI healthcare navigation platform (not a directory), added explicit problem statement, objection-handling section, multi-stage AI pipeline, HMO intelligence layer, doctor ranking, financial framing, tagline | Mentor flagged that the pitch read as "a directory with AI-assisted search" — needed sharper positioning and proactive answers to likely judge challenges |
@@ -239,6 +241,8 @@ Pick ONE specialty to seed deeply and convincingly rather than spreading thin.
 
 **General practitioners and the taxonomy:** Not every doctor has a sub-specialty. Doctors who are general practitioners or general healthcare specialists select `specialty = 'General Practice'` and submit `sub_specialty = NULL`. These doctors are intentionally **not** represented in `specialty_taxonomy` — that table contains only specialties that have sub-specialty offerings. `'General Practice'` is a row in the separate `public.specialties` lookup table (added in migration 0003), which validates all specialty values independently of the sub-specialty taxonomy.
 
+> **⚠ Stale as of 2026-08-19:** a second migration, `0005_nullable_sub_specialty.sql`, solves this same problem a different way (drops the composite FK, validates via a trigger, makes `specialty_taxonomy.sub_specialty` nullable directly instead of adding a `specialties` table). It was built on a parallel branch and is what's actually applied on the shared live Supabase project — `0003`'s `specialties` table was never applied there. The paragraph above still describes the *intended* design; it needs a rewrite once the team decides which migration to standardize on. See the Change Log above and `docs/BUILD_LOG.md`.
+
 ### 8.6 Reviews (Should-Have)
 - Only allow a review if there's a matching Appointment with status = "completed" for that patient + doctor pair (verified-visit-only, reduces fake/malicious reviews). Feeds into Doctor Ranking (8.4) once populated.
 
@@ -272,7 +276,7 @@ Use this reasoning in the pitch to answer "why does this matter financially," al
 - [ ] Doctor/secretary sign-up + profile setup with specialty/sub-specialty tagging
 - [ ] Doctor/secretary schedule management
 - [ ] Doctor/secretary appointment accept/decline dashboard
-- [ ] Seed data: one fully fleshed-out specialty (e.g. ophthalmology) with 4 sub-specialties and enough doctor profiles to make the demo feel real
+- [ ] Seed data: deterministic mock dataset across the full specialty roster — 202 doctors, 33 specialties, 425 clinics, 5,584 schedule slots (`scripts/gen_seed.mjs`), superseding the original single-specialty scope
 - [ ] Simple, plain-language UI copy and readable design defaults (Section 8.7)
 
 ### SHOULD HAVE
