@@ -345,15 +345,19 @@ function DoctorDetailPageContent() {
         </div>
 
         {/* Doctor Hero Profile Card */}
-        <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.03)] sm:p-8">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
+        <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white/95 backdrop-blur-xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.03)] sm:p-8">
+          {/* Ambient soft background glow */}
+          <div className="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-violet-400/15 blur-3xl pointer-events-none animate-pulse-gentle" />
+          <div className="absolute -left-16 -bottom-16 h-56 w-56 rounded-full bg-indigo-300/15 blur-3xl pointer-events-none" />
+
+          <div className="relative z-10 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
             <div className="flex-1">
               <div className="flex flex-wrap items-center gap-2.5">
                 <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
                   {doctor.name}
                 </h1>
                 {doctor.verified && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2.5 py-0.5 text-xs font-bold text-violet-700 border border-violet-100">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2.5 py-0.5 text-xs font-bold text-violet-700 border border-violet-100 shadow-xs">
                     <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
                       <path
                         fillRule="evenodd"
@@ -526,10 +530,10 @@ function DoctorDetailPageContent() {
                               setSelectedSlotId(slot.id);
                               setBookingError(null);
                             }}
-                            className={`flex flex-col items-start rounded-2xl p-4 min-h-[58px] text-left transition active:scale-[0.98] ${
+                            className={`fluid-hover flex flex-col items-start rounded-2xl p-4 min-h-[58px] text-left focus:outline-none ${
                               isSelected
                                 ? 'bg-[#2A2338] text-white font-bold shadow-md ring-2 ring-violet-500/40'
-                                : 'bg-white border border-slate-200/80 text-slate-800 hover:border-violet-300 hover:bg-violet-50/30 shadow-sm'
+                                : 'bg-white border border-slate-200/80 text-slate-800 hover:border-violet-300 hover:bg-violet-50/40 shadow-xs'
                             }`}
                           >
                             <span className="text-sm font-bold">
@@ -537,7 +541,7 @@ function DoctorDetailPageContent() {
                             </span>
                             <span
                               className={`text-xs mt-1 font-medium ${
-                                isSelected ? 'text-slate-200' : 'text-emerald-700'
+                                isSelected ? 'text-slate-200' : 'text-emerald-700 font-bold'
                               }`}
                             >
                               Available for Booking

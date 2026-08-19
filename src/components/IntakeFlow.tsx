@@ -375,16 +375,16 @@ export default function IntakeFlow({ onComplete }: IntakeFlowProps) {
 
       {/* ── Step 1: Basics & Family Member Toggle (Task 5.2) ──────────────── */}
       {step === 1 && (
-        <div className="flex flex-col gap-6">
+        <div key="step-1" className="animate-fade-slide-up flex flex-col gap-6">
           <div>
-            <h2 className="text-xl font-bold text-slate-900">Let's start with a few basics</h2>
-            <p className="mt-1 text-xs text-slate-500">
+            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">Let's start with a few basics</h2>
+            <p className="mt-1 text-xs text-slate-500 font-medium">
               This helps our clinical AI match the right pediatric, adult, or geriatric specialist.
             </p>
           </div>
 
           {/* ── "Who is this for?" Toggle (Task 5.2) ── */}
-          <div className="rounded-3xl border border-slate-100 bg-slate-50/80 p-4 sm:p-5">
+          <div className="rounded-3xl border border-slate-200/80 bg-slate-50/80 p-4 sm:p-5 shadow-xs">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-3">
               Who is this consultation for?
             </span>
@@ -393,10 +393,10 @@ export default function IntakeFlow({ onComplete }: IntakeFlowProps) {
                 id="intake-target-myself"
                 type="button"
                 onClick={() => handleTargetChange('myself')}
-                className={`flex items-center justify-center gap-2 rounded-2xl border px-4 py-3.5 text-sm font-bold transition active:scale-[0.98] focus:outline-none ${
+                className={`fluid-hover flex items-center justify-center gap-2 rounded-2xl border px-4 py-3.5 text-sm font-bold focus:outline-none ${
                   !isFamily
                     ? 'border-transparent bg-[#2A2338] text-white shadow-md'
-                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
                 }`}
               >
                 <span>👤 Myself</span>
@@ -406,10 +406,10 @@ export default function IntakeFlow({ onComplete }: IntakeFlowProps) {
                 id="intake-target-family"
                 type="button"
                 onClick={() => handleTargetChange('family_member')}
-                className={`flex items-center justify-center gap-2 rounded-2xl border px-4 py-3.5 text-sm font-bold transition active:scale-[0.98] focus:outline-none ${
+                className={`fluid-hover flex items-center justify-center gap-2 rounded-2xl border px-4 py-3.5 text-sm font-bold focus:outline-none ${
                   isFamily
                     ? 'border-transparent bg-[#2A2338] text-white shadow-md'
-                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
                 }`}
               >
                 <span>👨‍👩‍👧 A family member</span>
@@ -417,9 +417,9 @@ export default function IntakeFlow({ onComplete }: IntakeFlowProps) {
             </div>
 
             {isFamily && (
-              <div className="mt-3.5 rounded-2xl border border-violet-100 bg-violet-50/80 p-3 text-xs leading-relaxed text-violet-800 flex items-start gap-2">
+              <div className="mt-3.5 rounded-2xl border border-violet-200/70 bg-violet-50/90 p-3.5 text-xs leading-relaxed text-violet-900 flex items-start gap-2.5 animate-fade-slide-up">
                 <span className="text-sm">ℹ</span>
-                <span>
+                <span className="font-medium">
                   Enter the details of your family member (e.g. child or parent). Our AI will tailor specialty mapping specifically to their age and demographics.
                 </span>
               </div>
@@ -428,7 +428,7 @@ export default function IntakeFlow({ onComplete }: IntakeFlowProps) {
 
           {/* Full name */}
           <div className="flex flex-col gap-2">
-            <label htmlFor="intake-name" className="text-sm font-semibold text-slate-700">
+            <label htmlFor="intake-name" className="text-xs font-bold uppercase tracking-wider text-slate-700">
               {isFamily ? "Family member's full name" : 'Your full name'}
             </label>
             <input
@@ -444,11 +444,11 @@ export default function IntakeFlow({ onComplete }: IntakeFlowProps) {
           {/* Age */}
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <label htmlFor="intake-age" className="text-sm font-semibold text-slate-700">
+              <label htmlFor="intake-age" className="text-xs font-bold uppercase tracking-wider text-slate-700">
                 {isFamily ? "Family member's age" : 'Your age'}
               </label>
               {isFamily && (
-                <span className="text-xs text-violet-600 font-medium">
+                <span className="text-xs text-violet-700 font-bold">
                   Infants, children & seniors welcomed
                 </span>
               )}
@@ -467,7 +467,7 @@ export default function IntakeFlow({ onComplete }: IntakeFlowProps) {
 
           {/* Sex — button group */}
           <div className="flex flex-col gap-2">
-            <span className="text-sm font-semibold text-slate-700">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
               {isFamily ? "Family member's sex" : 'Your sex'}
             </span>
             <ButtonGroup
@@ -480,9 +480,9 @@ export default function IntakeFlow({ onComplete }: IntakeFlowProps) {
 
           {/* Location */}
           <div className="flex flex-col gap-2">
-            <label htmlFor="intake-location" className="text-sm font-semibold text-slate-700">
+            <label htmlFor="intake-location" className="text-xs font-bold uppercase tracking-wider text-slate-700">
               {isFamily ? 'City or Province' : 'Location'}
-              <span className="ml-1.5 text-xs font-normal text-slate-400">(city or province)</span>
+              <span className="ml-1.5 text-xs font-normal text-slate-400 normal-case">(city or province)</span>
             </label>
             <input
               id="intake-location"
@@ -498,12 +498,12 @@ export default function IntakeFlow({ onComplete }: IntakeFlowProps) {
 
       {/* ── Step 2: HMO ────────────────────────────────────────────────── */}
       {step === 2 && (
-        <div className="flex flex-col gap-6">
+        <div key="step-2" className="animate-fade-slide-up flex flex-col gap-6">
           <div>
-            <h2 className="text-xl font-bold text-slate-900">
+            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
               {isFamily ? 'Does your family member have HMO coverage?' : 'Do you have HMO coverage?'}
             </h2>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-slate-500 font-medium">
               {isFamily
                 ? 'This helps us show doctors accredited with their HMO, or cash consultation rates.'
                 : 'This helps us show doctors who accept your HMO.'}
@@ -512,7 +512,7 @@ export default function IntakeFlow({ onComplete }: IntakeFlowProps) {
 
           {/* HMO button group */}
           <div className="flex flex-col gap-2">
-            <span className="text-sm font-semibold text-slate-700">Select one</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-700">Select one</span>
             <ButtonGroup
               options={HMO_OPTIONS}
               value={hmoProvider as string | null | undefined}
@@ -522,7 +522,7 @@ export default function IntakeFlow({ onComplete }: IntakeFlowProps) {
           </div>
 
           {hmoProvider === null && (
-            <p className="text-xs text-slate-500 bg-slate-50 p-3 rounded-2xl border border-slate-200">
+            <p className="text-xs text-slate-600 bg-slate-50/90 p-3.5 rounded-2xl border border-slate-200 font-medium animate-fade-slide-up">
               No problem — we'll show you doctors with direct cash consultation rates.
             </p>
           )}
@@ -531,18 +531,18 @@ export default function IntakeFlow({ onComplete }: IntakeFlowProps) {
 
       {/* ── Step 3: Symptoms ────────────────────────────────────────────── */}
       {step === 3 && (
-        <div className="flex flex-col gap-6">
+        <div key="step-3" className="animate-fade-slide-up flex flex-col gap-6">
           <div>
-            <h2 className="text-xl font-bold text-slate-900">
+            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
               {isFamily ? `What is ${name || 'your family member'} feeling?` : 'What are you feeling?'}
             </h2>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-slate-500 font-medium">
               Tell us in your own words (English or Tagalog).
             </p>
           </div>
 
           <div className="flex flex-col gap-2">
-            <label htmlFor="intake-symptoms" className="text-sm font-semibold text-slate-700">
+            <label htmlFor="intake-symptoms" className="text-xs font-bold uppercase tracking-wider text-slate-700">
               Describe symptoms
             </label>
             <textarea
@@ -582,7 +582,7 @@ export default function IntakeFlow({ onComplete }: IntakeFlowProps) {
             type="button"
             onClick={handleBack}
             disabled={submitting}
-            className="text-sm font-bold text-slate-500 hover:text-slate-900 transition disabled:opacity-50"
+            className="fluid-hover rounded-2xl border border-slate-200 bg-white px-5 py-3 text-xs font-bold text-slate-600 hover:text-slate-900 transition disabled:opacity-50"
           >
             ← Back
           </button>
@@ -593,9 +593,9 @@ export default function IntakeFlow({ onComplete }: IntakeFlowProps) {
             id={`intake-next-step${step}`}
             type="button"
             onClick={handleNext}
-            className="rounded-xl bg-teal-600 px-8 py-4 text-base font-semibold text-white transition hover:bg-teal-500 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-teal-500/50"
+            className="fluid-hover rounded-2xl bg-[#2A2338] px-8 py-4 min-h-[48px] text-base font-bold text-white shadow-md hover:bg-[#1E192C] focus:outline-none focus:ring-2 focus:ring-violet-500/40"
           >
-            Continue
+            Continue →
           </button>
         ) : (
           <button
@@ -603,9 +603,9 @@ export default function IntakeFlow({ onComplete }: IntakeFlowProps) {
             type="button"
             onClick={handleSubmit}
             disabled={submitting || symptomText.trim().length < 3}
-            className="rounded-xl bg-teal-600 px-8 py-4 text-base font-semibold text-white transition hover:bg-teal-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-teal-500/50"
+            className="fluid-hover rounded-2xl bg-[#2A2338] px-8 py-4 min-h-[48px] text-base font-bold text-white shadow-md hover:bg-[#1E192C] disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-violet-500/40"
           >
-            {submitting ? 'Saving…' : 'Find the right doctor →'}
+            {submitting ? 'Matching Specialist…' : 'Find the Right Doctor →'}
           </button>
         )}
       </div>

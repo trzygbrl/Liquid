@@ -39,90 +39,96 @@ export default function MatchResultView({
     )}&hmo=${encodeURIComponent(patientData.hmoProvider || '')}`;
 
     return (
-      <div className="flex flex-col gap-6">
+      <div className="animate-fade-slide-up flex flex-col gap-6">
         {/* Pipeline reasoning stepper */}
-        <div className="rounded-3xl border border-slate-100 bg-slate-50/80 p-4 sm:p-5">
+        <div className="rounded-3xl border border-slate-200/80 bg-white/90 backdrop-blur-xl p-4 sm:p-5 shadow-xs">
           <p className="text-xs font-bold uppercase tracking-wider text-violet-700">
             ✨ Clinical AI Matching Pipeline
           </p>
           <div className="mt-3 flex items-center gap-2 text-xs text-slate-600 flex-wrap">
-            <span className="inline-flex items-center gap-1 rounded-xl bg-white px-3 py-1.5 font-semibold text-slate-700 shadow-sm border border-slate-200/60">
-              <span className="text-emerald-600">✓</span> Symptoms parsed
+            <span className="inline-flex items-center gap-1 rounded-xl bg-white px-3 py-1.5 font-bold text-slate-700 shadow-xs border border-slate-200/80">
+              <span className="text-emerald-600 font-bold">✓</span> Symptoms parsed
             </span>
-            <span className="text-slate-400">→</span>
-            <span className="inline-flex items-center gap-1 rounded-xl bg-white px-3 py-1.5 font-semibold text-slate-700 shadow-sm border border-slate-200/60">
-              <span className="text-emerald-600">✓</span> Specialty: {match.specialty}
+            <span className="text-slate-400 font-bold">→</span>
+            <span className="inline-flex items-center gap-1 rounded-xl bg-white px-3 py-1.5 font-bold text-slate-700 shadow-xs border border-slate-200/80">
+              <span className="text-emerald-600 font-bold">✓</span> Specialty: {match.specialty}
             </span>
-            <span className="text-slate-400">→</span>
-            <span className="inline-flex items-center gap-1 rounded-xl bg-violet-600 px-3 py-1.5 font-bold text-white shadow-sm">
+            <span className="text-slate-400 font-bold">→</span>
+            <span className="inline-flex items-center gap-1 rounded-xl bg-violet-600 px-3 py-1.5 font-extrabold text-white shadow-sm">
               Sub-specialty: {match.sub_specialty || 'General'}
             </span>
           </div>
         </div>
 
-        {/* Main Recommendation Card */}
-        <div className="rounded-3xl border border-violet-100 bg-white p-7 sm:p-8 shadow-sm">
-          <div className="flex items-start gap-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-violet-50 text-violet-600 text-2xl shadow-sm mt-0.5">
-              🩺
-            </div>
-            <div>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-50 px-3 py-1 text-xs font-bold uppercase tracking-wider text-violet-700 border border-violet-100">
-                Recommended Specialist
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1.5 tracking-tight">
-                {match.sub_specialty
-                  ? `${match.specialty} — ${match.sub_specialty}`
-                  : match.specialty}
-              </h2>
-              {/* Plain-language subtitle & Tagalog translation */}
-              <div className="mt-1.5 flex flex-wrap items-center gap-2 text-sm">
-                <span className="font-semibold text-violet-700">
-                  {plainInfo.plainName}
+        {/* Main Recommendation Card with ambient breathing glow */}
+        <div className="relative overflow-hidden rounded-3xl border border-violet-200/80 bg-white/95 backdrop-blur-xl p-7 sm:p-9 shadow-lg shadow-violet-500/5">
+          {/* Ambient inner soft glowing aura */}
+          <div className="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-violet-400/15 blur-3xl pointer-events-none animate-pulse-gentle" />
+          <div className="absolute -left-16 -bottom-16 h-56 w-56 rounded-full bg-indigo-300/15 blur-3xl pointer-events-none" />
+
+          <div className="relative z-10">
+            <div className="flex items-start gap-4">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-violet-600 to-indigo-600 text-white text-2xl shadow-lg shadow-violet-500/25 mt-0.5 animate-pulse-gentle">
+                🩺
+              </div>
+              <div>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-50 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-violet-700 border border-violet-200/80 shadow-xs">
+                  ✨ Recommended Specialist
                 </span>
-                <span className="text-slate-300">•</span>
-                <span className="italic text-slate-500 font-medium">
-                  {plainInfo.tagalogName}
-                </span>
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-2 tracking-tight">
+                  {match.sub_specialty
+                    ? `${match.specialty} — ${match.sub_specialty}`
+                    : match.specialty}
+                </h2>
+                {/* Plain-language subtitle & Tagalog translation */}
+                <div className="mt-1.5 flex flex-wrap items-center gap-2 text-sm">
+                  <span className="font-bold text-violet-700">
+                    {plainInfo.plainName}
+                  </span>
+                  <span className="text-slate-300">•</span>
+                  <span className="italic text-slate-500 font-medium">
+                    {plainInfo.tagalogName}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Reasoning box (Nurse-tone explanation) */}
-          <div className="mt-6 rounded-2xl border-l-4 border-violet-600 bg-violet-50/80 p-5">
-            <p className="text-xs font-bold uppercase tracking-wider text-violet-900">
-              Why this specialist is right for you
-            </p>
-            <p className="mt-2 text-base leading-relaxed text-slate-800 font-medium">
-              {match.reason}
-            </p>
-          </div>
+            {/* Reasoning box (Nurse-tone explanation) */}
+            <div className="mt-6 rounded-2xl border-l-4 border-violet-600 bg-violet-50/80 p-5.5 shadow-xs">
+              <p className="text-xs font-bold uppercase tracking-wider text-violet-950">
+                Why this specialist is right for you
+              </p>
+              <p className="mt-2 text-base leading-relaxed text-slate-800 font-medium">
+                {match.reason}
+              </p>
+            </div>
 
-          {/* Patient context recap */}
-          <div className="mt-6 flex flex-wrap items-center gap-2.5 border-t border-slate-100 pt-5 text-xs text-slate-600">
-            <span className="inline-flex items-center gap-1.5 rounded-xl bg-slate-50 px-3 py-1.5 text-slate-700 border border-slate-200/60 font-medium">
-              <span>Patient:</span>
-              <strong className="text-slate-900 font-bold">{patientData.name}</strong>
-              {patientData.isForFamilyMember && (
-                <span className="rounded-md bg-violet-100 px-1.5 py-0.5 text-xs font-bold text-violet-700">
-                  Family Member
+            {/* Patient context recap */}
+            <div className="mt-6 flex flex-wrap items-center gap-2.5 border-t border-slate-100 pt-5 text-xs text-slate-600">
+              <span className="inline-flex items-center gap-1.5 rounded-xl bg-slate-50 px-3 py-1.5 text-slate-700 border border-slate-200/60 font-medium">
+                <span>Patient:</span>
+                <strong className="text-slate-900 font-bold">{patientData.name}</strong>
+                {patientData.isForFamilyMember && (
+                  <span className="rounded-md bg-violet-100 px-1.5 py-0.5 text-xs font-bold text-violet-700">
+                    Family Member
+                  </span>
+                )}
+              </span>
+              <span className="rounded-xl bg-slate-50 px-3 py-1.5 text-slate-700 border border-slate-200/60 font-medium">
+                Age {patientData.age} • {patientData.sex}
+              </span>
+              <span className="rounded-xl bg-slate-50 px-3 py-1.5 text-slate-700 border border-slate-200/60 font-medium">
+                HMO:{' '}
+                <strong className="text-violet-700 font-bold">
+                  {patientData.hmoProvider || 'None (Cash)'}
+                </strong>
+              </span>
+              {patientData.location && (
+                <span className="rounded-xl bg-slate-50 px-3 py-1.5 text-slate-700 border border-slate-200/60 font-medium">
+                  📍 {patientData.location}
                 </span>
               )}
-            </span>
-            <span className="rounded-xl bg-slate-50 px-3 py-1.5 text-slate-700 border border-slate-200/60 font-medium">
-              Age {patientData.age} • {patientData.sex}
-            </span>
-            <span className="rounded-xl bg-slate-50 px-3 py-1.5 text-slate-700 border border-slate-200/60 font-medium">
-              HMO:{' '}
-              <strong className="text-violet-700 font-bold">
-                {patientData.hmoProvider || 'None (Cash)'}
-              </strong>
-            </span>
-            {patientData.location && (
-              <span className="rounded-xl bg-slate-50 px-3 py-1.5 text-slate-700 border border-slate-200/60 font-medium">
-                📍 {patientData.location}
-              </span>
-            )}
+            </div>
           </div>
         </div>
 
@@ -131,14 +137,14 @@ export default function MatchResultView({
           <a
             id="find-doctors-btn"
             href={findDoctorsUrl}
-            className="w-full sm:flex-1 text-center rounded-2xl bg-[#2A2338] px-8 py-4 text-base font-semibold text-white shadow-md transition hover:bg-[#1E192C] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+            className="fluid-hover w-full sm:flex-1 text-center rounded-2xl bg-[#2A2338] px-8 py-4 min-h-[48px] text-base font-bold text-white shadow-md hover:bg-[#1E192C] focus:outline-none focus:ring-2 focus:ring-violet-500/50"
           >
             Find Doctors in this Field →
           </a>
           <button
             type="button"
             onClick={onRestart}
-            className="w-full sm:w-auto rounded-2xl border border-slate-200 bg-white px-6 py-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-slate-900 shadow-sm"
+            className="fluid-hover w-full sm:w-auto rounded-2xl border border-slate-200/80 bg-white/90 backdrop-blur-md px-6 py-4 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-slate-900 shadow-sm"
           >
             ← Edit symptoms
           </button>

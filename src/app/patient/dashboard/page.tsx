@@ -61,6 +61,7 @@ function fmtDate(iso: string): string {
 
 function PatientDashboardContent() {
   const router = useRouter();
+  const [patientName, setPatientName] = useState<string>('');
   const [appointments, setAppointments] = useState<AppointmentItem[]>([]);
   const [loadingAppts, setLoadingAppts] = useState<boolean>(true);
 
@@ -74,6 +75,17 @@ function PatientDashboardContent() {
       if (!user) {
         setLoadingAppts(false);
         return;
+      }
+
+      // Fetch patient name
+      const { data: patientProfile } = await supabase
+        .from('patients')
+        .select('name')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (patientProfile?.name) {
+        setPatientName(patientProfile.name.split(' ')[0]);
       }
 
       const { data, error } = await supabase
@@ -149,36 +161,36 @@ function PatientDashboardContent() {
   const activeAppts = appointments.filter((a) => a.status !== 'completed');
 
   return (
-    <main className="flex min-h-screen flex-col bg-[#F8F7FA] px-4 py-8 sm:px-6 lg:px-8">
+    <main className="flex min-h-screen flex-col px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto w-full max-w-5xl">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/80 pb-6">
           <div className="flex items-center gap-3.5">
-            <div className="h-12 w-12 rounded-2xl bg-gradient-to-tr from-violet-600 to-indigo-600 flex items-center justify-center text-white text-lg font-black shadow-md shadow-violet-500/20 shrink-0">
+            <div className="h-12 w-12 rounded-2xl bg-gradient-to-tr from-violet-600 to-indigo-600 flex items-center justify-center text-white text-lg font-black shadow-lg shadow-violet-500/25 shrink-0 animate-pulse-gentle">
               ✦
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-violet-600 bg-violet-50 px-2.5 py-0.5 rounded-full border border-violet-100">
+                <span className="text-xs font-bold uppercase tracking-wider text-violet-700 bg-violet-50/90 px-3 py-0.5 rounded-full border border-violet-200/60 backdrop-blur-sm">
                   ✨ Patient Portal
                 </span>
               </div>
               <h1 className="mt-1 text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                Good day, Sarah!
+                Good day{patientName ? `, ${patientName}` : ''}!
               </h1>
             </div>
           </div>
           <div className="flex items-center gap-3 self-end sm:self-center">
             <a
               href="/patient/doctors"
-              className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
+              className="fluid-hover rounded-2xl border border-slate-200/80 bg-white/90 backdrop-blur-md px-4 py-2.5 text-xs font-bold text-slate-700 shadow-sm hover:bg-white hover:text-slate-900 hover:border-slate-300"
             >
               Doctor Directory
             </a>
             <button
               id="patient-sign-out"
               onClick={handleSignOut}
-              className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-500 shadow-sm transition hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200"
+              className="fluid-hover rounded-2xl border border-slate-200/80 bg-white/90 backdrop-blur-md px-4 py-2.5 text-xs font-semibold text-slate-500 shadow-sm hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200"
             >
               Sign out
             </button>
@@ -187,67 +199,68 @@ function PatientDashboardContent() {
 
         {/* Quick Action Navigation Cards */}
         <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-5">
-          {/* Hero Intake flow card (Inspo Sleep Tracker card style) */}
+          {/* Hero Intake flow card with internal breathing aura */}
           <a
             id="patient-start-intake"
             href="/patient/intake"
-            className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 p-7 text-white shadow-xl shadow-purple-500/15 transition transform hover:-translate-y-0.5"
+            className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 p-7 text-white shadow-xl shadow-purple-500/20 fluid-hover border border-white/10"
           >
-            {/* Ambient decorative glow circle */}
-            <div className="absolute -right-8 -bottom-8 h-40 w-40 rounded-full bg-white/10 blur-2xl pointer-events-none" />
+            {/* Ambient breathing aura inside the hero card */}
+            <div className="absolute -right-12 -bottom-12 h-48 w-48 rounded-full bg-white/20 blur-3xl pointer-events-none animate-pulse-gentle" />
+            <div className="absolute -left-10 -top-10 h-36 w-36 rounded-full bg-indigo-400/20 blur-2xl pointer-events-none" />
 
             <div className="relative z-10 flex flex-col justify-between h-full min-h-[170px]">
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-bold text-white backdrop-blur-md">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-bold text-white backdrop-blur-md border border-white/20 shadow-inner">
                     ✨ AI Clinical Triage
                   </span>
-                  <span className="text-white/80 group-hover:translate-x-1 transition text-lg">
+                  <span className="text-white/80 group-hover:translate-x-1.5 transition-transform duration-300 text-lg">
                     →
                   </span>
                 </div>
-                <h2 className="mt-4 text-xl sm:text-2xl font-bold tracking-tight text-white">
+                <h2 className="mt-4 text-xl sm:text-2xl font-extrabold tracking-tight text-white">
                   Check my symptoms
                 </h2>
-                <p className="mt-1.5 text-xs leading-relaxed text-purple-100 max-w-sm">
+                <p className="mt-1.5 text-xs leading-relaxed text-purple-100 max-w-sm font-medium">
                   Describe what you or your family member feels in English or Tagalog. We match you to the exact specialist.
                 </p>
               </div>
 
               <div className="mt-5 flex items-center gap-2">
-                <span className="rounded-2xl bg-white px-4 py-2 text-xs font-bold text-slate-950 shadow-md transition group-hover:bg-purple-50">
+                <span className="rounded-2xl bg-white px-4.5 py-2.5 text-xs font-extrabold text-slate-950 shadow-md transition group-hover:bg-purple-50 group-hover:shadow-lg">
                   Start Symptom Check →
                 </span>
               </div>
             </div>
           </a>
 
-          {/* Directory card (Inspo Clean White Card style) */}
+          {/* Directory card */}
           <a
             id="patient-browse-doctors"
             href="/patient/doctors"
-            className="group relative overflow-hidden rounded-3xl border border-slate-100 bg-white p-7 shadow-[0_8px_30px_rgb(0,0,0,0.03)] transition transform hover:-translate-y-0.5 hover:border-violet-200"
+            className="group relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white/90 backdrop-blur-xl p-7 shadow-[0_8px_30px_rgb(0,0,0,0.03)] fluid-hover hover:border-violet-300/80 hover:shadow-lg"
           >
             <div className="flex flex-col justify-between h-full min-h-[170px]">
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-50 px-3 py-1 text-xs font-bold text-violet-700 border border-violet-100">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-50/90 px-3 py-1 text-xs font-bold text-violet-700 border border-violet-200/60 shadow-xs">
                     🩺 200+ Verified Doctors
                   </span>
-                  <span className="text-slate-400 group-hover:translate-x-1 group-hover:text-violet-600 transition text-lg">
+                  <span className="text-slate-400 group-hover:translate-x-1.5 group-hover:text-violet-600 transition-all duration-300 text-lg">
                     →
                   </span>
                 </div>
-                <h2 className="mt-4 text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
+                <h2 className="mt-4 text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900">
                   Browse all doctors
                 </h2>
-                <p className="mt-1.5 text-xs leading-relaxed text-slate-500 max-w-sm">
+                <p className="mt-1.5 text-xs leading-relaxed text-slate-500 max-w-sm font-medium">
                   Filter by 33 medical specialties, clinic location, and HMO accreditations to book open slots directly.
                 </p>
               </div>
 
               <div className="mt-5 flex items-center gap-2">
-                <span className="rounded-2xl bg-[#2A2338] px-4 py-2 text-xs font-bold text-white shadow-sm transition group-hover:bg-[#1E192C]">
+                <span className="rounded-2xl bg-[#2A2338] px-4.5 py-2.5 text-xs font-extrabold text-white shadow-sm transition group-hover:bg-[#1E192C] group-hover:shadow-md">
                   View Doctor Directory →
                 </span>
               </div>
@@ -304,7 +317,7 @@ function PatientDashboardContent() {
                     {activeAppts.map((appt) => (
                       <div
                         key={appt.id}
-                        className="rounded-3xl border border-slate-100 bg-white p-5 sm:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.02)] transition hover:shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                        className="rounded-3xl border border-slate-200/70 bg-white/90 backdrop-blur-xl p-5 sm:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.02)] fluid-hover hover:border-violet-300/70 hover:shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                       >
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
@@ -356,7 +369,7 @@ function PatientDashboardContent() {
 
                           <a
                             href={`/patient/appointments/${appt.id}/confirmation`}
-                            className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 hover:text-slate-900"
+                            className="fluid-hover rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900"
                           >
                             Details →
                           </a>
@@ -377,7 +390,7 @@ function PatientDashboardContent() {
                     {completedAppts.map((appt) => (
                       <div
                         key={appt.id}
-                        className="rounded-3xl border border-emerald-100 bg-white p-5 sm:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.02)] flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                        className="rounded-3xl border border-emerald-200/60 bg-white/90 backdrop-blur-xl p-5 sm:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.02)] fluid-hover hover:border-emerald-300 hover:shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                       >
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
@@ -414,7 +427,7 @@ function PatientDashboardContent() {
                             <a
                               id={`write-review-${appt.id}`}
                               href={`/patient/appointments/${appt.id}/review`}
-                              className="rounded-2xl bg-[#2A2338] px-5 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-[#1E192C]"
+                              className="fluid-hover rounded-2xl bg-[#2A2338] px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-[#1E192C]"
                             >
                               ★ Write a Review →
                             </a>

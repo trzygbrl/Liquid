@@ -379,15 +379,15 @@ function DoctorListContent() {
               return (
                 <div
                   key={doctor.id}
-                  className={`relative flex flex-col justify-between rounded-3xl border bg-white p-6 sm:p-7 shadow-[0_8px_30px_rgb(0,0,0,0.03)] transition hover:shadow-md ${
+                  className={`fluid-hover relative flex flex-col justify-between rounded-3xl border bg-white/90 backdrop-blur-xl p-6 sm:p-7 shadow-[0_8px_30px_rgb(0,0,0,0.03)] hover:border-violet-300/80 hover:shadow-lg ${
                     isTopRecommendation
-                      ? 'border-violet-200 ring-2 ring-violet-500/20'
-                      : 'border-slate-100'
+                      ? 'border-violet-200 ring-2 ring-violet-500/20 shadow-violet-500/5'
+                      : 'border-slate-200/80'
                   }`}
                 >
                   {/* Top recommendation ribbon */}
                   {isTopRecommendation && (
-                    <div className="mb-4 inline-flex items-center gap-1.5 self-start rounded-full bg-violet-50 px-3 py-1 text-xs font-bold text-violet-700 border border-violet-200">
+                    <div className="mb-4 inline-flex items-center gap-1.5 self-start rounded-full bg-violet-50/90 px-3 py-1 text-xs font-bold text-violet-700 border border-violet-200/80 shadow-xs">
                       <span>⭐ Top Clinical Match</span>
                     </div>
                   )}
