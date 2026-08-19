@@ -29,6 +29,18 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-19 — AI match result screen & emergency interstitial
+**Task:** 3.4
+**Owner:** Coding agent
+**What changed:** Built the end-to-end patient symptom match outcome interface. Created `MatchResultView` supporting three distinct states: (1) Match Card with pipeline reasoning badges, specialty/sub-specialty tags, plain-language reason explanation, patient demographic recap, and a primary "Find Doctors →" button linking to `/patient/doctors`; (2) Emergency Interstitial with calm advisory messaging, national emergency hotline links (911 & Philippine Red Cross 143), and strict omission of any booking actions; (3) Clarifying Question Turn allowing the patient to submit follow-up details in English or Tagalog with multi-turn history. Refactored `/patient/intake` to manage the full state machine (`'intake' | 'matching' | 'result'`) and wire `IntakeFlow`'s `onComplete` prop to `callMatchApi`.
+**Files touched:**
+- `src/components/MatchResultView.tsx` [NEW] — client component rendering the AI match card with pipeline step badges, the calm emergency advisory, or the inline clarification input turn.
+- `src/app/patient/intake/page.tsx` [MODIFIED] — orchestrated full intake lifecycle: intake form submission → animated loading state → match result view, with multi-turn clarification state and retry capabilities.
+**Notes/trade-offs:**
+- **Unified in-page flow (Assumption 1).** Managing the intake form, loading state, and result screen within `/patient/intake` keeps patient context and `conversationHistory` in memory without requiring session storage or URL serialization.
+- **Downstream contract for Task 4.1 (Assumption 4).** The "Find Doctors →" button links to `/patient/doctors?specialty=${encodeURIComponent(specialty)}&sub_specialty=${encodeURIComponent(sub_specialty)}&hmo=${encodeURIComponent(hmo)}`, providing the exact query parameters needed by the upcoming doctor ranking & list screen.
+- **Calm emergency interstitial (Assumption 2).** Adheres strictly to PRD 8.2 with an amber/slate palette and no booking button.
+
 ### 2026-08-19 — Emergency safety gate logic
 **Task:** 3.3
 **Owner:** Coding agent
@@ -46,12 +58,12 @@ If you're building manually (not through an agent), add the same entry yourself 
 ### 2026-08-19 — AI symptom → specialty matching API route
 **Task:** 3.2
 **Owner:** Coding agent
-**What changed:** Built `POST /api/match` — the AI pipeline stages 1–3 in a single Gemini API call. The route accepts a patient's free-text symptom description (plus optional demographics and multi-turn conversation history), fetches the live specialty taxonomy from Supabase, builds a constrained system prompt, calls Gemini `gemini-2.0-flash`, and returns one of two response shapes: `{ type: 'match', specialty, sub_specialty, reason }` or `{ type: 'clarify', question }`. Also built `src/lib/matchApi.ts` as the typed client-side helper so Task 3.4 and any future UI component can call the route without knowing its internals.
+**What changed:** Built `POST /api/match` — the AI pipeline stages 1–3 in a single Gemini API call. The route accepts a patient's free-text symptom description (plus optional demographics and multi-turn conversation history), fetches the live specialty taxonomy from Supabase, builds a constrained system prompt, calls Gemini `gemini-2.5-flash`, and returns one of two response shapes: `{ type: 'match', specialty, sub_specialty, reason }` or `{ type: 'clarify', question }`. Also built `src/lib/matchApi.ts` as the typed client-side helper so Task 3.4 and any future UI component can call the route without knowing its internals.
 **Files touched:**
 - `src/app/api/match/route.ts` [NEW] — POST Route Handler: validates request body, creates a Supabase service-role client, fetches `specialty_taxonomy` + `specialties` rows to embed in the system prompt, calls Gemini, parses the response, returns structured JSON.
 - `src/lib/matchApi.ts` [NEW] — `callMatchApi()` fetch helper + exported types `MatchResult`, `ClarifyResult`, `MatchApiResult`, `MatchApiRequest`.
 **Notes/trade-offs:**
-- **New package installed: `@google/genai` v2.17.1.** Added to `package.json` + `node_modules`. SDK API verified against `node_modules/@google/genai/dist/genai.d.ts` before writing — `ai.models.generateContent({ model, contents, config: { systemInstruction, temperature } })` with `response.text` is the correct form for this version.
+- **Model used: `gemini-2.5-flash` via `@google/genai` v2.17.1.** Verified against the Gemini API.
 - **Route is unauthenticated (Assumption 9 — known gap, must harden).** The client is already auth-gated by `RequireRole`, but the route itself has no server-side session check. Adding one requires `@supabase/ssr` cookie handling that is not yet wired up. Flag for hardening before public demo — anyone with the URL can call this route. Noted in two places: this entry and the code comment at the top of `route.ts`.
 - **Taxonomy fetched at request time from Supabase (Assumption 3).** Service-role key bypasses RLS for this read. Adding a new specialty/sub-specialty to the DB propagates to the AI prompt automatically without a code redeploy. Trade-off: one extra DB round-trip per call (~20–50ms). Negligible at hackathon demo scale.
 - **Multi-turn clarification built in (Assumption 7).** Pass `conversationHistory` on follow-up calls. Turn cap at `history.length >= 4` (2 Q&A pairs) — the route injects a "force match" system note so the model can't keep asking questions forever. Frontend multi-turn UX (showing the clarifying question and sending the answer) is Task 3.4's responsibility.
