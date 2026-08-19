@@ -6,6 +6,8 @@ import RequireRole from '@/components/RequireRole';
 import { supabase } from '@/lib/supabaseClient';
 import ScheduleManager from '@/components/ScheduleManager';
 import AppointmentsDashboard from '@/components/AppointmentsDashboard';
+import ClinicManager from '@/components/ClinicManager';
+import ProfileEditor from '@/components/ProfileEditor';
 
 function DashboardContent() {
   const router = useRouter();
@@ -90,8 +92,10 @@ function DashboardContent() {
         </div>
 
         <div className="space-y-8">
+          <ProfileEditor />
           <AppointmentsDashboard />
           <ScheduleManager />
+          <ClinicManager />
         </div>
       </div>
     </main>

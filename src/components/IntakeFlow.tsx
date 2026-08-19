@@ -31,6 +31,11 @@ export interface IntakeCompleteData {
 
 interface IntakeFlowProps {
   onComplete?: (data: IntakeCompleteData) => void;
+  // When set, the wizard seeds its fields from this data instead of the blank
+  // defaults / DB prefill -- used to return the user directly to a given step
+  // (e.g. symptoms) with their prior answers intact, instead of a full reset.
+  initialData?: IntakeCompleteData | null;
+  initialStep?: 1 | 2 | 3;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -110,26 +115,30 @@ function ButtonGroup<T extends string | null>({
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export default function IntakeFlow({ onComplete }: IntakeFlowProps) {
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+export default function IntakeFlow({ onComplete, initialData = null, initialStep = 1 }: IntakeFlowProps) {
+  const [step, setStep] = useState<1 | 2 | 3>(initialStep);
 
   // Target toggle (Myself vs Family Member) — Task 5.2
-  const [consultationTarget, setConsultationTarget] = useState<ConsultationTarget>('myself');
+  const [consultationTarget, setConsultationTarget] = useState<ConsultationTarget>(
+    initialData?.isForFamilyMember ? 'family_member' : 'myself'
+  );
 
-  // Stored state for switching cleanly back and forth
+  // Stored state for switching cleanly back and forth. Seeded from
+  // initialData (keyed by which target it belonged to) so backing up to
+  // Step 1 and toggling Myself/Family still round-trips correctly on an
+  // edit-in-place re-entry.
+  const blankProfile = { name: '', age: '', sex: undefined as Sex | undefined, location: '', hmoProvider: undefined as HmoSelection };
   const [savedUserProfile, setSavedUserProfile] = useState<{
     name: string;
     age: string;
     sex: Sex | undefined;
     location: string;
     hmoProvider: HmoSelection;
-  }>({
-    name: '',
-    age: '',
-    sex: undefined,
-    location: '',
-    hmoProvider: undefined,
-  });
+  }>(
+    initialData && !initialData.isForFamilyMember
+      ? { name: initialData.name, age: String(initialData.age), sex: initialData.sex, location: initialData.location, hmoProvider: initialData.hmoProvider }
+      : blankProfile
+  );
 
   const [savedFamilyData, setSavedFamilyData] = useState<{
     name: string;
@@ -137,21 +146,19 @@ export default function IntakeFlow({ onComplete }: IntakeFlowProps) {
     sex: Sex | undefined;
     location: string;
     hmoProvider: HmoSelection;
-  }>({
-    name: '',
-    age: '',
-    sex: undefined,
-    location: '',
-    hmoProvider: undefined,
-  });
+  }>(
+    initialData && initialData.isForFamilyMember
+      ? { name: initialData.name, age: String(initialData.age), sex: initialData.sex, location: initialData.location, hmoProvider: initialData.hmoProvider }
+      : blankProfile
+  );
 
   // Active form fields
-  const [name, setName] = useState('');
-  const [age, setAge] = useState('');
-  const [sex, setSex] = useState<Sex | undefined>(undefined);
-  const [location, setLocation] = useState('');
-  const [hmoProvider, setHmoProvider] = useState<HmoSelection>(undefined);
-  const [symptomText, setSymptomText] = useState('');
+  const [name, setName] = useState(initialData?.name ?? '');
+  const [age, setAge] = useState(initialData ? String(initialData.age) : '');
+  const [sex, setSex] = useState<Sex | undefined>(initialData?.sex);
+  const [location, setLocation] = useState(initialData?.location ?? '');
+  const [hmoProvider, setHmoProvider] = useState<HmoSelection>(initialData ? initialData.hmoProvider : undefined);
+  const [symptomText, setSymptomText] = useState(initialData?.symptomText ?? '');
 
   // Per-step inline validation errors
   const [stepError, setStepError] = useState<string | null>(null);
@@ -161,11 +168,16 @@ export default function IntakeFlow({ onComplete }: IntakeFlowProps) {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
-  // Prefill flag
-  const [prefillLoading, setPrefillLoading] = useState(true);
+  // Prefill flag -- skipped entirely when initialData is already supplied
+  const [prefillLoading, setPrefillLoading] = useState(!initialData);
 
   // ── Prefill user profile from existing patients row on mount
   useEffect(() => {
+    // Already have known-good values (edit-in-place re-entry) -- re-fetching
+    // from the DB here would overwrite them and, critically, drop symptomText
+    // (which isn't stored server-side).
+    if (initialData) return;
+
     async function prefill() {
       const {
         data: { session },

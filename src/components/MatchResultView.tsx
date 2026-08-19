@@ -15,6 +15,9 @@ interface MatchResultViewProps {
   result: MatchApiResult;
   patientData: IntakeCompleteData;
   onClarifySubmit: (answer: string) => Promise<void>;
+  // Returns to the symptoms step with prior answers intact (edit-in-place).
+  onEditSymptoms: () => void;
+  // Full reset back to a blank Step 1.
   onRestart: () => void;
   isLoadingClarification?: boolean;
 }
@@ -23,6 +26,7 @@ export default function MatchResultView({
   result,
   patientData,
   onClarifySubmit,
+  onEditSymptoms,
   onRestart,
   isLoadingClarification = false,
 }: MatchResultViewProps) {
@@ -51,11 +55,11 @@ export default function MatchResultView({
             </span>
             <span className="text-slate-400 font-bold">→</span>
             <span className="inline-flex items-center gap-1 rounded-xl bg-white px-3 py-1.5 font-bold text-slate-700 shadow-xs border border-slate-200/80">
-              <span className="text-emerald-600 font-bold">✓</span> Specialty: {match.specialty}
+              <span className="text-emerald-600 font-bold">✓</span> Specialty matched
             </span>
             <span className="text-slate-400 font-bold">→</span>
             <span className="inline-flex items-center gap-1 rounded-xl bg-violet-600 px-3 py-1.5 font-extrabold text-white shadow-sm">
-              Sub-specialty: {match.sub_specialty || 'General'}
+              Recommendation ready
             </span>
           </div>
         </div>
@@ -143,7 +147,7 @@ export default function MatchResultView({
           </a>
           <button
             type="button"
-            onClick={onRestart}
+            onClick={onEditSymptoms}
             className="fluid-hover w-full sm:w-auto rounded-2xl border border-slate-200/80 bg-white/90 backdrop-blur-md px-6 py-4 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-slate-900 shadow-sm"
           >
             ← Edit symptoms
@@ -210,7 +214,7 @@ export default function MatchResultView({
         <div className="flex justify-start">
           <button
             type="button"
-            onClick={onRestart}
+            onClick={onEditSymptoms}
             className="rounded-2xl border border-slate-200 bg-white px-6 py-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 shadow-sm"
           >
             ← Return to symptom check

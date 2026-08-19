@@ -11,16 +11,23 @@
 //    - Real-time / updated status tracking
 //    - Verified Review submission entry point for completed visits (Task 5.1)
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import RequireRole from '@/components/RequireRole';
 import { supabase } from '@/lib/supabaseClient';
+import { daysSince } from '@/lib/dateUtils';
+
+// Declined/cancelled appointments older than this drop off the dashboard
+// entirely (the row itself stays in the DB for audit history — there's no
+// background job in this app to actually purge it).
+const DROPPED_APPT_RETENTION_DAYS = 14;
 
 interface AppointmentItem {
   id: string;
   status: 'pending' | 'confirmed' | 'declined' | 'completed' | 'cancelled';
   created_at: string;
   symptom_summary: string | null;
+  status_reason: string | null;
   doctor: {
     id: string;
     name: string;
@@ -65,100 +72,143 @@ function PatientDashboardContent() {
   const [appointments, setAppointments] = useState<AppointmentItem[]>([]);
   const [loadingAppts, setLoadingAppts] = useState<boolean>(true);
 
-  useEffect(() => {
-    async function loadPatientData() {
-      setLoadingAppts(true);
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+  // Which appointment's inline "reason for cancelling" panel is open, and
+  // its in-progress text (cancelling requires a reason -- see migration
+  // 0007_appointment_status_reason.sql).
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelError, setCancelError] = useState<string | null>(null);
+  const [cancelSubmitting, setCancelSubmitting] = useState(false);
 
-      if (!user) {
-        setLoadingAppts(false);
-        return;
-      }
+  const loadPatientData = useCallback(async () => {
+    setLoadingAppts(true);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-      // Fetch patient name
-      const { data: patientProfile } = await supabase
-        .from('patients')
-        .select('name')
-        .eq('id', user.id)
-        .maybeSingle();
-
-      if (patientProfile?.name) {
-        setPatientName(patientProfile.name.split(' ')[0]);
-      }
-
-      const { data, error } = await supabase
-        .from('appointments')
-        .select(`
-          id,
-          status,
-          created_at,
-          symptom_summary,
-          doctors (
-            id,
-            name,
-            specialty,
-            sub_specialty
-          ),
-          schedule_slots (
-            date,
-            start_time,
-            end_time,
-            clinics (
-              name,
-              location
-            )
-          ),
-          reviews (
-            id,
-            rating
-          )
-        `)
-        .eq('patient_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (!error && data) {
-        const formatted: AppointmentItem[] = data.map((item: any) => {
-          const doc = Array.isArray(item.doctors) ? item.doctors[0] : item.doctors;
-          const slot = Array.isArray(item.schedule_slots) ? item.schedule_slots[0] : item.schedule_slots;
-          const clinic = slot ? (Array.isArray(slot.clinics) ? slot.clinics[0] : slot.clinics) : null;
-          const rev = Array.isArray(item.reviews) ? item.reviews[0] : item.reviews;
-
-          return {
-            id: item.id,
-            status: item.status,
-            created_at: item.created_at,
-            symptom_summary: item.symptom_summary,
-            doctor: doc,
-            slot: slot
-              ? {
-                  date: slot.date,
-                  start_time: slot.start_time,
-                  end_time: slot.end_time,
-                  clinic: clinic,
-                }
-              : null,
-            review: rev || null,
-          };
-        });
-
-        setAppointments(formatted);
-      }
-
+    if (!user) {
       setLoadingAppts(false);
+      return;
     }
 
-    loadPatientData();
+    // Fetch patient name
+    const { data: patientProfile } = await supabase
+      .from('patients')
+      .select('name')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (patientProfile?.name) {
+      setPatientName(patientProfile.name.split(' ')[0]);
+    }
+
+    const { data, error } = await supabase
+      .from('appointments')
+      .select(`
+        id,
+        status,
+        created_at,
+        symptom_summary,
+        status_reason,
+        doctors (
+          id,
+          name,
+          specialty,
+          sub_specialty
+        ),
+        schedule_slots (
+          date,
+          start_time,
+          end_time,
+          clinics (
+            name,
+            location
+          )
+        ),
+        reviews (
+          id,
+          rating
+        )
+      `)
+      .eq('patient_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (!error && data) {
+      const formatted: AppointmentItem[] = data.map((item: any) => {
+        const doc = Array.isArray(item.doctors) ? item.doctors[0] : item.doctors;
+        const slot = Array.isArray(item.schedule_slots) ? item.schedule_slots[0] : item.schedule_slots;
+        const clinic = slot ? (Array.isArray(slot.clinics) ? slot.clinics[0] : slot.clinics) : null;
+        const rev = Array.isArray(item.reviews) ? item.reviews[0] : item.reviews;
+
+        return {
+          id: item.id,
+          status: item.status,
+          created_at: item.created_at,
+          symptom_summary: item.symptom_summary,
+          status_reason: item.status_reason,
+          doctor: doc,
+          slot: slot
+            ? {
+                date: slot.date,
+                start_time: slot.start_time,
+                end_time: slot.end_time,
+                clinic: clinic,
+              }
+            : null,
+          review: rev || null,
+        };
+      });
+
+      setAppointments(formatted);
+    }
+
+    setLoadingAppts(false);
   }, []);
+
+  useEffect(() => {
+    loadPatientData();
+  }, [loadPatientData]);
 
   async function handleSignOut() {
     await supabase.auth.signOut();
     router.replace('/patient/auth');
   }
 
+  async function handleCancelConfirm(appointmentId: string) {
+    if (cancelReason.trim().length < 3) {
+      setCancelError('Please provide a brief reason for cancelling.');
+      return;
+    }
+    setCancelSubmitting(true);
+    setCancelError(null);
+
+    const { error } = await supabase
+      .from('appointments')
+      .update({ status: 'cancelled', status_reason: cancelReason.trim() })
+      .eq('id', appointmentId);
+
+    setCancelSubmitting(false);
+
+    if (error) {
+      setCancelError('Unable to cancel this appointment. Please try again.');
+      return;
+    }
+
+    setCancellingId(null);
+    setCancelReason('');
+    await loadPatientData();
+  }
+
   const completedAppts = appointments.filter((a) => a.status === 'completed');
-  const activeAppts = appointments.filter((a) => a.status !== 'completed');
+  // Declined/cancelled appointments older than the retention window are
+  // dropped from the dashboard entirely (see DROPPED_APPT_RETENTION_DAYS).
+  const activeAppts = appointments.filter((a) => {
+    if (a.status === 'completed') return false;
+    if (a.status === 'declined' || a.status === 'cancelled') {
+      return daysSince(a.created_at) <= DROPPED_APPT_RETENTION_DAYS;
+    }
+    return true;
+  });
 
   return (
     <main className="flex min-h-screen flex-col px-4 py-8 sm:px-6 lg:px-8">
@@ -314,68 +364,136 @@ function PatientDashboardContent() {
                     Upcoming & Active ({activeAppts.length})
                   </h3>
                   <div className="grid grid-cols-1 gap-3.5">
-                    {activeAppts.map((appt) => (
+                    {activeAppts.map((appt) => {
+                      const canCancel = appt.status === 'pending' || appt.status === 'confirmed';
+                      return (
                       <div
                         key={appt.id}
-                        className="rounded-3xl border border-slate-200/70 bg-white/90 backdrop-blur-xl p-5 sm:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.02)] fluid-hover hover:border-violet-300/70 hover:shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                        className="rounded-3xl border border-slate-200/70 bg-white/90 backdrop-blur-xl p-5 sm:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.02)] fluid-hover hover:border-violet-300/70 hover:shadow-md"
                       >
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <h4 className="text-base font-bold text-slate-900">
-                              {appt.doctor?.name || 'Specialist'}
-                            </h4>
-                            <span className="text-xs text-slate-400">•</span>
-                            <span className="text-xs font-semibold text-violet-700 bg-violet-50 px-2.5 py-0.5 rounded-full border border-violet-100">
-                              {appt.doctor?.specialty}
-                              {appt.doctor?.sub_specialty ? ` (${appt.doctor.sub_specialty})` : ''}
-                            </span>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <h4 className="text-base font-bold text-slate-900">
+                                {appt.doctor?.name || 'Specialist'}
+                              </h4>
+                              <span className="text-xs text-slate-400">•</span>
+                              <span className="text-xs font-semibold text-violet-700 bg-violet-50 px-2.5 py-0.5 rounded-full border border-violet-100">
+                                {appt.doctor?.specialty}
+                                {appt.doctor?.sub_specialty ? ` (${appt.doctor.sub_specialty})` : ''}
+                              </span>
+                            </div>
+
+                            {appt.slot && (
+                              <p className="text-xs text-slate-700 font-medium">
+                                📅 {fmtDate(appt.slot.date)} at <span className="font-bold text-slate-900">{fmtTime(appt.slot.start_time)}</span>
+                                {appt.slot.clinic && ` • 📍 ${appt.slot.clinic.name}`}
+                              </p>
+                            )}
+
+                            {appt.symptom_summary && (
+                              <p className="text-xs text-slate-500 italic">
+                                &ldquo;{appt.symptom_summary}&rdquo;
+                              </p>
+                            )}
+
+                            {(appt.status === 'declined' || appt.status === 'cancelled') && appt.status_reason && (
+                              <p className="text-xs text-slate-600">
+                                <span className="font-bold uppercase tracking-wide text-slate-500 mr-1 text-[11px]">
+                                  Reason:
+                                </span>
+                                {appt.status_reason}
+                              </p>
+                            )}
                           </div>
 
-                          {appt.slot && (
-                            <p className="text-xs text-slate-700 font-medium">
-                              📅 {fmtDate(appt.slot.date)} at <span className="font-bold text-slate-900">{fmtTime(appt.slot.start_time)}</span>
-                              {appt.slot.clinic && ` • 📍 ${appt.slot.clinic.name}`}
-                            </p>
-                          )}
+                          <div className="flex items-center gap-3 self-end sm:self-center">
+                            {appt.status === 'pending' && (
+                              <span className="rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-xs font-bold text-amber-700">
+                                ⏳ Pending Confirmation
+                              </span>
+                            )}
+                            {appt.status === 'confirmed' && (
+                              <span className="rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-bold text-emerald-700">
+                                ✓ Confirmed
+                              </span>
+                            )}
+                            {appt.status === 'declined' && (
+                              <span className="rounded-full bg-rose-50 border border-rose-200 px-3 py-1 text-xs font-bold text-rose-700">
+                                Declined
+                              </span>
+                            )}
+                            {appt.status === 'cancelled' && (
+                              <span className="rounded-full bg-slate-100 border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-500">
+                                Cancelled
+                              </span>
+                            )}
 
-                          {appt.symptom_summary && (
-                            <p className="text-xs text-slate-500 italic">
-                              &ldquo;{appt.symptom_summary}&rdquo;
-                            </p>
-                          )}
+                            {canCancel && (
+                              <button
+                                id={`cancel-appt-${appt.id}`}
+                                type="button"
+                                onClick={() => {
+                                  setCancellingId(appt.id);
+                                  setCancelReason('');
+                                  setCancelError(null);
+                                }}
+                                className="fluid-hover rounded-2xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 hover:border-rose-300 hover:text-rose-600 hover:bg-rose-50/50"
+                              >
+                                Cancel
+                              </button>
+                            )}
+
+                            <a
+                              href={`/patient/appointments/${appt.id}/confirmation`}
+                              className="fluid-hover rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                            >
+                              Details →
+                            </a>
+                          </div>
                         </div>
 
-                        <div className="flex items-center gap-3 self-end sm:self-center">
-                          {appt.status === 'pending' && (
-                            <span className="rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-xs font-bold text-amber-700">
-                              ⏳ Pending Confirmation
-                            </span>
-                          )}
-                          {appt.status === 'confirmed' && (
-                            <span className="rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-bold text-emerald-700">
-                              ✓ Confirmed
-                            </span>
-                          )}
-                          {appt.status === 'declined' && (
-                            <span className="rounded-full bg-rose-50 border border-rose-200 px-3 py-1 text-xs font-bold text-rose-700">
-                              Declined
-                            </span>
-                          )}
-                          {appt.status === 'cancelled' && (
-                            <span className="rounded-full bg-slate-100 border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-500">
-                              Cancelled
-                            </span>
-                          )}
-
-                          <a
-                            href={`/patient/appointments/${appt.id}/confirmation`}
-                            className="fluid-hover rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900"
-                          >
-                            Details →
-                          </a>
-                        </div>
+                        {/* Inline reason panel — cancelling requires a reason */}
+                        {cancellingId === appt.id && (
+                          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50/40 p-4">
+                            <label htmlFor={`cancel-reason-${appt.id}`} className="block text-xs font-bold text-slate-700 mb-1.5">
+                              Reason for cancelling
+                            </label>
+                            <textarea
+                              id={`cancel-reason-${appt.id}`}
+                              rows={2}
+                              value={cancelReason}
+                              onChange={(e) => setCancelReason(e.target.value)}
+                              placeholder="e.g. Schedule conflict — I need to rebook for a later date."
+                              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-rose-400 focus:ring-2 focus:ring-rose-500/20 resize-none"
+                            />
+                            {cancelError && (
+                              <p className="mt-1.5 text-xs font-medium text-rose-700">{cancelError}</p>
+                            )}
+                            <div className="mt-3 flex items-center gap-2.5">
+                              <button
+                                id={`cancel-confirm-${appt.id}`}
+                                type="button"
+                                onClick={() => handleCancelConfirm(appt.id)}
+                                disabled={cancelSubmitting}
+                                className="rounded-2xl bg-rose-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-rose-700 disabled:opacity-50"
+                              >
+                                {cancelSubmitting ? '…' : 'Confirm Cancellation'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setCancellingId(null)}
+                                disabled={cancelSubmitting}
+                                className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-100 disabled:opacity-50"
+                              >
+                                Nevermind
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}

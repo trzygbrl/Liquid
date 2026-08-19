@@ -28,7 +28,6 @@ function DoctorListContent() {
   const [availableSubSpecialties, setAvailableSubSpecialties] = useState<string[]>([]);
   const [selectedSubSpecialty, setSelectedSubSpecialty] = useState<string | null>(initialSubSpecialty);
   const [patientHmo, setPatientHmo] = useState<string | null>(initialHmo);
-  const [showAllHmo, setShowAllHmo] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,6 +35,9 @@ function DoctorListContent() {
   // pills below instead, fed by specialtyParam).
   const [search, setSearch] = useState('');
   const [specialtyFilter, setSpecialtyFilter] = useState('all');
+
+  // Doctor ids whose "other locations" list is expanded on the card
+  const [expandedClinics, setExpandedClinics] = useState<Set<string>>(new Set());
 
   // Sync state if searchParams change
   useEffect(() => {
@@ -168,10 +170,9 @@ function DoctorListContent() {
       visibleDoctors,
       specialtyParam ?? '',
       selectedSubSpecialty,
-      patientHmo,
-      showAllHmo
+      patientHmo
     );
-  }, [visibleDoctors, specialtyParam, selectedSubSpecialty, patientHmo, showAllHmo]);
+  }, [visibleDoctors, specialtyParam, selectedSubSpecialty, patientHmo]);
 
   return (
     <main className="min-h-screen bg-[#F8F7FA] px-4 py-8 sm:px-6 lg:px-8">
@@ -300,19 +301,6 @@ function DoctorListContent() {
               ))}
             </div>
           )}
-
-          {/* HMO coverage toggle (if patient has HMO) */}
-          {patientHmo && (
-            <label className="flex cursor-pointer items-center gap-2 text-xs font-medium text-slate-700 select-none">
-              <input
-                type="checkbox"
-                checked={showAllHmo}
-                onChange={(e) => setShowAllHmo(e.target.checked)}
-                className="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
-              />
-              <span>Show all (ignore HMO filter)</span>
-            </label>
-          )}
         </div>
 
         {/* Results summary header */}
@@ -321,7 +309,7 @@ function DoctorListContent() {
             Showing <strong className="text-slate-900 font-bold">{ranked.length}</strong> verified doctors
             {selectedSubSpecialty && ` for ${selectedSubSpecialty}`}
           </span>
-          {patientHmo && !showAllHmo && (
+          {patientHmo && (
             <span className="text-violet-700 font-semibold">
               {coveredCount} accredited with {patientHmo}
             </span>
@@ -352,13 +340,12 @@ function DoctorListContent() {
               type="button"
               onClick={() => {
                 setSelectedSubSpecialty(null);
-                setShowAllHmo(true);
                 setSearch('');
                 setSpecialtyFilter('all');
               }}
               className="mt-4 rounded-2xl bg-[#2A2338] px-5 py-2.5 text-xs font-semibold text-white transition hover:bg-[#1E192C]"
             >
-              Reset Filters & Show All
+              Reset Filters
             </button>
           </div>
         )}
@@ -481,6 +468,49 @@ function DoctorListContent() {
                               <span className="text-sm font-extrabold text-slate-900">{formattedFee}</span>
                             </div>
                           </div>
+
+                          {doctor.otherClinics.length > 0 && (
+                            <div className="mt-3 border-t border-slate-200/60 pt-3">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setExpandedClinics((prev) => {
+                                    const next = new Set(prev);
+                                    if (next.has(doctor.id)) next.delete(doctor.id);
+                                    else next.add(doctor.id);
+                                    return next;
+                                  })
+                                }
+                                className="text-xs font-bold text-violet-700 hover:text-violet-900 transition"
+                              >
+                                {expandedClinics.has(doctor.id)
+                                  ? '− Hide other locations'
+                                  : `+ ${doctor.otherClinics.length} more ${doctor.otherClinics.length === 1 ? 'location' : 'locations'}`}
+                              </button>
+
+                              {expandedClinics.has(doctor.id) && (
+                                <div className="mt-2.5 flex flex-col gap-2">
+                                  {doctor.otherClinics.map((other) => (
+                                    <div
+                                      key={other.id}
+                                      className="flex items-center justify-between gap-2 rounded-xl bg-white border border-slate-200/70 px-3 py-2"
+                                    >
+                                      <div className="min-w-0">
+                                        <p className="font-semibold text-slate-800 truncate">{other.name}</p>
+                                        <p className="text-slate-500 mt-0.5">📍 {other.location}</p>
+                                      </div>
+                                      <span className="shrink-0 font-bold text-slate-900">
+                                        ₱{Number(other.consultation_fee).toLocaleString('en-US', {
+                                          minimumFractionDigits: 2,
+                                          maximumFractionDigits: 2,
+                                        })}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       )}
 
@@ -533,12 +563,12 @@ function DoctorListContent() {
                           Earliest Open Slot
                         </span>
                         {doctor.soonestSlot ? (
-                          <div className="mt-2 inline-flex items-center gap-1.5 rounded-2xl bg-violet-50 border border-violet-100 px-3.5 py-2 text-xs font-bold text-violet-800">
+                          <div className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-2xl bg-violet-50 border border-violet-100 px-3.5 py-2 text-xs font-bold text-violet-800">
                             <span>📅</span>
                             <span>{doctor.soonestSlot.formatted}</span>
                           </div>
                         ) : (
-                          <p className="mt-2 text-xs text-slate-400 italic">
+                          <p className="mt-2 w-full text-xs text-slate-400 italic">
                             No open slots posted
                           </p>
                         )}

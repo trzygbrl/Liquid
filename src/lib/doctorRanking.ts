@@ -4,7 +4,7 @@
 //
 // RANKING TIERS (PRD 8.4):
 //   1. Sub-specialty match strength (exact match ranks above adjacent/general specialty)
-//   2. HMO coverage (covered doctors rank above cash-only, unless patient toggled "show all")
+//   2. HMO coverage (covered doctors rank above cash-only)
 //   3. Average rating (higher rating ranks first)
 //   4. Soonest available slot (earliest available date/time ranks first)
 
@@ -43,6 +43,7 @@ export interface SoonestSlotInfo {
   date: string;
   time: string;
   formatted: string;
+  clinicId: string;
 }
 
 export interface RankedDoctor extends DoctorRecord {
@@ -52,6 +53,7 @@ export interface RankedDoctor extends DoctorRecord {
   reviewCount: number;
   soonestSlot: SoonestSlotInfo | null;
   primaryClinic: Clinic | null;
+  otherClinics: Clinic[];
 }
 
 export interface RankingResult {
@@ -70,8 +72,7 @@ export function rankDoctors(
   doctors: DoctorRecord[],
   targetSpecialty: string,
   targetSubSpecialty: string | null,
-  patientHmo: string | null,
-  showAllHmo: boolean = false
+  patientHmo: string | null
 ): RankingResult {
   const todayStr = new Date().toISOString().split('T')[0];
 
@@ -128,8 +129,18 @@ export function rankDoctors(
         date: first.date,
         time: first.start_time,
         formatted: `${formattedDate} at ${formattedTime}`,
+        clinicId: first.clinic_id,
       };
     }
+
+    // The primary clinic shown on the card is the one hosting the soonest
+    // slot (so the displayed clinic and displayed slot always agree); falls
+    // back to the first clinic only when there's no posted availability.
+    const primaryClinic =
+      (soonestSlot && doc.clinics?.find((c) => c.id === soonestSlot!.clinicId)) ||
+      doc.clinics?.[0] ||
+      null;
+    const otherClinics = (doc.clinics ?? []).filter((c) => c.id !== primaryClinic?.id);
 
     return {
       ...doc,
@@ -138,7 +149,8 @@ export function rankDoctors(
       averageRating,
       reviewCount: ratings.length,
       soonestSlot,
-      primaryClinic: doc.clinics?.[0] ?? null,
+      primaryClinic,
+      otherClinics,
     };
   });
 
@@ -165,8 +177,8 @@ export function rankDoctors(
       return a.isExactSubSpecialty ? -1 : 1;
     }
 
-    // Tier 2: HMO Coverage (if patient has HMO and not toggled to ignore)
-    if (patientHmo && !showAllHmo && a.isHmoCovered !== b.isHmoCovered) {
+    // Tier 2: HMO Coverage (if patient has HMO)
+    if (patientHmo && a.isHmoCovered !== b.isHmoCovered) {
       return a.isHmoCovered ? -1 : 1;
     }
 
