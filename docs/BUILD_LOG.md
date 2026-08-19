@@ -29,8 +29,27 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-19 — Patient intake flow (3-step form)
+**Task:** 3.1
+**Owner:** Coding agent
+**What changed:** Built the patient symptom-intake flow at `/patient/intake`. A 3-step form collects patient demographics (name, age, sex, location), HMO selection, and a free-text symptom description, then upserts a `patients` row and hands off the symptom text to a caller-provided `onComplete` hook. The patient dashboard stub card was replaced with a real "Check my symptoms" entry card linking to `/patient/intake`.
+**Files touched:**
+- `src/components/IntakeFlow.tsx` [NEW] — self-contained `'use client'` component with step state, per-step inline validation, prefill from existing `patients` row on mount, `patients` upsert on submit, optional `onComplete(data)` prop, and a fallback "coming soon" confirmation panel when no prop is passed.
+- `src/app/patient/intake/page.tsx` [NEW] — route page; wraps `IntakeFlow` in `RequireRole role="patient"`, matching the doctor profile-setup pattern.
+- `src/app/patient/dashboard/page.tsx` [MODIFIED] — replaced the placeholder stub card with a real "Check my symptoms" entry card (`<a href="/patient/intake">`). Header, sign-out button, and `RequireRole` wrapper left untouched.
+**Notes/trade-offs:**
+- **`onComplete` is currently unused by any caller (Assumption 5 — explicit follow-on needed).** The prop exists so Tasks 3.2 (AI matching API route) and 3.4 (result screen) can wire into this component without touching it again. Until those tasks are built, every submit falls through to the built-in "coming soon" confirmation panel. Task owners for 3.2 and 3.4 **must remember to pass `onComplete` when embedding `IntakeFlow`** — this note is the reminder.
+- **"None/Cash" writes `null` to `hmo_provider`, not the string (Assumption 4).** The HMO button group has `value: null` for "None or Cash." The upsert sends `hmo_provider: null`. Task 4.1 (HMO matching) should check for `null` hmo_provider as the "skip HMO matching" signal.
+- **Prefill on return visits (Assumption 3).** Steps 1–2 are prefilled from the `patients` row on mount. Step 3 (symptom text) always starts blank — it's visit-specific.
+- **Sex and HMO use button groups, not `<select>` (Assumption 6).** Large-tap `<button>` grid with clear selected-state highlight. Easier on touchscreen and less cognitively demanding for less tech-savvy users (PRD 8.7).
+- **`patients` RLS verified from migration `0001_initial_schema.sql`.** `patients_insert_own`, `patients_update_own`, and `patients_select_own` are already in place — no new migration needed for this task.
+- **No redirect gate on `/patient/dashboard` (Assumption 1).** Intake is not enforced as a pre-condition for viewing the dashboard (unlike the doctor profile gate). The dashboard just surfaces the entry card. This is intentional: a patient returning to check appointment status shouldn't be forced through intake again.
+- **No "Booking for a family member" toggle built (Assumption 9 — out of scope).** PRD 8.7 mentions this; Task 5.2 adds it. The flow is self-contained enough that it can be prepended to the front of `IntakeFlow` later without restructuring.
+
+
 ### 2026-08-19 — Doctor appointments dashboard
 **Task:** 2.3
+
 **Owner:** Coding agent
 **What changed:** Built `AppointmentsDashboard`, the doctor-facing view for managing appointment requests. The component renders above `ScheduleManager` on the doctor dashboard so pending decisions are always the first thing a doctor sees. It has two sections: (1) "Pending appointments" — all pending appointments for the doctor in FIFO order (oldest `created_at` first), each showing patient name/age/sex, symptom summary, and the requested slot date/time/clinic, with Accept and Decline buttons; (2) "Upcoming confirmed appointments" — confirmed appointments with a slot date today-or-later, sorted soonest first, read-only. Realtime subscription on `appointments` filtered by `doctor_id` keeps both lists live without a page refresh.
 **Files touched:**
