@@ -29,6 +29,25 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-19 — Doctor dashboard real-time booking sync audit & fix (Task 4.4)
+**Task:** 4.4
+**Owner:** Coding agent
+**What changed:** Conducted end-to-end audit and fix for real-time synchronization between the patient booking flow and the doctor dashboard.
+- **Phase 1 Audit Findings & Root Cause:**
+  1. *Patient Write*: Task 4.2 (`/patient/doctors/[id]`) correctly writes an insert into `public.appointments` with `status: 'pending'`, while PostgreSQL trigger `trg_sync_slot_status` flips `schedule_slots.is_booked` to `'booked'`.
+  2. *Doctor Read & Subscriptions*: `AppointmentsDashboard.tsx` and `ScheduleManager.tsx` already had Client Component `postgres_changes` listener logic for `appointments` and `schedule_slots` filtered by `doctor_id=eq.${uid}`.
+  3. *Root Cause Identified*: Neither `public.appointments` nor `public.schedule_slots` were added to PostgreSQL's `supabase_realtime` publication in database migrations, so Supabase Realtime never broadcast CDC events to subscribed browser clients. Additionally, `REPLICA IDENTITY FULL` was missing on both tables, which is required for Postgres to include non-PK columns (like `doctor_id`) in update/delete replication streams so client-side row filters work.
+  4. *RLS & Auth*: Confirmed that `appointments_select_own` (`auth.uid() = patient_id or auth.uid() = doctor_id`) and `patients_select_by_doctor` allow authenticated doctors to select their appointments and patient details without permission errors.
+- **Phase 2 Fix:**
+  - Created migration `supabase/migrations/0006_enable_realtime.sql` to add `appointments` and `schedule_slots` to `supabase_realtime` and enable `REPLICA IDENTITY FULL` on both tables.
+  - Verified channels in `AppointmentsDashboard.tsx` and `ScheduleManager.tsx` properly clean up via `supabase.removeChannel(channel)` on unmount.
+**Files touched:**
+- `supabase/migrations/0006_enable_realtime.sql` [NEW] — enables `supabase_realtime` publication and full replica identity for `appointments` and `schedule_slots`.
+- `docs/BUILD_LOG.md` [MODIFIED] — logged audit findings and resolution.
+**Notes/trade-offs:**
+- **Manual Apply Step:** `0006_enable_realtime.sql` should be executed in the Supabase SQL Editor against the shared database project to activate Postgres CDC broadcasting.
+- **Out of Scope Follow-up:** Real-time sync for the patient's appointments dashboard is not yet implemented (patient dashboard currently only has intake/browse entry points; Task 5 will add the dedicated patient appointments view).
+
 ### 2026-08-19 — Booking confirmation screen (Task 4.3)
 **Task:** 4.3
 **Owner:** Coding agent
