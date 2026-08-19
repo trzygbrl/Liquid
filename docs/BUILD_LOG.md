@@ -29,6 +29,18 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-19 — Dynamic slug collision resolved & 200 mock doctors seeded
+**Task:** Bugfix / Seed Execution
+**Owner:** Coding agent
+**What changed:** Resolved the Next.js Turbopack startup failure `You cannot use different slug names for the same dynamic path ('doctorId' !== 'id')` by removing the redundant `src/app/patient/doctors/[doctorId]` folder, keeping the full-featured `src/app/patient/doctors/[id]` booking route. Seeded all 202 doctors across 33 medical specialties, 425 clinics, 5,584 schedule slots, and 103 taxonomy pairs into the Supabase database using the GoTrue admin client. The active schema's nullable `sub_specialty` architecture (`0003_nullable_subspecialty.sql`) properly validates both general practitioners (null sub-specialty) and sub-specialists.
+**Files touched:**
+- `src/app/patient/doctors/[doctorId]` [DELETED] — removed duplicate dynamic route folder colliding with `[id]`.
+- `scripts/seed_200_doctors.mjs` [NEW] — script utilizing Supabase Admin client to seed the 202 doctors, clinics, slots, and taxonomy.
+- `docs/BUILD_LOG.md` [MODIFIED] — logged resolution and seed verification.
+**Notes/trade-offs:**
+- Total database counts now verified live: 211 Doctors (including 8 demo doctors + Jal Tuazon), 434 Clinics, 5,612 Schedule Slots, 103 Taxonomy pairs across 33 Specialties.
+- Cleared stale `.next` build cache to ensure clean compilation.
+
 ### 2026-08-19 — Seed apply instructions embedded in file headers
 **Task:** 1.4 (follow-up)
 **Owner:** Coding agent
