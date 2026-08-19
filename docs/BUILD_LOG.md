@@ -29,6 +29,28 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-19 — Demo doctor auth provisioning & GoTrue identity repair
+**Task:** 1.4 / Auth Repair
+**Owner:** Coding agent
+**What changed:** Provisioned all 8 demo doctor accounts through the official Supabase GoTrue Admin API (`scripts/seed_doctors.js`). Resolved the `500 Database error querying schema` root cause caused by raw SQL seed insertion having mismatched `provider_id` / missing identity relations. Verified that all 8 demo accounts authenticate successfully via `signInWithPassword` and receive valid JWT sessions.
+**Files touched:**
+- `scripts/seed_doctors.js` [NEW] — automated seed script using GoTrue Admin API.
+- `supabase/seeds/fix_auth_identities.sql` [NEW] — repair script.
+- `supabase/seeds/seed_ophthalmology.sql` [MODIFIED] — updated schema definitions for auth identities and users.
+**Notes/trade-offs:**
+- **Full Auth Verification:** 100% of all 8 doctor accounts now log in with 200 OK.
+
+### 2026-08-19 — Doctor profile detail & slot booking page
+**Task:** 4.2
+**Owner:** Coding agent
+**What changed:** Built `/patient/doctors/[id]` — the doctor profile detail and interactive appointment booking page. The dynamic route fetches full credentials, verified license status, practice locations, consultation fees, HMO accreditations, and open schedule slots. Available slots (`is_booked === 'available'` and `date >= today`) are grouped chronologically by calendar date with 12-hour AM/PM formatting. Patients can select a slot, input an optional consultation note, and submit an appointment request (`status: 'pending'`). Leveraged the PostgreSQL database trigger `trg_sync_slot_status` to automatically transition the slot to `'booked'` upon appointment creation with concurrency protection.
+**Files touched:**
+- `src/app/patient/doctors/[id]/page.tsx` [NEW] — dynamic doctor profile and slot booking route with Suspense wrapper, credentials display, interactive slot calendar grouped by date, booking confirmation modal, and success panel.
+**Notes/trade-offs:**
+- **Automated slot sync (Assumption 1).** The database trigger `trg_sync_slot_status` handles updating `schedule_slots.is_booked = 'booked'` as a single atomic transaction during `appointments` insertion.
+- **Double-booking concurrency protection (Assumption 2).** Database partial unique index `idx_appointments_active_slot` on `appointments(slot_id)` prevents race conditions; catch error code `23505` to surface a clear notification if two users pick the same slot simultaneously.
+- **End-to-end booking flow active:** Patients can now navigate from intake → AI match → doctor ranking → profile view → appointment booking.
+
 ### 2026-08-19 — Doctor list screen: HMO verification + multi-factor ranking
 **Task:** 4.1
 **Owner:** Coding agent

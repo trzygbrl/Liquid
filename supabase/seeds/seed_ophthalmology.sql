@@ -64,8 +64,8 @@ BEGIN
 
   -- =========================================================
   -- 1. auth.users
-  --    email_confirmed_at = now() skips the confirmation email
-  --    so these accounts can log in immediately.
+  --    email_confirmed_at = now() automatically sets confirmed_at
+  --    so these accounts can log in immediately with GoTrue.
   -- =========================================================
   INSERT INTO auth.users (
     id,
@@ -75,6 +75,7 @@ BEGIN
     email,
     encrypted_password,
     email_confirmed_at,
+    last_sign_in_at,
     raw_user_meta_data,
     raw_app_meta_data,
     is_sso_user,
@@ -82,38 +83,42 @@ BEGIN
     updated_at
   ) VALUES
     (d1, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
-     'doctor+reyes@civicaccess.demo',      demo_pw, now(),
+     'doctor+reyes@civicaccess.demo',      demo_pw, now(), now(),
      '{"role":"doctor"}'::jsonb, '{"provider":"email","providers":["email"]}'::jsonb, false, now(), now()),
     (d2, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
-     'doctor+dela-cruz@civicaccess.demo',  demo_pw, now(),
+     'doctor+dela-cruz@civicaccess.demo',  demo_pw, now(), now(),
      '{"role":"doctor"}'::jsonb, '{"provider":"email","providers":["email"]}'::jsonb, false, now(), now()),
     (d3, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
-     'doctor+santos@civicaccess.demo',     demo_pw, now(),
+     'doctor+santos@civicaccess.demo',     demo_pw, now(), now(),
      '{"role":"doctor"}'::jsonb, '{"provider":"email","providers":["email"]}'::jsonb, false, now(), now()),
     (d4, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
-     'doctor+garcia@civicaccess.demo',     demo_pw, now(),
+     'doctor+garcia@civicaccess.demo',     demo_pw, now(), now(),
      '{"role":"doctor"}'::jsonb, '{"provider":"email","providers":["email"]}'::jsonb, false, now(), now()),
     (d5, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
-     'doctor+mendoza@civicaccess.demo',    demo_pw, now(),
+     'doctor+mendoza@civicaccess.demo',    demo_pw, now(), now(),
      '{"role":"doctor"}'::jsonb, '{"provider":"email","providers":["email"]}'::jsonb, false, now(), now()),
     (d6, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
-     'doctor+lim@civicaccess.demo',        demo_pw, now(),
+     'doctor+lim@civicaccess.demo',        demo_pw, now(), now(),
      '{"role":"doctor"}'::jsonb, '{"provider":"email","providers":["email"]}'::jsonb, false, now(), now()),
     (d7, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
-     'doctor+tan@civicaccess.demo',        demo_pw, now(),
+     'doctor+tan@civicaccess.demo',        demo_pw, now(), now(),
      '{"role":"doctor"}'::jsonb, '{"provider":"email","providers":["email"]}'::jsonb, false, now(), now()),
     (d8, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
-     'doctor+aquino@civicaccess.demo',     demo_pw, now(),
+     'doctor+aquino@civicaccess.demo',     demo_pw, now(), now(),
      '{"role":"doctor"}'::jsonb, '{"provider":"email","providers":["email"]}'::jsonb, false, now(), now())
-  ON CONFLICT (id) DO NOTHING;
+  ON CONFLICT (id) DO UPDATE
+  SET encrypted_password = EXCLUDED.encrypted_password,
+      email_confirmed_at = EXCLUDED.email_confirmed_at,
+      raw_app_meta_data = EXCLUDED.raw_app_meta_data,
+      raw_user_meta_data = EXCLUDED.raw_user_meta_data,
+      updated_at = now();
 
   -- =========================================================
   -- 1b. auth.identities
-  --    Required in current Supabase versions — without this row,
-  --    logging in returns "Database error querying schema" because
-  --    the auth service can't resolve the user's email provider.
-  --    Each row links a user to their 'email' provider.
+  --    In Supabase GoTrue, id is UUID and provider_id is TEXT (user_id::text).
   -- =========================================================
+  DELETE FROM auth.identities WHERE user_id IN (d1, d2, d3, d4, d5, d6, d7, d8);
+
   INSERT INTO auth.identities (
     id,
     user_id,
@@ -124,31 +129,14 @@ BEGIN
     created_at,
     updated_at
   ) VALUES
-    (gen_random_uuid(), d1,
-     jsonb_build_object('sub', d1::text, 'email', 'doctor+reyes@civicaccess.demo'),
-     'email', 'doctor+reyes@civicaccess.demo', now(), now(), now()),
-    (gen_random_uuid(), d2,
-     jsonb_build_object('sub', d2::text, 'email', 'doctor+dela-cruz@civicaccess.demo'),
-     'email', 'doctor+dela-cruz@civicaccess.demo', now(), now(), now()),
-    (gen_random_uuid(), d3,
-     jsonb_build_object('sub', d3::text, 'email', 'doctor+santos@civicaccess.demo'),
-     'email', 'doctor+santos@civicaccess.demo', now(), now(), now()),
-    (gen_random_uuid(), d4,
-     jsonb_build_object('sub', d4::text, 'email', 'doctor+garcia@civicaccess.demo'),
-     'email', 'doctor+garcia@civicaccess.demo', now(), now(), now()),
-    (gen_random_uuid(), d5,
-     jsonb_build_object('sub', d5::text, 'email', 'doctor+mendoza@civicaccess.demo'),
-     'email', 'doctor+mendoza@civicaccess.demo', now(), now(), now()),
-    (gen_random_uuid(), d6,
-     jsonb_build_object('sub', d6::text, 'email', 'doctor+lim@civicaccess.demo'),
-     'email', 'doctor+lim@civicaccess.demo', now(), now(), now()),
-    (gen_random_uuid(), d7,
-     jsonb_build_object('sub', d7::text, 'email', 'doctor+tan@civicaccess.demo'),
-     'email', 'doctor+tan@civicaccess.demo', now(), now(), now()),
-    (gen_random_uuid(), d8,
-     jsonb_build_object('sub', d8::text, 'email', 'doctor+aquino@civicaccess.demo'),
-     'email', 'doctor+aquino@civicaccess.demo', now(), now(), now())
-  ON CONFLICT DO NOTHING;
+    (d1, d1, jsonb_build_object('sub', d1::text, 'email', 'doctor+reyes@civicaccess.demo', 'email_verified', true), 'email', d1::text, now(), now(), now()),
+    (d2, d2, jsonb_build_object('sub', d2::text, 'email', 'doctor+dela-cruz@civicaccess.demo', 'email_verified', true), 'email', d2::text, now(), now(), now()),
+    (d3, d3, jsonb_build_object('sub', d3::text, 'email', 'doctor+santos@civicaccess.demo', 'email_verified', true), 'email', d3::text, now(), now(), now()),
+    (d4, d4, jsonb_build_object('sub', d4::text, 'email', 'doctor+garcia@civicaccess.demo', 'email_verified', true), 'email', d4::text, now(), now(), now()),
+    (d5, d5, jsonb_build_object('sub', d5::text, 'email', 'doctor+mendoza@civicaccess.demo', 'email_verified', true), 'email', d5::text, now(), now(), now()),
+    (d6, d6, jsonb_build_object('sub', d6::text, 'email', 'doctor+lim@civicaccess.demo', 'email_verified', true), 'email', d6::text, now(), now(), now()),
+    (d7, d7, jsonb_build_object('sub', d7::text, 'email', 'doctor+tan@civicaccess.demo', 'email_verified', true), 'email', d7::text, now(), now(), now()),
+    (d8, d8, jsonb_build_object('sub', d8::text, 'email', 'doctor+aquino@civicaccess.demo', 'email_verified', true), 'email', d8::text, now(), now(), now());
 
   -- =========================================================
   -- 2. specialty_taxonomy
