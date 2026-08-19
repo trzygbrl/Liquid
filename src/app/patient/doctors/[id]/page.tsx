@@ -60,7 +60,19 @@ function formatDateHeader(dateStr: string): string {
   ];
   const dayName = days[dateObj.getDay()];
   const monthName = months[dateObj.getMonth()];
-  return `${dayName} — ${monthName} ${parseInt(day, 10)}, ${year}`;
+  return `${dayName}, ${monthName} ${parseInt(day, 10)}, ${year}`;
+}
+
+function formatReviewDate(iso: string): string {
+  try {
+    return new Date(iso).toLocaleDateString('en-PH', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  } catch {
+    return iso.split('T')[0];
+  }
 }
 
 function DoctorDetailPageContent() {
@@ -286,6 +298,24 @@ function DoctorDetailPageContent() {
     ratings.length > 0
       ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1)
       : null;
+
+  const starDistribution = useMemo(() => {
+    const counts: Record<number, number> = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+    if (!doctor?.reviews) return counts;
+    for (const r of doctor.reviews) {
+      if (r.rating >= 1 && r.rating <= 5) {
+        counts[r.rating]++;
+      }
+    }
+    return counts;
+  }, [doctor]);
+
+  const sortedReviews = useMemo(() => {
+    if (!doctor?.reviews) return [];
+    return [...doctor.reviews].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+  }, [doctor]);
 
   const datesWithSlots = Object.keys(groupedSlots);
   const primaryClinic = doctor.clinics[0] || null;
@@ -571,6 +601,128 @@ function DoctorDetailPageContent() {
                 >
                   Cancel
                 </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ─── Patient Reviews & Ratings Section ────────────────────────────── */}
+        <div className="mt-8 rounded-2xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl backdrop-blur sm:p-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800 pb-4 mb-6 gap-2">
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-bold text-white">Patient Reviews & Ratings</h2>
+                <span className="rounded-md bg-teal-500/15 px-2 py-0.5 text-[10px] font-semibold text-teal-300 border border-teal-500/20">
+                  ✓ Verified Consultations
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-slate-400">
+                Authentic feedback from patients who completed consultations with {doctor.name}.
+              </p>
+            </div>
+            {avgRating && (
+              <div className="text-right">
+                <span className="text-2xl font-black text-amber-400">★ {avgRating}</span>
+                <span className="text-xs text-slate-400 block">
+                  {doctor.reviews.length} {doctor.reviews.length === 1 ? 'review' : 'reviews'}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Rating Breakdown / Summary Card */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 rounded-xl border border-slate-800/80 bg-slate-800/30 p-5 mb-8">
+            {/* Score & Stars */}
+            <div className="flex flex-col items-center justify-center text-center border-b md:border-b-0 md:border-r border-slate-800/80 pb-4 md:pb-0 md:pr-4">
+              <span className="text-4xl font-extrabold text-white">
+                {avgRating ?? '—'}
+              </span>
+              <div className="flex items-center gap-1 my-1 text-amber-400 text-lg">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <span key={star}>
+                    {avgRating && star <= Math.round(Number(avgRating)) ? '★' : '☆'}
+                  </span>
+                ))}
+              </div>
+              <span className="text-xs text-slate-400">
+                {doctor.reviews.length > 0
+                  ? `Based on ${doctor.reviews.length} verified ${doctor.reviews.length === 1 ? 'review' : 'reviews'}`
+                  : 'No reviews yet'}
+              </span>
+              <span className="mt-2 text-[10px] text-teal-400 bg-teal-500/10 px-2 py-0.5 rounded border border-teal-500/20">
+                100% Verified Visits Only
+              </span>
+            </div>
+
+            {/* Distribution Bars */}
+            <div className="md:col-span-2 space-y-1.5 justify-center flex flex-col">
+              {[5, 4, 3, 2, 1].map((star) => {
+                const count = starDistribution[star] || 0;
+                const total = doctor.reviews.length || 1;
+                const percentage = doctor.reviews.length > 0 ? Math.round((count / total) * 100) : 0;
+                return (
+                  <div key={star} className="flex items-center gap-3 text-xs">
+                    <span className="w-12 text-slate-400 text-right">{star} ★</span>
+                    <div className="flex-1 h-2 rounded-full bg-slate-800 overflow-hidden">
+                      <div
+                        className="h-full bg-amber-400 rounded-full transition-all duration-300"
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
+                    <span className="w-16 text-[11px] text-slate-400 text-right">
+                      {count} ({percentage}%)
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Individual Reviews List */}
+          {sortedReviews.length === 0 ? (
+            <div className="rounded-xl border border-slate-800/80 bg-slate-800/20 p-8 text-center text-slate-400 text-xs">
+              <p className="text-sm font-medium text-slate-300">No patient reviews yet.</p>
+              <p className="mt-1 text-slate-500">
+                Reviews appear here once patients complete their consultations with this doctor.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                Recent Patient Feedback ({sortedReviews.length})
+              </h3>
+              <div className="grid grid-cols-1 gap-3">
+                {sortedReviews.map((rev) => (
+                  <div
+                    key={rev.id}
+                    className="rounded-xl border border-slate-800 bg-slate-800/40 p-4 transition hover:border-slate-700"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center text-amber-400 text-xs">
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <span key={s}>{s <= rev.rating ? '★' : '☆'}</span>
+                          ))}
+                        </div>
+                        <span className="rounded bg-teal-500/10 px-1.5 py-0.5 text-[10px] font-medium text-teal-300 border border-teal-500/20">
+                          ✓ Verified Patient
+                        </span>
+                      </div>
+                      <span className="text-[11px] text-slate-500">
+                        {formatReviewDate(rev.created_at)}
+                      </span>
+                    </div>
+                    {rev.comment ? (
+                      <p className="text-xs leading-relaxed text-slate-200">
+                        &ldquo;{rev.comment}&rdquo;
+                      </p>
+                    ) : (
+                      <p className="text-[11px] italic text-slate-500">
+                        Rated {rev.rating} out of 5 stars without written comments.
+                      </p>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           )}

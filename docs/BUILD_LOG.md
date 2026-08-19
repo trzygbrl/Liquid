@@ -29,6 +29,33 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-19 — Verified patient reviews & rating display (Task 5.1)
+**Task:** 5.1
+**Owner:** Coding agent
+**What changed:** Built the verified-visit-only patient review submission and doctor rating display system per PRD Section 8.6.
+- **Review Submission Route (`/patient/appointments/[id]/review`):**
+  - Gated route with `<RequireRole role="patient">` and Suspense boundary.
+  - Enforces the verified-visit eligibility rule: verifies `appointment.patient_id === session.user.id` and `appointment.status === 'completed'`. Uncompleted/pending/cancelled visits render a clear blocked notice explaining that reviews are only accessible after consultation completion.
+  - Interactive 5-star rating selector with hover preview and qualitative labels (1 - Poor to 5 - Excellent).
+  - Optional feedback textarea (up to 1,000 chars) with character counter.
+  - Duplicate check: detects if a review was already submitted for this appointment (and handles Postgres constraint `23505`), rendering a read-only submitted state rather than throwing an error.
+- **Doctor Profile Review Section (`/patient/doctors/[id]`):**
+  - Added a dedicated "Patient Reviews & Ratings" section with a 100% Verified Consultations trust badge.
+  - Displays overall average score (`★ 4.8 / 5.0`) and total review count.
+  - Computes and renders star distribution breakdown bars (percentage and count for 5★ down to 1★).
+  - Lists individual verified patient reviews sorted by newest first with star rating badges, formatted review dates, verified patient tags, and comments.
+  - Clean placeholder empty state for doctors without reviews.
+- **Patient Dashboard Integration (`/patient/dashboard`):**
+  - Added "My Consultations & Appointments" overview section. Completed visits without a review present a direct "★ Write a Review →" action button linking to `/patient/appointments/[id]/review`.
+**Files touched:**
+- `src/app/patient/appointments/[id]/review/page.tsx` [NEW] — review submission page with verified visit eligibility gate, interactive 5-star selector, and submitted review state.
+- `src/app/patient/doctors/[id]/page.tsx` [MODIFIED] — added Patient Reviews & Ratings section with average rating score, star distribution bars, and verified review list.
+- `src/app/patient/dashboard/page.tsx` [MODIFIED] — added consultations list with status pills and "★ Write a Review" button for completed appointments.
+- `docs/BUILD_LOG.md` [MODIFIED] — logged build entry.
+**Notes/trade-offs:**
+- **Database integrity:** Leveraged existing `public.reviews` schema with `unique (appointment_id)` constraint and RLS policy `reviews_insert_patient` (`auth.uid() = patient_id`) without requiring any schema migrations.
+- **Doctor Ranking:** `src/lib/doctorRanking.ts` automatically consumes the new reviews to calculate average ratings and rank doctors in search results.
+
 ### 2026-08-19 — Doctor dashboard real-time booking sync audit & fix (Task 4.4)
 **Task:** 4.4
 **Owner:** Coding agent
