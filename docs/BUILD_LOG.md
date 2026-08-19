@@ -29,9 +29,34 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-19 — AI symptom → specialty matching API route
+**Task:** 3.2
+**Owner:** Coding agent
+**What changed:** Built `POST /api/match` — the AI pipeline stages 1–3 in a single Gemini API call. The route accepts a patient's free-text symptom description (plus optional demographics and multi-turn conversation history), fetches the live specialty taxonomy from Supabase, builds a constrained system prompt, calls Gemini `gemini-2.0-flash`, and returns one of two response shapes: `{ type: 'match', specialty, sub_specialty, reason }` or `{ type: 'clarify', question }`. Also built `src/lib/matchApi.ts` as the typed client-side helper so Task 3.4 and any future UI component can call the route without knowing its internals.
+**Files touched:**
+- `src/app/api/match/route.ts` [NEW] — POST Route Handler: validates request body, creates a Supabase service-role client, fetches `specialty_taxonomy` + `specialties` rows to embed in the system prompt, calls Gemini, parses the response, returns structured JSON.
+- `src/lib/matchApi.ts` [NEW] — `callMatchApi()` fetch helper + exported types `MatchResult`, `ClarifyResult`, `MatchApiResult`, `MatchApiRequest`.
+**Notes/trade-offs:**
+- **New package installed: `@google/genai` v2.17.1.** Added to `package.json` + `node_modules`. SDK API verified against `node_modules/@google/genai/dist/genai.d.ts` before writing — `ai.models.generateContent({ model, contents, config: { systemInstruction, temperature } })` with `response.text` is the correct form for this version.
+- **Route is unauthenticated (Assumption 9 — known gap, must harden).** The client is already auth-gated by `RequireRole`, but the route itself has no server-side session check. Adding one requires `@supabase/ssr` cookie handling that is not yet wired up. Flag for hardening before public demo — anyone with the URL can call this route. Noted in two places: this entry and the code comment at the top of `route.ts`.
+- **Taxonomy fetched at request time from Supabase (Assumption 3).** Service-role key bypasses RLS for this read. Adding a new specialty/sub-specialty to the DB propagates to the AI prompt automatically without a code redeploy. Trade-off: one extra DB round-trip per call (~20–50ms). Negligible at hackathon demo scale.
+- **Multi-turn clarification built in (Assumption 7).** Pass `conversationHistory` on follow-up calls. Turn cap at `history.length >= 4` (2 Q&A pairs) — the route injects a "force match" system note so the model can't keep asking questions forever. Frontend multi-turn UX (showing the clarifying question and sending the answer) is Task 3.4's responsibility.
+- **Malformed AI response is a graceful fallback, not an error (Assumption 8).** `parseAIResponse()` strips markdown fences then tries `JSON.parse`. If that still fails, the route returns `{ type: 'clarify', question: "We couldn't quite understand..." }` as a 200 (not a 500). Raw AI text is logged server-side for debugging.
+- **Temperature set to 0.1.** Low temperature produces more deterministic JSON output. Higher values risk the model adding prose around the JSON, breaking the parser.
+- **`onComplete` in `IntakeFlow` is still unwired — Task 3.4 is responsible.** The pattern is documented in `src/lib/matchApi.ts` comments: render `<IntakeFlow onComplete={async (data) => { const result = await callMatchApi({...}); ... }} />`.
+- **`conversationHistory` multi-turn UX also belongs to Task 3.4.** The API route handles multi-turn state; the UI for showing a clarifying question and collecting the patient's answer is not built yet.
+**ENV VARS — teammates must add before testing:**
+```
+GEMINI_API_KEY=<from Google AI Studio>
+SUPABASE_SERVICE_ROLE_KEY=<from Supabase Dashboard → Project Settings → API>
+```
+Both are server-only (no `NEXT_PUBLIC_` prefix). `NEXT_PUBLIC_SUPABASE_URL` is already present.
+
+
 ### 2026-08-19 — Patient intake flow (3-step form)
 **Task:** 3.1
 **Owner:** Coding agent
+
 **What changed:** Built the patient symptom-intake flow at `/patient/intake`. A 3-step form collects patient demographics (name, age, sex, location), HMO selection, and a free-text symptom description, then upserts a `patients` row and hands off the symptom text to a caller-provided `onComplete` hook. The patient dashboard stub card was replaced with a real "Check my symptoms" entry card linking to `/patient/intake`.
 **Files touched:**
 - `src/components/IntakeFlow.tsx` [NEW] — self-contained `'use client'` component with step state, per-step inline validation, prefill from existing `patients` row on mount, `patients` upsert on submit, optional `onComplete(data)` prop, and a fallback "coming soon" confirmation panel when no prop is passed.
