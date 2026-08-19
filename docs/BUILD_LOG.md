@@ -29,6 +29,51 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-19 — Seed apply instructions embedded in file headers
+**Task:** 1.4 (follow-up)
+**Owner:** Coding agent
+**What changed:** The regenerated `seeds.sql` (~1.5MB — 202 doctors, 425 clinics, 5,584 slots as one embedded JSON literal) is too large to paste into the Supabase Dashboard's SQL Editor, which rejects it with "Query is too large to be run via the SQL Editor." Added a small Node script that runs a `.sql` file directly against the database over a real Postgres connection instead, and embedded the exact apply steps directly in `seeds.sql`'s and `gen_seed.mjs`'s header comments so the workflow survives future regenerations instead of only living in chat history.
+**Files touched:**
+- `scripts/run_seed.mjs` [NEW] — reads `DATABASE_URL` from the environment and executes a given `.sql` file (defaults to `seeds.sql`) via the `postgres` package.
+- `package.json` / `package-lock.json` [MODIFIED] — added `postgres` as a dev dependency.
+- `supabase/migrations/seeds.sql`, `scripts/gen_seed.mjs` [MODIFIED] — header comment block now documents which migrations must run first (and which one to skip — see the branch-integration entry below), how to get the direct connection string, and the exact `run_seed.mjs` commands.
+**Notes/trade-offs:**
+- **Direct connection (port 5432), not the pgbouncer pooler** — the seed runs as one large transaction inside a single `DO $$` block, and pooled connections aren't guaranteed to hold a transaction open reliably across a statement this size.
+- **`DATABASE_URL` stays in the user's shell only.** It's set per-session in PowerShell and never written to a file, committed, or passed through me — the password never leaves the user's terminal.
+- **Re-running `seeds.sql` is safe.** Every insert is `ON CONFLICT DO NOTHING` with deterministic IDs, so there's no harm in re-running it if a teammate is unsure whether it already applied.
+
+### 2026-08-19 — Branch integration: merged main into feat/doctor-mock-database
+**Task:** Integration (no roadmap number — reconciling parallel work, not new scope)
+**Owner:** Coding agent
+**What changed:** Pulled 15 commits of parallel work from `main` (AI symptom-intake flow, safety gate, doctor ranking/matching, appointments dashboard, schedule manager, doctor profile setup) into a branch that had independently built — but not yet committed — a large deterministic mock-data seed generator (202 doctors / 425 clinics / 5,584 schedule slots), a nullable-`sub_specialty` migration, and a doctor detail/booking page. Two real conflicts came up and were resolved per team direction: (1) `patient/dashboard/page.tsx` had been rebuilt two different ways in parallel — kept main's AI-intake entry card and added a second "Browse all doctors" entry card instead of dropping either; (2) two independent migrations solved the same nullable-`sub_specialty` problem under colliding numbers — renumbered this branch's copy to remove the filename collision, but left the actual design conflict unresolved for the team (see trade-offs below).
+**Files touched:**
+- `src/app/patient/dashboard/page.tsx` [MODIFIED] — kept main's "Check my symptoms" entry card; added a second card linking to `/patient/doctors` (browse-all mode).
+- `src/app/patient/doctors/page.tsx` [MODIFIED] — added a "browse all doctors" mode (active when no `specialty` query param is present): free-text search + specialty dropdown, reusing this branch's original directory UI. The existing specialty-driven ranked-match mode (reached from the intake flow via `?specialty=...`) is unchanged.
+- `src/app/patient/doctors/[doctorId]/page.tsx` [NEW, from this branch] — doctor detail/booking page. No wiring changes needed: main's "View Profile & Book →" button already links to `/patient/doctors/${doctor.id}`, in both modes.
+- `supabase/migrations/0002_slot_appointment_triggers.sql` [RENAMED from `002_slot_appointment_triggers.sql`] — numbering cleanup only, content unchanged (confirmed via diff).
+- `supabase/migrations/0004_json_build_object.sql`, `supabase/migrations/0005_nullable_sub_specialty.sql` [RENAMED from this branch's `0003_...` / `0004_...`] — renumbered to avoid colliding with main's `0003_nullable_subspecialty.sql`. In-file comment references updated in `seeds.sql` and `scripts/gen_seed.mjs`.
+- `scripts/run_seed.mjs` [NEW, from this branch] — runs a `.sql` file directly against the database over a Postgres connection string, for the ~1.5MB `seeds.sql` that exceeds the Supabase SQL Editor's paste size limit.
+- `package.json` / `package-lock.json` [MODIFIED] — merged both branches' dependency additions (`@google/genai` from main, `postgres` devDependency from this branch); lockfile regenerated with `npm install` rather than hand-merged.
+- `.gitignore` [MODIFIED] — added `/supabase/.temp/` (Supabase CLI local cache).
+- `openapi.json` [DELETED, was untracked] — accidental debug output (a bare API error message), no real content.
+**Notes/trade-offs:**
+- **Unresolved for the team: two competing `sub_specialty`-nullability designs.** This branch's live Supabase project (`pkafruzeiakqmareywnn.supabase.co`) already has `0005_nullable_sub_specialty.sql`'s trigger-based design applied and seeded (202 doctors, verified live). Main's `0003_nullable_subspecialty.sql` (a `specialties` lookup table + second FK, per its own comment "applied by Zin manually") was checked directly against that same project via the anon-key REST API — `public.specialties` does not exist there, so it was never actually applied to this shared database, only committed to git. **Do not run `0003` against the live project** until the team picks one design; running both would leave inconsistent/duplicate schema logic.
+- **Dashboard kept as two entry points, not merged into one.** Main's intake-first flow and this branch's direct-browse flow are genuinely different UX paths (patient has symptoms to describe vs. patient already knows who/what they're looking for) — decided with the user rather than silently picking one.
+- **Browse-all mode reuses `rankDoctors()`** for slot/rating decoration even without a meaningful specialty target — the function doesn't filter or require one internally, it only decorates and sorts, so this was a safe reuse rather than forking the ranking logic.
+
+### 2026-08-19 — Deterministic mock doctor/clinic/schedule seed generator (full specialty roster)
+**Task:** 1.4 (rework — expands the 2026-08-18 Ophthalmology-only re-seed entry further down to the full specialty roster; that entry's `seed_taxonomy_only.sql` script is still valid for a from-scratch taxonomy-only re-seed)
+**Owner:** Coding agent
+**What changed:** Built a deterministic mock-data generator producing 202 doctors across 33 specialties, 425 clinics, and 5,584 schedule slots — enough breadth to actually exercise the ranking (8.4) and HMO-mismatch (8.3) logic across many specialties instead of just one. Consultation fees and credential depth scale with each specialty's real-world complexity: niche fields (e.g. Neurosurgery, Interventional Cardiology) carry an added fellowship credential and a higher fee band than a standard specialty like General Medicine. Every doctor gets 3-4 distinct available days, each a contiguous 30-minute-interval morning or afternoon block, and every clinic a doctor is affiliated with is guaranteed at least one such block.
+**Files touched:**
+- `scripts/gen_seed.mjs` [NEW] — mulberry32-seeded deterministic PRNG (seed `20260818`) driving name/specialty/credential/fee/schedule generation, plus a deterministic UUIDv4 generator so re-running the script with no source changes reproduces byte-identical output; emits `supabase/migrations/seeds.sql`.
+- `supabase/migrations/seeds.sql` [NEW/GENERATED] — single PL/pgSQL `DO $$` block seeding `auth.users`, `specialty_taxonomy`, `doctors`, `clinics`, and `schedule_slots` from an embedded JSON literal, all `ON CONFLICT DO NOTHING`.
+**Notes/trade-offs:**
+- **Deterministic generation, not random.** Re-running the generator with no code changes reproduces identical IDs — regenerating after a small roster tweak doesn't churn unrelated doctors' IDs or scheduling, keeping re-seeds true no-ops (`ON CONFLICT DO NOTHING`).
+- **Fee/credential complexity is hand-curated, not derived.** A `SPECIALTY_META` table (fee band + primary board credential + niche flag per specialty) drives generation, rather than an algorithmic complexity score — a deliberate step so the demo data reads as clinically plausible rather than arbitrarily assigned.
+- **Per-clinic schedule coverage is guaranteed, not left to chance.** Any "extra" available days beyond a doctor's clinic count are explicitly assigned to a random already-covered clinic, so every clinic a doctor is affiliated with always has at least one bookable block.
+- **Requires migration `0005_nullable_sub_specialty.sql`** (trigger-based nullable `sub_specialty` design) — see the "Branch integration" entry above for the still-unresolved conflict with main's alternate `0003_nullable_subspecialty.sql` design.
+
 ### 2026-08-19 — Doctor list screen: HMO verification + multi-factor ranking
 **Task:** 4.1
 **Owner:** Coding agent

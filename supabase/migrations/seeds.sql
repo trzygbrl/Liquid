@@ -8,7 +8,40 @@
 -- hand-editing this file.
 --
 -- Requires migration 0005_nullable_sub_specialty.sql (nullable
--- doctors.sub_specialty / specialty_taxonomy.sub_specialty).
+-- doctors.sub_specialty / specialty_taxonomy.sub_specialty). Do NOT run
+-- 0003_nullable_subspecialty.sql against the same project -- it's a
+-- competing, unapplied design for the same problem (see BUILD_LOG.md).
+--
+-- HOW TO APPLY THIS FILE
+-- --------------------------
+-- This file is too large (~1.5MB) to paste into the Supabase Dashboard's
+-- SQL Editor -- it will reject it with "Query is too large to be run via
+-- the SQL Editor." Run it directly against the database instead:
+--
+--   1. Apply prerequisite migrations first, in order, the same way (below):
+--        0001_initial_schema.sql
+--        0002_slot_appointment_triggers.sql
+--        0004_json_build_object.sql
+--        0005_nullable_sub_specialty.sql
+--      (skip 0003_nullable_subspecialty.sql -- see note above)
+--
+--   2. Get your project's direct connection string:
+--        Supabase Dashboard -> Project Settings -> Database ->
+--        Connection string -> URI -- use "Direct connection" (port 5432),
+--        not the pgbouncer pooler, since this runs as one large transaction.
+--
+--   3. In PowerShell, set it for the current session only (don't commit
+--      or paste the password anywhere):
+--        $env:DATABASE_URL = "postgresql://postgres:[PASSWORD]@db.<project-ref>.supabase.co:5432/postgres"
+--
+--   4. Run this file (and, the same way, any migration above it that
+--      hasn't been applied yet):
+--        node scripts/run_seed.mjs supabase/migrations/seeds.sql
+--        node scripts/run_seed.mjs supabase/migrations/0005_nullable_sub_specialty.sql
+--
+-- Re-running this file is safe -- every INSERT uses ON CONFLICT DO NOTHING
+-- and IDs are deterministic, so it's a true no-op against already-seeded
+-- data.
 -- =========================================================
 
 DO $$
