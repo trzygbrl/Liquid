@@ -31,6 +31,7 @@ function IntakePageContent() {
         age: data.age,
         sex: data.sex,
         location: data.location,
+        isForFamilyMember: data.isForFamilyMember,
       });
       setMatchResult(res);
       setState('result');
@@ -59,6 +60,7 @@ function IntakePageContent() {
         age: patientData.age,
         sex: patientData.sex,
         location: patientData.location,
+        isForFamilyMember: patientData.isForFamilyMember,
         conversationHistory: updatedHistory,
       });
       setMatchResult(res);

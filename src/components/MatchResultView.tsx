@@ -109,8 +109,14 @@ export default function MatchResultView({
 
           {/* Patient context recap */}
           <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-slate-800 pt-5 text-xs text-slate-400">
-            <span className="rounded-md bg-slate-800 px-2.5 py-1 text-slate-300">
-              Patient: <strong className="text-white">{patientData.name}</strong>
+            <span className="inline-flex items-center gap-1.5 rounded-md bg-slate-800 px-2.5 py-1 text-slate-300">
+              <span>Patient:</span>
+              <strong className="text-white">{patientData.name}</strong>
+              {patientData.isForFamilyMember && (
+                <span className="rounded bg-teal-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-teal-300 border border-teal-500/20">
+                  Family Member
+                </span>
+              )}
             </span>
             <span className="rounded-md bg-slate-800 px-2.5 py-1 text-slate-300">
               Age {patientData.age} • {patientData.sex}

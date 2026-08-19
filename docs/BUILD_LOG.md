@@ -29,6 +29,25 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-19 — "Booking for a family member" toggle in intake flow (Task 5.2)
+**Task:** 5.2
+**Owner:** Coding agent
+**What changed:** Implemented the "Booking for a family member" intake toggle in Step 1 of `IntakeFlow.tsx` per PRD Section 8.7 & 10.
+- **"Who is this for?" Toggle:** Added segmented large-tap selector with "Myself" (default) and "A family member" options.
+- **Dynamic Field & Label Adaptation:**
+  - In "Myself" mode: pre-fills the logged-in user's profile from `public.patients` with personalized labels ("Your full name", "Your age", "Your sex", "Your HMO").
+  - In "A family member" mode: switches to dedicated family member input fields with helper banner and contextual labels ("Family member's full name", "Family member's age", "Family member's sex", "Family member's HMO coverage").
+  - Switching back and forth restores the user's personal profile without data loss.
+- **Database Safety:** When booking for a family member, the patient's persistent profile row in `public.patients` is protected and NOT overwritten, while the complete demographic payload is passed into the session and matching pipeline.
+- **Clinical AI Triage Integration:** Updated `IntakeCompleteData`, `MatchApiRequest`, `callMatchApi`, `MatchResultView`, and `/api/match` to pass the consulted family member's actual age, sex, and name directly into the Gemini prompt (enabling accurate age-specific pediatric vs adult vs geriatric specialist recommendations).
+**Files touched:**
+- `src/components/IntakeFlow.tsx` [MODIFIED] — added consultation target toggle, dynamic field labeling, independent state caching, and family member validation messages.
+- `src/lib/matchApi.ts` [MODIFIED] — added `isForFamilyMember` to `MatchApiRequest`.
+- `src/app/patient/intake/page.tsx` [MODIFIED] — forwarded `isForFamilyMember` in match and clarify submissions.
+- `src/app/api/match/route.ts` [MODIFIED] — included `isForFamilyMember` in Gemini demographic context.
+- `src/components/MatchResultView.tsx` [MODIFIED] — rendered `Family Member` tag in patient recap bar.
+- `docs/BUILD_LOG.md` [MODIFIED] — logged build entry.
+
 ### 2026-08-19 — Verified patient reviews & rating display (Task 5.1)
 **Task:** 5.1
 **Owner:** Coding agent

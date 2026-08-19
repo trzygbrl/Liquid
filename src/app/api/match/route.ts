@@ -32,6 +32,7 @@ interface RequestBody {
   age?: number;
   sex?: string;
   location?: string;
+  isForFamilyMember?: boolean;
   conversationHistory?: Array<{ role: 'user' | 'model'; text: string }>;
 }
 
@@ -218,7 +219,7 @@ ${noSubLines}`;
   // ── 6. Build the user turn content ───────────────────────────────────────
   // Demographic preamble for the model's context
   const demoParts: string[] = [];
-  if (name) demoParts.push(`Patient: ${name}`);
+  if (name) demoParts.push(`Patient: ${name}${body.isForFamilyMember ? ' (Family Member)' : ''}`);
   if (age) demoParts.push(`Age: ${age}`);
   if (sex) demoParts.push(`Sex: ${sex}`);
   if (location) demoParts.push(`Location: ${location}`);

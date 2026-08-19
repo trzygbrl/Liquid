@@ -53,6 +53,8 @@ export interface MatchApiRequest {
   sex?: string;
   /** Optional — city/province, e.g. "Angeles City, Pampanga" */
   location?: string;
+  /** Optional — true if consultation is being booked on behalf of a family member */
+  isForFamilyMember?: boolean;
   /**
    * Optional — multi-turn history for clarification follow-ups.
    * After a { type: 'clarify' } response, append the model's question as
