@@ -29,6 +29,43 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-20 — Multi-clinic doctor profiles, in-app profile editing, and required decline/cancel reasons
+**Task:** Doctor Portal follow-ups (no single roadmap number — post-5.4 polish pass)
+**Owner:** Coding agent
+**What changed:** Doctors are no longer locked into what they entered at onboarding, and both sides of an appointment cancellation now have to explain themselves.
+- **Doctor profile editing (`ProfileEditor.tsx`):** New collapsible "Edit Profile" panel on the doctor dashboard letting doctors update name, credentials, specialty/sub-specialty, and HMO accreditations after onboarding, via `update` against the existing `doctors` row (mirrors `profile-setup/page.tsx`'s field set and taxonomy pattern).
+- **Multiple clinic locations:**
+  - `profile-setup/page.tsx` now collects a repeatable list of clinics at onboarding instead of exactly one.
+  - New `ClinicManager.tsx` on the doctor dashboard lets doctors add/edit/delete clinic locations afterward, with a realtime subscription on `clinics` filtered by `doctor_id`.
+  - `doctorRanking.ts`: `primaryClinic` is now derived as whichever clinic hosts the soonest slot (falling back to the first clinic when there's no posted availability) instead of always `clinics[0]`, and a new `otherClinics` field lists the doctor's remaining locations. `/patient/doctors` renders these behind a "+N more locations" expandable per doctor card.
+- **Required reason for declining/cancelling appointments:**
+  - New migration `0007_appointment_status_reason.sql` adds `appointments.status_reason` and a check constraint rejecting any transition into `'declined'` or `'cancelled'` without one (with a backfill for pre-existing rows).
+  - `AppointmentsDashboard.tsx` (doctor side): Decline now opens an inline reason textarea (min length enforced client-side) before confirming, instead of firing immediately.
+  - Patient dashboard: added a matching Cancel action (for `pending`/`confirmed` appointments) with its own inline reason panel, and now surfaces `status_reason` on declined/cancelled cards so the patient can see why.
+  - Declined/cancelled appointments older than 14 days (`DROPPED_APPT_RETENTION_DAYS` in the new `src/lib/dateUtils.ts`) drop off the patient dashboard's active list — the row itself is untouched, this is a display filter only.
+- **Edit-in-place symptom editing:** "← Edit symptoms" on the AI match result screen now returns to Step 3 of the intake form with prior answers intact (`IntakeFlow`'s new `initialData`/`initialStep` props), instead of a full reset to a blank Step 1. Full restart is still available separately.
+- **HMO "show all" toggle removed from `/patient/doctors`:** Simplified the ranking call back down to always respecting HMO coverage in tier 2 sorting; the checkbox and its associated state were removed as unused complexity.
+- **Housekeeping:** Added `.claude/settings.json` permitting `npx tsc` and `git checkout` without prompting; added the "no AI co-authorship in commits" rule to `CLAUDE.md`.
+**Files touched:**
+- `src/components/ProfileEditor.tsx` [NEW] — doctor profile editing panel.
+- `src/components/ClinicManager.tsx` [NEW] — add/edit/delete clinic locations with realtime sync.
+- `src/lib/dateUtils.ts` [NEW] — `daysSince()` helper.
+- `supabase/migrations/0007_appointment_status_reason.sql` [NEW] — `status_reason` column + check constraint, with backfill.
+- `src/app/doctor/dashboard/page.tsx` [MODIFIED] — mounted `ProfileEditor` and `ClinicManager`.
+- `src/app/doctor/profile-setup/page.tsx` [MODIFIED] — repeatable clinic rows at onboarding.
+- `src/lib/doctorRanking.ts` [MODIFIED] — `primaryClinic`/`otherClinics` derivation; removed `showAllHmo` parameter.
+- `src/app/patient/doctors/page.tsx` [MODIFIED] — expandable "other locations" per card; removed HMO show-all toggle.
+- `src/app/patient/doctors/[id]/page.tsx` [MODIFIED] — minor header layout fix.
+- `src/components/AppointmentsDashboard.tsx` [MODIFIED] — inline required-reason panel for declines.
+- `src/app/patient/dashboard/page.tsx` [MODIFIED] — cancel action with required reason, status_reason display, 14-day retention filter for dropped appointments.
+- `src/app/patient/intake/page.tsx`, `src/components/IntakeFlow.tsx`, `src/components/MatchResultView.tsx` [MODIFIED] — edit-in-place return to Step 3 (`onEditSymptoms`) distinct from full restart (`onRestart`).
+- `.claude/settings.json` [NEW] — permission allowlist for `npx tsc` and `git checkout`.
+- `CLAUDE.md` [MODIFIED] — added no-AI-co-authorship commit rule.
+**Notes/trade-offs:**
+- **Retention window is a display filter, not a data purge (Assumption).** There's no background job in this app to actually delete old declined/cancelled rows — they stay in the DB for audit history; `daysSince()` just hides them from the patient's active list after 14 days.
+- **Decline/cancel reason enforced at the DB layer, not just the UI.** The check constraint on `appointments` means any future code path that tries to decline/cancel without a reason fails at the database, not just in this component.
+- **Commit message on the underlying commit was accidentally left as "null"** — this log entry reconstructs the change set from the diff since it wasn't otherwise documented.
+
 ### 2026-08-19 — Visual & design consistency pass (Task 5.4)
 **Task:** 5.4
 **Owner:** Coding agent
