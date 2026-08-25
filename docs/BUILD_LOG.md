@@ -29,6 +29,28 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-25: Symptom plausibility gate & gentle nonsense/off-topic clarification
+**Task:** 1.2 (`docs/kayapp-additional-features.md` Phase 1 — Matching prompt hardening)
+**Owner:** Coding agent
+**What changed:** Added a pre-matching plausibility check so the AI symptom-to-specialist matcher never forces a medical specialty recommendation on gibberish, off-topic prompts, or contextless single words, while still accepting vague-but-genuine health complaints.
+- **Symptom Plausibility Engine (`src/lib/symptomValidation.ts`):** Created a dedicated, deterministic rule engine distinct from the emergency safety gate (`src/lib/safetyGate.ts`). It filters out keyboard mashing (`asdfghjkl`, consonant clusters without vowels, repeated characters), short non-symptom words (`idk`, `hi`, `test`, `wala`, `ewan`, etc.), and obvious off-topic queries (travel booking, weather, food orders, coding/math, trivia). Recognizes vague-but-genuine symptoms (`"I don't feel good"`, `"masama ang pakiramdam ko"`, `"body hurts"`) and valid single-word symptoms (`"fever"`, `"lagnat"`), allowing them to proceed. Features bilingual English/Tagalog language detection and returns warm, non-judgmental guidance with 1–2 practical symptom examples.
+- **Matching Route & Model Prompt (`src/app/api/match/route.ts` & `src/lib/matchApi.ts`):** Added Stage 2.6 (Symptom Plausibility Gate) inside `POST /api/match` after the emergency safety gate to short-circuit nonsense/off-topic queries before making database or Gemini LLM calls. Hardened the Gemini system instruction with explicit rules to never force a specialty on off-topic requests and return gentle clarification prompts instead. Extended `ClarifyResult` to include optional `examples` and `isGentlePrompt` fields.
+- **Clarification Result View (`src/components/MatchResultView.tsx`):** Redesigned the clarification view with empathetic nurse guidance styling. Displays interactive example cards/chips with good symptom descriptions (e.g. clicking an example pre-fills the answer textarea) alongside "Edit original text", "Start over", and "Continue with this detail" actions.
+- **Automated Tests (`src/lib/symptomValidation.test.ts`):** Added 47 automated test cases covering gibberish, off-topic queries, very short input, vague-but-genuine symptoms, specific symptoms, and language detection. Added `npm test` and `npm run test:validation` scripts to `package.json`.
+**Files touched:**
+- `src/lib/symptomValidation.ts` [NEW] — symptom plausibility heuristic rule engine, language detection, and warm clarification prompts.
+- `src/lib/symptomValidation.test.ts` [NEW] — 47 automated test cases for symptom plausibility.
+- `src/lib/matchApi.ts` [MODIFIED] — extended `ClarifyResult` with `isGentlePrompt` and `examples`.
+- `src/app/api/match/route.ts` [MODIFIED] — added Step 2.6 plausibility check, updated Gemini system instructions, and enhanced response parser.
+- `src/components/MatchResultView.tsx` [MODIFIED] — enhanced clarify state with warm nurse guidance and interactive symptom example chips.
+- `package.json` [MODIFIED] — added `test` and `test:validation` scripts.
+- `tsconfig.json` [MODIFIED] — enabled `allowImportingTsExtensions: true` for clean Node test runner execution.
+- `docs/kayapp-additional-features.md` [MODIFIED] — marked Feature 1.2 as shipped `[x]`.
+**Notes/trade-offs:**
+- **Zero latency & zero LLM cost on obvious nonsense:** Catching keyboard mashing and single-word filler locally before the Gemini API call saves latency, token usage, and prevents hallucinations.
+- **Vague-but-genuine symptoms are strictly preserved:** Symptoms like "I don't feel good" or "masama pakiramdam" are deliberately NOT rejected; they pass through to either prompt for specific clinical details or map to General Medicine / Pediatrics.
+- **Plausibility check is separated from emergency safety:** Plausibility validation lives in `src/lib/symptomValidation.ts`, while acute clinical emergency detection (chest pain + dyspnea, stroke, loss of consciousness, uncontrolled bleeding) remains in `src/lib/safetyGate.ts` to keep concerns clean and isolated.
+
 ### 2026-08-25: HITL doctor verification, self-service taxonomy, and 2-step booking flow
 **Task:** 7.1–7.4 (personal Phase 7 pivot roadmap — see `.claude/roadmap.md`; not merged into the shared `docs/liquid-roadmap.md`, per team decision to keep it as an assigned personal task list rather than the whole team's roadmap)
 **Owner:** Coding agent

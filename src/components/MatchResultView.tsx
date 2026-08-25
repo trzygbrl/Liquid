@@ -226,9 +226,10 @@ export default function MatchResultView({
     );
   }
 
-  // STATE 3: Clarifying Question
+  // STATE 3: Clarifying Question / Gentle Guidance
   if (result.type === 'clarify') {
     const clarify = result as ClarifyResult;
+    const isGentlePrompt = clarify.isGentlePrompt || (clarify.examples && clarify.examples.length > 0);
 
     async function handleClarify(e: React.FormEvent) {
       e.preventDefault();
@@ -237,59 +238,108 @@ export default function MatchResultView({
       setClarifyAnswer('');
     }
 
+    function handleExampleClick(exampleText: string) {
+      // Strip leading "e.g. " or "Halimbawa: " if present, and strip wrapping quotes
+      const cleaned = exampleText
+        .replace(/^(e\.g\.\s*['"]?|halimbawa:\s*['"]?)/i, '')
+        .replace(/['"]$/i, '')
+        .trim();
+      setClarifyAnswer(cleaned);
+    }
+
     return (
-      <form onSubmit={handleClarify} className="flex flex-col gap-6">
-        <div className="rounded-2xl border border-blue-100 bg-white p-7 sm:p-8 shadow-sm">
+      <form onSubmit={handleClarify} className="animate-fade-slide-up flex flex-col gap-6">
+        <div className="rounded-2xl border border-blue-200/80 bg-white p-7 sm:p-8 shadow-sm">
           <div className="flex items-center gap-3.5">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 shadow-sm">
               <IconChat className="h-6 w-6" />
             </div>
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-100">
-                Follow-up Question
+                {isGentlePrompt ? 'Symptom Clarification' : 'Follow-up Question'}
               </span>
               <h2 className="text-lg font-bold text-slate-900 mt-0.5">
-                We need a bit more detail to match accurately
+                {isGentlePrompt
+                  ? "Help us understand what you're experiencing"
+                  : 'We need a bit more detail to match accurately'}
               </h2>
             </div>
           </div>
 
-          <div className="mt-5 rounded-2xl border border-blue-100 bg-blue-50/70 p-5">
-            <p className="text-base font-bold text-blue-900 leading-relaxed">
+          <div className="mt-5 rounded-2xl border border-blue-200/70 bg-blue-50/80 p-5">
+            <p className="text-xs font-bold uppercase tracking-wider text-blue-900 mb-1">
+              Nurse Guidance
+            </p>
+            <p className="text-base font-semibold text-slate-800 leading-relaxed">
               &ldquo;{clarify.question}&rdquo;
             </p>
           </div>
 
+          {/* Example guidance chips for user convenience */}
+          {clarify.examples && clarify.examples.length > 0 && (
+            <div className="mt-5 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-4 sm:p-5">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-600 mb-2.5 flex items-center gap-1.5">
+                <span>💡</span>
+                <span>Examples of good symptom descriptions (click to use):</span>
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2.5">
+                {clarify.examples.map((ex, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleExampleClick(ex)}
+                    className="fluid-hover text-left flex-1 rounded-xl border border-slate-200 bg-white p-3 text-xs font-medium text-slate-700 hover:border-blue-300 hover:bg-blue-50/60 hover:text-blue-900 transition shadow-2xs"
+                  >
+                    <span className="font-semibold text-blue-600 block text-[11px] mb-0.5">
+                      Example {idx + 1}
+                    </span>
+                    &ldquo;{ex}&rdquo;
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="mt-5 flex flex-col gap-2">
-            <label htmlFor="clarify-answer" className="text-sm font-semibold text-slate-700">
-              Your answer (English or Tagalog)
+            <label htmlFor="clarify-answer" className="text-xs font-bold uppercase tracking-wider text-slate-700">
+              Describe what is being felt (English or Tagalog)
             </label>
             <textarea
               id="clarify-answer"
               rows={4}
               value={clarifyAnswer}
               onChange={(e) => setClarifyAnswer(e.target.value)}
-              placeholder="e.g. Malabo po ang paningin ko lalo na sa malayo, at medyo nanunuyo ang mata ko..."
+              placeholder="e.g. Masakit po ang likod ko at medyo may lagnat mula pa kahapon..."
               className="rounded-2xl border border-slate-200 bg-slate-50/60 px-5 py-4 text-base text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20 resize-none leading-relaxed"
             />
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-3 pt-2">
-          <button
-            type="button"
-            onClick={onRestart}
-            disabled={isLoadingClarification}
-            className="text-sm font-bold text-slate-500 hover:text-slate-900 transition disabled:opacity-50"
-          >
-            Start over
-          </button>
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={onEditSymptoms}
+              disabled={isLoadingClarification}
+              className="fluid-hover w-full sm:w-auto rounded-2xl border border-slate-200 bg-white px-5 py-3 text-xs font-bold text-slate-600 hover:text-slate-900 transition disabled:opacity-50"
+            >
+              Edit original text
+            </button>
+            <button
+              type="button"
+              onClick={onRestart}
+              disabled={isLoadingClarification}
+              className="text-xs font-bold text-slate-400 hover:text-slate-700 transition disabled:opacity-50 px-2 py-3"
+            >
+              Start over
+            </button>
+          </div>
 
           <button
             id="clarify-submit-btn"
             type="submit"
             disabled={!clarifyAnswer.trim() || isLoadingClarification}
-            className="rounded-2xl bg-blue-600 px-8 py-4 text-base font-semibold text-white shadow-sm transition hover:bg-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+            className="fluid-hover w-full sm:w-auto rounded-2xl bg-blue-600 px-8 py-4 min-h-[48px] text-base font-bold text-white shadow-md transition hover:bg-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
           >
             {isLoadingClarification ? 'Analyzing details…' : 'Continue with this detail'}
           </button>

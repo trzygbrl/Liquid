@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "test": "node --test src/lib/symptomValidation.test.ts",
+    "test:validation": "node --test src/lib/symptomValidation.test.ts"
   },
   "dependencies": {
     "@google/genai": "^2.17.1",
