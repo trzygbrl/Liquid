@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import AmbientBackground from "@/components/AmbientBackground";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,8 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CivicAccess — Philippine Clinical Triage & Specialist Booking",
+  title: "KayApp: Philippine Clinical Triage & Specialist Booking",
   description: "AI-powered clinical triage matching patients to verified specialists and clinics across the Philippines.",
+  icons: { icon: "/logo.png" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -24,9 +24,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col relative bg-[#F8F7FA] text-[#1E1B2E]">
-        <AmbientBackground />
-        <div className="relative z-10 flex min-h-screen flex-col">
+      <body className="min-h-full flex flex-col bg-background text-foreground">
+        <div className="flex min-h-screen flex-col">
           {children}
         </div>
       </body>

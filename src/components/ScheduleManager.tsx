@@ -2,9 +2,10 @@
 
 import { useEffect, useState, type FormEvent } from 'react';
 import { supabase } from '@/lib/supabaseClient';
+import ScheduleCalendar from '@/components/ScheduleCalendar';
+import { todayISO } from '@/lib/dateUtils';
 
-// ─── Types ───────────────────────────────────────────────────────────────────
-
+// Types
 type SlotStatus = 'available' | 'booked' | 'doctor_on_leave';
 
 interface Clinic {
@@ -22,13 +23,9 @@ interface Slot {
   is_booked: SlotStatus;
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// Helpers
 
-function todayISO(): string {
-  return new Date().toISOString().split('T')[0];
-}
-
-/** 'HH:MM:SS' → '9:00 AM' */
+/** Formats 'HH:MM:SS' as '9:00 AM' */
 function fmt24to12(t: string): string {
   const [hStr, mStr] = t.split(':');
   const h = parseInt(hStr, 10);
@@ -38,7 +35,7 @@ function fmt24to12(t: string): string {
   return `${h12}:${m} ${suffix}`;
 }
 
-/** 'YYYY-MM-DD' → 'Tue, Aug 19' */
+/** Formats 'YYYY-MM-DD' as 'Tue, Aug 19' */
 function fmtDate(iso: string): string {
   // Append T00:00:00 so Date parses in local time, not UTC midnight
   return new Date(`${iso}T00:00:00`).toLocaleDateString('en-PH', {
@@ -65,16 +62,15 @@ function groupByDate(slots: Slot[]): Map<string, Slot[]> {
   return map;
 }
 
-// ─── Component ───────────────────────────────────────────────────────────────
-
+// Component
 export default function ScheduleManager() {
-  // ── data state
+  // data state
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [slots, setSlots] = useState<Slot[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // ── form state
+  // form state
   const [selectedClinicId, setSelectedClinicId] = useState('');
   const [date, setDate] = useState('');
   const [startTime, setStartTime] = useState('');
@@ -82,10 +78,15 @@ export default function ScheduleManager() {
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // ── delete state (track which slot id is mid-delete)
+  // delete state (track which slot id is mid-delete)
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  // ── load clinics + slots, then subscribe to realtime
+  // Day picked in the calendar. Narrows the slot list below and pre-fills the
+  // add form, so "what does the 14th look like" and "add another hour to the
+  // 14th" are the same gesture. null = show the whole upcoming list.
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+
+  // load clinics + slots, then subscribe to realtime
   useEffect(() => {
     let channel: ReturnType<typeof supabase.channel> | null = null;
     // Prevents the async init from subscribing if cleanup already ran.
@@ -143,7 +144,7 @@ export default function ScheduleManager() {
       // Guard: if the effect was cleaned up while we were awaiting, don't subscribe.
       if (cancelled) return;
 
-      // ── Realtime subscription
+      // Realtime subscription
       // Channel name is scoped to the uid so it can't collide if StrictMode
       // causes a rapid unmount/remount before the previous channel is removed.
       channel = supabase
@@ -166,7 +167,7 @@ export default function ScheduleManager() {
               const deleted = payload.old as { id: string };
               setSlots((prev) => prev.filter((s) => s.id !== deleted.id));
             } else if (payload.eventType === 'INSERT') {
-              // Another device/tab added a slot — add it to the list if it's upcoming
+              // Another device/tab added a slot, so add it to the list if it's upcoming
               const inserted = payload.new as Slot;
               if (inserted.date >= today) {
                 setSlots((prev) =>
@@ -191,7 +192,7 @@ export default function ScheduleManager() {
     };
   }, []);
 
-  // ── Add slot
+  // Add slot
   async function handleAddSlot(e: FormEvent) {
     e.preventDefault();
     setFormError(null);
@@ -213,7 +214,7 @@ export default function ScheduleManager() {
 
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-      setFormError('Your session expired — please log in again.');
+      setFormError('Your session expired. Please log in again.');
       setSubmitting(false);
       return;
     }
@@ -222,7 +223,7 @@ export default function ScheduleManager() {
       .from('schedule_slots')
       .insert({
         doctor_id: session.user.id,
-        clinic_id: selectedClinicId, // required — DB trigger rejects mismatched doctor/clinic
+        clinic_id: selectedClinicId, // required; DB trigger rejects mismatched doctor/clinic
         date,
         start_time: startTime,
         end_time: endTime,
@@ -239,7 +240,7 @@ export default function ScheduleManager() {
     }
 
     if (newSlot) {
-      // Optimistic append — keep list sorted by date then start_time
+      // Optimistic append. Keep list sorted by date then start_time
       setSlots((prev) =>
         [...prev, newSlot as Slot].sort((a, b) =>
           a.date !== b.date
@@ -254,7 +255,7 @@ export default function ScheduleManager() {
     setEndTime('');
   }
 
-  // ── Delete slot
+  // Delete slot
   async function handleDelete(slotId: string) {
     setDeletingId(slotId);
     const { error } = await supabase
@@ -271,38 +272,59 @@ export default function ScheduleManager() {
     setSlots((prev) => prev.filter((s) => s.id !== slotId));
   }
 
-  // ── Render helpers
+  // Render helpers
   const clinicNameById = (id: string) =>
-    clinics.find((c) => c.id === id)?.name ?? '—';
+    clinics.find((c) => c.id === id)?.name ?? 'N/A';
 
-  const grouped = groupByDate(slots);
+  function handleSelectDate(iso: string | null) {
+    setSelectedDate(iso);
+    // Picking a day in the calendar is also how you choose the day to post to.
+    if (iso) setDate(iso);
+  }
 
-  // ─────────────────────────────────────────────────────────────────────────
+  const visibleSlots = selectedDate ? slots.filter((s) => s.date === selectedDate) : slots;
+  const grouped = groupByDate(visibleSlots);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-600 border-t-indigo-500" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
       </div>
     );
   }
 
   if (loadError) {
     return (
-      <div className="mt-8 rounded-xl border border-red-500/30 bg-red-500/10 px-6 py-4 text-sm text-red-400">
+      <div className="mt-8 rounded-2xl border border-rose-200 bg-rose-50 px-6 py-4 text-sm font-medium text-rose-700">
         {loadError}
       </div>
     );
   }
 
   return (
-    <div className="mt-8 flex flex-col gap-8">
+    <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_20rem] lg:items-start">
 
-      {/* ── Add slot form ─────────────────────────────────────────────────── */}
-      <section className="rounded-3xl border border-slate-100 bg-white p-6 sm:p-7 shadow-[0_8px_30px_rgb(0,0,0,0.03)]">
+      {/* Month overview in a right rail. Kept first in DOM so it still stacks
+          on top on narrow screens (it is the overview and the day picker);
+          explicit column placement, rather than source order, puts it on the
+          right from lg up. Sticky so it stays reachable while scrolling a long
+          list of slots. */}
+      <aside className="lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1">
+        <ScheduleCalendar
+          slots={slots}
+          selectedDate={selectedDate}
+          onSelectDate={handleSelectDate}
+          today={todayISO()}
+        />
+      </aside>
+
+      <div className="flex flex-col gap-6 lg:col-start-1 lg:row-start-1">
+
+      {/* Add slot form */}
+      <section className="card p-6 sm:p-7">
         <div className="border-b border-slate-100 pb-4 mb-5">
           <h2 className="text-lg font-bold text-slate-900">Add Schedule Slot</h2>
-          <p className="text-xs text-slate-400 mt-0.5 font-medium">Post open consultation hours for patient booking.</p>
+          <p className="text-sm text-slate-600 mt-1">Post open consultation hours for patient booking.</p>
         </div>
 
         <form onSubmit={handleAddSlot} className="flex flex-col gap-4.5">
@@ -317,12 +339,12 @@ export default function ScheduleManager() {
               value={selectedClinicId}
               onChange={(e) => setSelectedClinicId(e.target.value)}
               required
-              className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20 disabled:opacity-50"
+              className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50"
             >
               <option value="">Select clinic</option>
               {clinics.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.name} — {c.location}
+                  {c.name} ({c.location})
                 </option>
               ))}
             </select>
@@ -346,7 +368,7 @@ export default function ScheduleManager() {
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
                 required
-                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20"
+                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
               />
             </div>
 
@@ -360,7 +382,7 @@ export default function ScheduleManager() {
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
                 required
-                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20"
+                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
               />
             </div>
 
@@ -374,7 +396,7 @@ export default function ScheduleManager() {
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
                 required
-                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20"
+                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
               />
             </div>
           </div>
@@ -390,7 +412,7 @@ export default function ScheduleManager() {
               id="add-slot-submit"
               type="submit"
               disabled={submitting || clinics.length === 0}
-              className="rounded-2xl bg-[#2A2338] px-7 py-3.5 min-h-[48px] text-sm font-semibold text-white shadow-sm transition hover:bg-[#1E192C] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+              className="rounded-2xl bg-blue-600 px-7 py-3.5 min-h-[48px] text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
             >
               {submitting ? 'Adding slot…' : '+ Add Schedule Slot'}
             </button>
@@ -398,25 +420,49 @@ export default function ScheduleManager() {
         </form>
       </section>
 
-      {/* ── Upcoming slots list ───────────────────────────────────────────── */}
-      <section className="rounded-3xl border border-slate-100 bg-white p-6 sm:p-7 shadow-[0_8px_30px_rgb(0,0,0,0.03)]">
-        <div className="border-b border-slate-100 pb-4 mb-5">
-          <h2 className="text-lg font-bold text-slate-900">Upcoming Posted Slots</h2>
-          <p className="text-xs text-slate-400 mt-0.5 font-medium">All upcoming available and booked slots in your calendar.</p>
+      {/* Upcoming slots list */}
+      <section className="card p-6 sm:p-7">
+        <div className="border-b border-slate-100 pb-4 mb-5 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">
+              {selectedDate ? fmtDate(selectedDate) : 'Upcoming Posted Slots'}
+            </h2>
+            <p className="text-sm text-slate-600 mt-1">
+              {selectedDate
+                ? 'Slots posted on the day selected in the calendar.'
+                : 'All upcoming available and booked slots in your calendar.'}
+            </p>
+          </div>
+          {selectedDate && (
+            <button
+              type="button"
+              onClick={() => handleSelectDate(null)}
+              className="rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-blue-300 hover:text-blue-700"
+            >
+              Show all days
+            </button>
+          )}
         </div>
 
-        {slots.length === 0 ? (
+        {visibleSlots.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 px-6 py-10 text-center">
-            <p className="text-xs font-medium text-slate-500">No upcoming slots posted — add one above to receive patient bookings.</p>
+            <p className="text-xs font-medium text-slate-500">
+              {selectedDate
+                ? 'Nothing posted on this day yet. The date is already filled in above.'
+                : 'No upcoming slots posted. Add one above to receive patient bookings.'}
+            </p>
           </div>
         ) : (
           <div className="flex flex-col gap-6">
             {Array.from(grouped.entries()).map(([dateStr, daySlots]) => (
               <div key={dateStr}>
-                {/* Date header */}
-                <p className="mb-2.5 text-xs font-bold uppercase tracking-wider text-violet-700">
-                  📅 {fmtDate(dateStr)}
-                </p>
+                {/* Date header. Redundant when a single day is selected --
+                    the section heading above already names that day. */}
+                {!selectedDate && (
+                  <p className="mb-2.5 text-xs font-bold uppercase tracking-wider text-blue-700">
+                    {fmtDate(dateStr)}
+                  </p>
+                )}
 
                 <div className="flex flex-col gap-2.5">
                   {daySlots.map((slot) => {
@@ -432,7 +478,7 @@ export default function ScheduleManager() {
                         {/* Left: time + clinic */}
                         <div className="flex flex-col gap-0.5 min-w-0">
                           <p className="text-sm font-bold text-slate-900">
-                            {fmt24to12(slot.start_time)} – {fmt24to12(slot.end_time)}
+                            {fmt24to12(slot.start_time)} to {fmt24to12(slot.end_time)}
                           </p>
                           <p className="truncate text-xs text-slate-600 font-medium">
                             {clinicNameById(slot.clinic_id)}
@@ -466,7 +512,7 @@ export default function ScheduleManager() {
                               onClick={() => handleDelete(slot.id)}
                               disabled={isDeleting}
                               aria-label="Delete slot"
-                              className="rounded-2xl border border-slate-200 bg-white px-3.5 py-1.5 min-h-[38px] text-xs font-semibold text-slate-700 transition hover:border-rose-300 hover:text-rose-600 hover:bg-rose-50/50 shadow-sm disabled:opacity-50"
+                              className="card px-3.5 py-1.5 min-h-[38px] text-xs font-semibold text-slate-700 transition hover:border-rose-300 hover:text-rose-600 hover:bg-rose-50/50 disabled:opacity-50"
                             >
                               {isDeleting ? '…' : 'Delete'}
                             </button>
@@ -481,6 +527,7 @@ export default function ScheduleManager() {
           </div>
         )}
       </section>
+      </div>
     </div>
   );
 }

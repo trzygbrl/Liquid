@@ -2,7 +2,7 @@
 
 // src/app/patient/appointments/[id]/review/page.tsx
 //
-// Task 5.1 — Verified Patient Reviews & Rating Submission
+// Task 5.1. Verified Patient Reviews & Rating Submission
 //
 // PRD Section 8.6 specifies a verified-visit-only review system:
 // Patients can only submit a review if they have a completed appointment
@@ -18,6 +18,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import RequireRole from '@/components/RequireRole';
 import { supabase } from '@/lib/supabaseClient';
+import { IconWarning, IconClose, IconCheck, IconStar } from '@/components/Icons';
 
 interface AppointmentDetail {
   id: string;
@@ -241,26 +242,26 @@ function ReviewPageContent() {
     }
   }
 
-  // ─── Loading State ──────────────────────────────────────────────────────────
+  // Loading State
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#F8F7FA] px-6 py-12 text-slate-500">
+      <main className="flex min-h-screen items-center justify-center px-6 py-12 text-slate-500">
         <div className="flex items-center gap-3">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-violet-200 border-t-violet-600" />
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600" />
           <span className="text-sm font-medium">Verifying consultation status…</span>
         </div>
       </main>
     );
   }
 
-  // ─── Blocked State: Not Completed ──────────────────────────────────────────
+  // Blocked State: Not Completed
   if (errorStatus && errorStatus.startsWith('not_completed')) {
     const rawStatus = errorStatus.split(':')[1] || 'pending';
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-[#F8F7FA] px-4 py-12 sm:px-6">
-        <div className="w-full max-w-lg rounded-3xl border border-slate-100 bg-white p-8 text-center shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 text-3xl">
-            ⚠️
+      <main className="flex min-h-screen flex-col items-center justify-center px-4 py-12 sm:px-6">
+        <div className="w-full max-w-lg card p-8 text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
+            <IconWarning className="h-8 w-8" />
           </div>
 
           <span className="mt-4 inline-block rounded-full bg-amber-50 px-3 py-1 text-xs font-bold uppercase tracking-wider text-amber-800 border border-amber-200">
@@ -295,14 +296,14 @@ function ReviewPageContent() {
           <div className="mt-8 flex flex-col gap-3">
             <a
               href="/patient/dashboard"
-              className="w-full rounded-2xl bg-[#2A2338] px-6 py-3.5 text-sm font-semibold text-white shadow-md transition hover:bg-[#1E192C]"
+              className="w-full rounded-2xl bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white shadow-md transition hover:bg-blue-700"
             >
-              Return to Patient Dashboard →
+              Return to Patient Dashboard
             </a>
             {appointment?.doctor && (
               <a
                 href={`/patient/doctors/${appointment.doctor.id}`}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-6 py-3 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 shadow-sm"
+                className="w-full card px-6 py-3 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
               >
                 View Doctor Profile
               </a>
@@ -313,13 +314,13 @@ function ReviewPageContent() {
     );
   }
 
-  // ─── Error State: Not Found / Unauthorized ─────────────────────────────────
+  // Error State: Not Found / Unauthorized
   if (errorStatus || !appointment) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-[#F8F7FA] px-4 py-12 text-center">
-        <div className="w-full max-w-md rounded-3xl border border-slate-100 bg-white p-8 shadow-sm">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 text-2xl">
-            ✕
+      <main className="flex min-h-screen flex-col items-center justify-center px-4 py-12 text-center">
+        <div className="w-full max-w-md card p-8">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
+            <IconClose className="h-7 w-7" />
           </div>
           <h1 className="mt-4 text-lg font-bold text-slate-900">Consultation Not Found</h1>
           <p className="mt-2 text-xs text-slate-500 leading-relaxed">
@@ -327,9 +328,9 @@ function ReviewPageContent() {
           </p>
           <a
             href="/patient/dashboard"
-            className="mt-6 inline-block rounded-2xl bg-[#2A2338] px-6 py-3 text-xs font-bold text-white transition hover:bg-[#1E192C]"
+            className="mt-6 inline-block rounded-2xl bg-blue-600 px-6 py-3 text-xs font-bold text-white transition hover:bg-blue-700"
           >
-            ← Return to Dashboard
+            Return to Dashboard
           </a>
         </div>
       </main>
@@ -338,18 +339,18 @@ function ReviewPageContent() {
 
   const activeStars = hoverRating !== null ? hoverRating : rating;
 
-  // ─── Render: Review Already Submitted / Success State ──────────────────────
+  // Render: Review Already Submitted / Success State
   if (existingReview || submittedSuccessfully) {
     const rev = existingReview!;
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-[#F8F7FA] px-4 py-12 sm:px-6">
-        <div className="w-full max-w-lg rounded-3xl border border-slate-100 bg-white p-8 text-center shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-50 text-violet-600 text-3xl">
-            ✓
+      <main className="flex min-h-screen flex-col items-center justify-center px-4 py-12 sm:px-6">
+        <div className="w-full max-w-lg card p-8 text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+            <IconCheck className="h-8 w-8" />
           </div>
 
-          <span className="mt-4 inline-block rounded-full bg-violet-50 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-violet-700 border border-violet-100">
-            ✓ Verified Review Submitted
+          <span className="mt-4 inline-flex items-center gap-1 rounded-full bg-blue-50 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-blue-700 border border-blue-100">
+            <IconCheck className="h-3 w-3" /> Verified Review Submitted
           </span>
 
           <h1 className="mt-2 text-2xl font-bold text-slate-900">Thank You For Your Feedback!</h1>
@@ -362,9 +363,7 @@ function ReviewPageContent() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1 text-amber-500">
                 {[1, 2, 3, 4, 5].map((star) => (
-                  <span key={star} className="text-lg">
-                    {star <= rev.rating ? '★' : '☆'}
-                  </span>
+                  <IconStar key={star} className="h-4.5 w-4.5" filled={star <= rev.rating} />
                 ))}
                 <span className="ml-2 font-bold text-slate-900">{rev.rating}.0 / 5.0</span>
               </div>
@@ -389,9 +388,9 @@ function ReviewPageContent() {
             {appointment.doctor && (
               <a
                 href={`/patient/doctors/${appointment.doctor.id}`}
-                className="w-full rounded-2xl bg-[#2A2338] px-6 py-3.5 text-sm font-semibold text-white shadow-md transition hover:bg-[#1E192C]"
+                className="w-full rounded-2xl bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white shadow-md transition hover:bg-blue-700"
               >
-                View Doctor Profile & Ratings →
+                View Doctor Profile & Ratings
               </a>
             )}
             <a
@@ -406,9 +405,9 @@ function ReviewPageContent() {
     );
   }
 
-  // ─── Render: Review Form ───────────────────────────────────────────────────
+  // Render: Review Form
   return (
-    <main className="min-h-screen bg-[#F8F7FA] px-4 py-10 sm:px-6 lg:px-8">
+    <main className="min-h-screen px-4 py-10 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-xl">
         {/* Navigation Breadcrumb */}
         <div className="mb-6 flex items-center justify-between border-b border-slate-200/80 pb-4">
@@ -416,36 +415,36 @@ function ReviewPageContent() {
             href="/patient/dashboard"
             className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-900 transition"
           >
-            ← Back to dashboard
+            Back to dashboard
           </a>
-          <span className="rounded-full bg-violet-50 px-3 py-1 text-xs font-bold text-violet-700 border border-violet-100">
+          <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700 border border-blue-100">
             Verified Patient Review
           </span>
         </div>
 
         {/* Form Container */}
-        <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.03)] sm:p-8">
+        <div className="card p-6 sm:p-8">
           <div className="text-center">
-            <span className="inline-block rounded-full bg-violet-50 px-3 py-1 text-xs font-bold uppercase tracking-wider text-violet-700 border border-violet-100">
+            <span className="inline-block rounded-full bg-blue-50 px-3 py-1 text-xs font-bold uppercase tracking-wider text-blue-700 border border-blue-100">
               Verified Consultation
             </span>
-            <h1 className="mt-3 text-2xl font-extrabold text-slate-900 tracking-tight">
+            <h1 className="mt-3 text-2xl font-bold text-slate-900 tracking-tight">
               How was your consultation?
             </h1>
             <p className="mt-1 text-xs text-slate-500">
               Share your experience with{' '}
               <strong className="text-slate-900 font-bold">{appointment.doctor?.name}</strong>{' '}
               ({appointment.doctor?.specialty}
-              {appointment.doctor?.sub_specialty ? ` — ${appointment.doctor?.sub_specialty}` : ''})
+              {appointment.doctor?.sub_specialty ? `, ${appointment.doctor?.sub_specialty}` : ''})
             </p>
 
             {appointment.slot && (
               <div className="mt-4 inline-flex items-center gap-2 rounded-2xl bg-slate-50 px-4 py-2 text-xs text-slate-600 border border-slate-100 font-medium">
-                <span>📅 {formatDate(appointment.slot.date)}</span>
+                <span>{formatDate(appointment.slot.date)}</span>
                 {appointment.slot.clinic && (
                   <>
                     <span>•</span>
-                    <span>🏥 {appointment.slot.clinic.name}</span>
+                    <span>{appointment.slot.clinic.name}</span>
                   </>
                 )}
               </div>
@@ -468,18 +467,16 @@ function ReviewPageContent() {
                       onClick={() => setRating(star)}
                       onMouseEnter={() => setHoverRating(star)}
                       onMouseLeave={() => setHoverRating(null)}
-                      className="group p-2 min-h-[48px] min-w-[48px] text-4xl sm:text-5xl transition transform active:scale-125 focus:outline-none rounded-2xl"
+                      className="group p-2 min-h-[48px] min-w-[48px] transition transform active:scale-125 focus:outline-none rounded-2xl"
                       aria-label={`${star} star`}
                     >
-                      <span
-                        className={`transition-colors duration-150 ${
+                      <IconStar
+                        className={`h-9 w-9 sm:h-11 sm:w-11 transition-colors duration-150 ${
                           isFilled
                             ? 'text-amber-400 drop-shadow-[0_0_10px_rgba(251,191,36,0.5)]'
-                            : 'text-slate-200 hover:text-slate-300'
+                            : 'text-slate-200 group-hover:text-slate-300'
                         }`}
-                      >
-                        ★
-                      </span>
+                      />
                     </button>
                   );
                 })}
@@ -502,9 +499,9 @@ function ReviewPageContent() {
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 placeholder="How was the doctor's communication? Was the clinic staff helpful? Did the consultation address your concerns?"
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm leading-relaxed text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20"
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm leading-relaxed text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
               />
-              <p className="mt-1.5 text-right text-xs text-slate-400 font-medium">
+              <p className="mt-1.5 text-right text-xs text-slate-500 font-medium">
                 {comment.length} / 1000 characters
               </p>
             </div>
@@ -520,9 +517,9 @@ function ReviewPageContent() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full sm:flex-1 rounded-2xl bg-[#2A2338] px-8 py-4 text-base font-semibold text-white shadow-md transition hover:bg-[#1E192C] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+                className="w-full sm:flex-1 rounded-2xl bg-blue-600 px-8 py-4 text-base font-semibold text-white shadow-md transition hover:bg-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
               >
-                {submitting ? 'Submitting review…' : 'Submit Verified Review →'}
+                {submitting ? 'Submitting review…' : 'Submit Verified Review'}
               </button>
               <button
                 type="button"
@@ -545,9 +542,9 @@ export default function ReviewPage() {
     <RequireRole role="patient">
       <Suspense
         fallback={
-          <main className="flex min-h-screen items-center justify-center bg-[#F8F7FA] text-slate-500">
+          <main className="flex min-h-screen items-center justify-center text-slate-500">
             <div className="flex items-center gap-3">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-violet-200 border-t-violet-600" />
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600" />
               <span className="text-sm font-medium">Loading consultation review…</span>
             </div>
           </main>

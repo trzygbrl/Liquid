@@ -2,9 +2,13 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabaseClient';
+import {
+  hasStatusReason,
+  isMissingStatusReason,
+  noteMissingStatusReason,
+} from '@/lib/statusReasonCompat';
 
-// ─── Types ───────────────────────────────────────────────────────────────────
-
+// Types
 type AppointmentStatus = 'pending' | 'confirmed' | 'declined' | 'completed' | 'cancelled';
 
 interface Patient {
@@ -33,13 +37,12 @@ interface Appointment {
   schedule_slots: ScheduleSlot | null;
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
+// Helpers
 function todayISO(): string {
   return new Date().toISOString().split('T')[0];
 }
 
-/** 'HH:MM:SS' → '9:00 AM' */
+/** Formats 'HH:MM:SS' as '9:00 AM' */
 function fmt24to12(t: string): string {
   const [hStr, mStr] = t.split(':');
   const h = parseInt(hStr, 10);
@@ -49,7 +52,7 @@ function fmt24to12(t: string): string {
   return `${h12}:${m} ${suffix}`;
 }
 
-/** 'YYYY-MM-DD' → 'Tue, Aug 19' */
+/** Formats 'YYYY-MM-DD' as 'Tue, Aug 19' */
 function fmtDate(iso: string): string {
   // Append T00:00:00 so Date parses in local time, not UTC midnight
   return new Date(`${iso}T00:00:00`).toLocaleDateString('en-PH', {
@@ -61,12 +64,11 @@ function fmtDate(iso: string): string {
 
 /** Sex abbreviation for the patient chip */
 function fmtSex(sex: string | null): string {
-  if (!sex) return '—';
+  if (!sex) return 'N/A';
   return sex === 'male' ? 'M' : sex === 'female' ? 'F' : 'O';
 }
 
-// ─── Component ───────────────────────────────────────────────────────────────
-
+// Component
 export default function AppointmentsDashboard() {
   const [pendingAppts, setPendingAppts] = useState<Appointment[]>([]);
   const [confirmedAppts, setConfirmedAppts] = useState<Appointment[]>([]);
@@ -83,7 +85,7 @@ export default function AppointmentsDashboard() {
   const [declineReason, setDeclineReason] = useState('');
   const [declineError, setDeclineError] = useState<string | null>(null);
 
-  // ── Fetch helper — called on init and on realtime events
+  // Fetch helper, called on init and on realtime events
   const fetchAppointments = useCallback(async (uid: string) => {
     const today = todayISO();
 
@@ -126,7 +128,7 @@ export default function AppointmentsDashboard() {
     // Assumption 5: client-side filter for upcoming (date >= today) + sort ascending
     // by slot date then start_time. Supabase embedded-resource filters on the nested
     // schedule_slots object filter the nested object per row, not which parent rows
-    // come back — so we can't reliably exclude past-dated appointments at query level.
+    // come back, so we can't reliably exclude past-dated appointments at query level.
     const upcoming = ((confirmedRes.data ?? []) as unknown as Appointment[])
       .filter((a) => {
         const slotDate = a.schedule_slots?.date;
@@ -145,7 +147,7 @@ export default function AppointmentsDashboard() {
     setLoading(false);
   }, []);
 
-  // ── Mount: get session, fetch data, subscribe to realtime
+  // Mount: get session, fetch data, subscribe to realtime
   useEffect(() => {
     let channel: ReturnType<typeof supabase.channel> | null = null;
     // Prevents duplicate subscriptions in React StrictMode
@@ -164,7 +166,7 @@ export default function AppointmentsDashboard() {
 
       if (cancelled) return;
 
-      // ── Realtime subscription (Assumption 8 — deliberate pull-forward of Task 4.4)
+      // Realtime subscription (Assumption 8, a deliberate pull-forward of Task 4.4)
       // Filtered by doctor_id so we only receive events relevant to this doctor.
       // Channel name is scoped to the uid so it can't collide on StrictMode remounts.
       channel = supabase
@@ -196,7 +198,7 @@ export default function AppointmentsDashboard() {
     };
   }, [fetchAppointments]);
 
-  // ── Accept / Decline handler. `reason` is required for 'decline' (enforced
+  // Accept / Decline handler. `reason` is required for 'decline' (enforced
   // by migration 0007_appointment_status_reason.sql's check constraint).
   async function handleAction(
     appointmentId: string,
@@ -220,22 +222,35 @@ export default function AppointmentsDashboard() {
       return;
     }
 
-    // Optimistic update — remove from the pending list immediately so the
+    // Optimistic update. Remove from the pending list immediately so the
     // doctor sees instant feedback rather than waiting for the re-fetch.
     setPendingAppts((prev) => prev.filter((a) => a.id !== appointmentId));
 
-    // Assumption 3: only write appointments.status — do NOT touch schedule_slots.is_booked.
+    // Assumption 3: only write appointments.status. Do NOT touch schedule_slots.is_booked.
     // The trg_sync_slot_status trigger handles the slot flip automatically.
     //
     // Assumption 4: scope the update with .eq('status', 'pending') so that a
     // double-click or a second tab acting on the same appointment doesn't silently
-    // double-apply. If count === 0, someone already actioned it — re-fetch reconciles.
-    const { data: updatedRows, error } = await supabase
-      .from('appointments')
-      .update({ status: newStatus, ...(action === 'decline' ? { status_reason: reason } : {}) })
-      .eq('id', appointmentId)
-      .eq('status', 'pending')
-      .select('id');
+    // double-apply. If count === 0, someone already actioned it, and the re-fetch reconciles.
+    const runAction = (withReason: boolean) =>
+      supabase
+        .from('appointments')
+        .update({
+          status: newStatus,
+          ...(action === 'decline' && withReason ? { status_reason: reason } : {}),
+        })
+        .eq('id', appointmentId)
+        .eq('status', 'pending')
+        .select('id');
+
+    let { data: updatedRows, error } = await runAction(hasStatusReason());
+
+    // Pre-0007 database: still let the doctor decline. The reason they typed
+    // has nowhere to be stored, which the console warning explains.
+    if (isMissingStatusReason(error)) {
+      noteMissingStatusReason('AppointmentsDashboard');
+      ({ data: updatedRows, error } = await runAction(false));
+    }
 
     // count === 0 means someone else already actioned this appointment (Assumption 4)
     const count = updatedRows?.length ?? 0;
@@ -252,8 +267,8 @@ export default function AppointmentsDashboard() {
     }
 
     if (!error && count === 0) {
-      // Assumption 4: zero rows updated → already actioned by another tab/device.
-      // Treat gracefully — re-fetch below will reconcile the UI.
+      // Assumption 4: zero rows updated means already actioned by another tab/device.
+      // Treat gracefully; the re-fetch below will reconcile the UI.
     }
 
     // Re-fetch to reconcile: reflects the trigger-driven slot status change and
@@ -281,19 +296,17 @@ export default function AppointmentsDashboard() {
     handleAction(appointmentId, 'decline', declineReason.trim());
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-200 border-t-violet-600" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600" />
       </div>
     );
   }
 
   if (loadError) {
     return (
-      <div className="rounded-3xl border border-rose-200 bg-rose-50 px-6 py-4 text-xs font-medium text-rose-700">
+      <div className="rounded-2xl border border-rose-200 bg-rose-50 px-6 py-4 text-xs font-medium text-rose-700">
         {loadError}
       </div>
     );
@@ -302,8 +315,8 @@ export default function AppointmentsDashboard() {
   return (
     <div className="flex flex-col gap-8">
 
-      {/* ── Pending Appointments ────────────────────────────────────────────── */}
-      <section className="rounded-3xl border border-slate-100 bg-white p-6 sm:p-7 shadow-[0_8px_30px_rgb(0,0,0,0.03)]">
+      {/* Pending Appointments */}
+      <section className="card p-6 sm:p-7">
         <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-5">
           <div className="flex items-center gap-2.5">
             <h2 className="text-lg font-bold text-slate-900">
@@ -315,12 +328,12 @@ export default function AppointmentsDashboard() {
               </span>
             )}
           </div>
-          <span className="text-xs text-slate-400 font-medium">Requires your review</span>
+          <span className="text-xs text-slate-500 font-medium">Requires your review</span>
         </div>
 
         {pendingAppts.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 px-6 py-10 text-center">
-            <p className="text-xs font-medium text-slate-500">No pending appointment requests — you're all caught up!</p>
+            <p className="text-xs font-medium text-slate-500">No pending appointment requests. You're all caught up!</p>
           </div>
         ) : (
           <div className="flex flex-col gap-3.5">
@@ -341,7 +354,7 @@ export default function AppointmentsDashboard() {
                     <div className="flex min-w-0 flex-col gap-1.5">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="text-sm font-bold text-slate-900">
-                          {patient?.name ?? '—'}
+                          {patient?.name ?? 'N/A'}
                         </p>
                         {(patient?.age || patient?.sex) && (
                           <span className="rounded-full bg-white border border-slate-200/80 px-2.5 py-0.5 text-xs text-slate-600 font-medium shadow-sm">
@@ -368,13 +381,13 @@ export default function AppointmentsDashboard() {
                       {slot ? (
                         <p className="text-xs text-slate-500 font-medium">
                           <span>Requested slot: </span>
-                          <strong className="text-slate-900 font-bold">{fmtDate(slot.date)}&nbsp;·&nbsp;{fmt24to12(slot.start_time)}–{fmt24to12(slot.end_time)}</strong>
+                          <strong className="text-slate-900 font-bold">{fmtDate(slot.date)}&nbsp;·&nbsp;{fmt24to12(slot.start_time)} to {fmt24to12(slot.end_time)}</strong>
                           {slot.clinics?.name && (
                             <>&nbsp;·&nbsp;<span className="text-slate-600">{slot.clinics.name}</span></>
                           )}
                         </p>
                       ) : (
-                        <p className="text-xs text-slate-400 italic">Slot details unavailable</p>
+                        <p className="text-xs text-slate-500 italic">Slot details unavailable</p>
                       )}
                     </div>
 
@@ -385,7 +398,7 @@ export default function AppointmentsDashboard() {
                         onClick={() => handleDeclineClick(appt.id)}
                         disabled={isActioning}
                         aria-label={`Decline appointment for ${patient?.name ?? 'patient'}`}
-                        className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 min-h-[44px] text-xs font-bold text-slate-700 transition hover:border-rose-300 hover:text-rose-600 hover:bg-rose-50/50 shadow-sm active:scale-[0.98] disabled:opacity-50"
+                        className="card px-4 py-2.5 min-h-[44px] text-xs font-bold text-slate-700 transition hover:border-rose-300 hover:text-rose-600 hover:bg-rose-50/50 active:scale-[0.98] disabled:opacity-50"
                       >
                         {isActioning ? '…' : 'Decline'}
                       </button>
@@ -394,14 +407,14 @@ export default function AppointmentsDashboard() {
                         onClick={() => handleAction(appt.id, 'accept')}
                         disabled={isActioning}
                         aria-label={`Accept appointment for ${patient?.name ?? 'patient'}`}
-                        className="rounded-2xl bg-[#2A2338] px-5 py-2.5 min-h-[44px] text-xs font-bold text-white shadow-sm transition hover:bg-[#1E192C] active:scale-[0.98] disabled:opacity-50"
+                        className="rounded-2xl bg-blue-600 px-5 py-2.5 min-h-[44px] text-xs font-bold text-white shadow-sm transition hover:bg-blue-700 active:scale-[0.98] disabled:opacity-50"
                       >
                         {isActioning ? '…' : 'Accept Appointment'}
                       </button>
                     </div>
                   </div>
 
-                  {/* Inline reason panel — declining requires a reason (visible to the patient) */}
+                  {/* Inline reason panel: declining requires a reason (visible to the patient) */}
                   {decliningId === appt.id && (
                     <div className="mt-4 rounded-2xl border border-rose-200 bg-white p-4">
                       <label htmlFor={`decline-reason-${appt.id}`} className="block text-xs font-bold text-slate-700 mb-1.5">
@@ -412,7 +425,7 @@ export default function AppointmentsDashboard() {
                         rows={2}
                         value={declineReason}
                         onChange={(e) => setDeclineReason(e.target.value)}
-                        placeholder="e.g. Fully booked at this clinic for the requested date — please pick another slot."
+                        placeholder="e.g. Fully booked at this clinic for the requested date. Please pick another slot."
                         className="w-full rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-rose-400 focus:bg-white focus:ring-2 focus:ring-rose-500/20 resize-none"
                       />
                       {declineError && (
@@ -446,11 +459,11 @@ export default function AppointmentsDashboard() {
         )}
       </section>
 
-      {/* ── Confirmed / Upcoming Appointments ──────────────────────────────── */}
-      <section className="rounded-3xl border border-slate-100 bg-white p-6 sm:p-7 shadow-[0_8px_30px_rgb(0,0,0,0.03)]">
+      {/* Confirmed / Upcoming Appointments */}
+      <section className="card p-6 sm:p-7">
         <div className="border-b border-slate-100 pb-4 mb-5">
           <h2 className="text-lg font-bold text-slate-900">Upcoming Confirmed Consultations</h2>
-          <p className="text-xs text-slate-400 mt-0.5 font-medium">Scheduled patient appointments for your practice.</p>
+          <p className="text-sm text-slate-600 mt-1">Scheduled patient appointments for your practice.</p>
         </div>
 
         {confirmedAppts.length === 0 ? (
@@ -472,7 +485,7 @@ export default function AppointmentsDashboard() {
                   <div className="flex min-w-0 flex-col gap-0.5">
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-bold text-slate-900">
-                        {patient?.name ?? '—'}
+                        {patient?.name ?? 'N/A'}
                       </p>
                       {(patient?.age || patient?.sex) && (
                         <span className="rounded-full bg-white border border-slate-200 px-2 py-0.5 text-xs text-slate-600 font-medium">
@@ -484,13 +497,13 @@ export default function AppointmentsDashboard() {
                     </div>
                     {slot ? (
                       <p className="truncate text-xs text-slate-500 font-medium">
-                        <strong className="text-slate-800 font-semibold">{fmtDate(slot.date)}&nbsp;·&nbsp;{fmt24to12(slot.start_time)}–{fmt24to12(slot.end_time)}</strong>
+                        <strong className="text-slate-800 font-semibold">{fmtDate(slot.date)}&nbsp;·&nbsp;{fmt24to12(slot.start_time)} to {fmt24to12(slot.end_time)}</strong>
                         {slot.clinics?.name && (
                           <>&nbsp;·&nbsp;{slot.clinics.name}</>
                         )}
                       </p>
                     ) : (
-                      <p className="text-xs text-slate-400 italic">Slot details unavailable</p>
+                      <p className="text-xs text-slate-500 italic">Slot details unavailable</p>
                     )}
                   </div>
 

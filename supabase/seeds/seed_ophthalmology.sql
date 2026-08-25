@@ -1,6 +1,6 @@
 -- =============================================================
 -- seed_ophthalmology.sql
--- Civic Access (Team Liquid) — Task 1.4 seed data
+-- Civic Access (Team Liquid). Task 1.4 seed data
 --
 -- 8 Ophthalmology doctors for the Pampanga demo.
 -- Sub-specialties: Retina (x2), Cataract (x2), Glaucoma (x2),
@@ -182,7 +182,7 @@ BEGIN
 
     (d2,
      'Dr. Jose Antonio Dela Cruz',
-     'PRC Lic. No. 0234567 | MD, Far Eastern University–NRMF (2015) | '
+     'PRC Lic. No. 0234567 | MD, Far Eastern University-NRMF (2015) | '
      'Fellow, Vitreo-Retina Society of the Philippines | 9 yrs experience',
      'Ophthalmology', 'Retina',
      ARRAY['Maxicare', 'PhilCare'],
@@ -191,7 +191,7 @@ BEGIN
     -- Cataract -----------------------------------------------
     (d3,
      'Dr. Ana Corazon Santos',
-     'PRC Lic. No. 0345678 | MD, University of the Philippines–Manila (2007) | '
+     'PRC Lic. No. 0345678 | MD, University of the Philippines-Manila (2007) | '
      'Diplomate, Philippine Board of Ophthalmology | '
      'Phacoemulsification Training, Aravind Eye Hospital (India) | 17 yrs experience',
      'Ophthalmology', 'Cataract',
@@ -237,7 +237,7 @@ BEGIN
 
     (d8,
      'Dr. Leonardo Cruz Aquino',
-     'PRC Lic. No. 0890123 | MD, University of the East–Ramon Magsaysay Memorial Medical Center (2017) | '
+     'PRC Lic. No. 0890123 | MD, University of the East-Ramon Magsaysay Memorial Medical Center (2017) | '
      'Fellow, Philippine Academy of Ophthalmology | 7 yrs experience',
      'Ophthalmology', 'Pediatric Ophthalmology',
      ARRAY['Medicard', 'PhilCare', 'Intellicare'],
@@ -246,7 +246,7 @@ BEGIN
   ON CONFLICT (id) DO NOTHING;
 
   -- =========================================================
-  -- 5. clinics — one per doctor, all in Pampanga
+  -- 5. clinics. one per doctor, all in Pampanga
   -- =========================================================
   INSERT INTO public.clinics (id, doctor_id, name, room_details, location, consultation_fee)
   VALUES
@@ -301,52 +301,52 @@ BEGIN
   ON CONFLICT (id) DO NOTHING;
 
   -- =========================================================
-  -- 6. schedule_slots — 3-4 available slots per doctor
-  --    Spread across Aug 19 – Sep 1 2026 (the demo window).
+  -- 6. schedule_slots. 3-4 available slots per doctor
+  --    Spread across Aug 19 to Sep 1 2026 (the demo window).
   --    is_booked defaults to 'available'; no need to set it.
   -- =========================================================
   INSERT INTO public.schedule_slots (doctor_id, clinic_id, date, start_time, end_time)
   VALUES
-    -- Dr. Reyes (Retina) — 4 slots
+    -- Dr. Reyes (Retina). 4 slots
     (d1, c1, '2026-08-20', '09:00', '09:45'),
     (d1, c1, '2026-08-20', '10:00', '10:45'),
     (d1, c1, '2026-08-25', '14:00', '14:45'),
     (d1, c1, '2026-09-01', '09:00', '09:45'),
 
-    -- Dr. Dela Cruz (Retina) — 3 slots
+    -- Dr. Dela Cruz (Retina). 3 slots
     (d2, c2, '2026-08-21', '08:00', '08:45'),
     (d2, c2, '2026-08-21', '09:00', '09:45'),
     (d2, c2, '2026-08-27', '13:00', '13:45'),
 
-    -- Dr. Santos (Cataract) — 4 slots
+    -- Dr. Santos (Cataract). 4 slots
     (d3, c3, '2026-08-19', '10:00', '10:45'),
     (d3, c3, '2026-08-22', '14:00', '14:45'),
     (d3, c3, '2026-08-26', '10:00', '10:45'),
     (d3, c3, '2026-08-29', '09:00', '09:45'),
 
-    -- Dr. Garcia (Cataract) — 3 slots
+    -- Dr. Garcia (Cataract). 3 slots
     (d4, c4, '2026-08-20', '13:00', '13:45'),
     (d4, c4, '2026-08-23', '09:00', '09:45'),
     (d4, c4, '2026-08-28', '14:00', '14:45'),
 
-    -- Dr. Mendoza (Glaucoma) — 4 slots
+    -- Dr. Mendoza (Glaucoma). 4 slots
     (d5, c5, '2026-08-19', '08:00', '08:45'),
     (d5, c5, '2026-08-24', '10:00', '10:45'),
     (d5, c5, '2026-08-27', '08:00', '08:45'),
     (d5, c5, '2026-08-31', '13:00', '13:45'),
 
-    -- Dr. Lim (Glaucoma) — 3 slots
+    -- Dr. Lim (Glaucoma). 3 slots
     (d6, c6, '2026-08-21', '13:00', '13:45'),
     (d6, c6, '2026-08-25', '09:00', '09:45'),
     (d6, c6, '2026-08-29', '14:00', '14:45'),
 
-    -- Dr. Tan (Pediatric Ophthalmology) — 4 slots
+    -- Dr. Tan (Pediatric Ophthalmology). 4 slots
     (d7, c7, '2026-08-19', '09:00', '09:45'),
     (d7, c7, '2026-08-22', '10:00', '10:45'),
     (d7, c7, '2026-08-26', '09:00', '09:45'),
     (d7, c7, '2026-09-01', '13:00', '13:45'),
 
-    -- Dr. Aquino (Pediatric Ophthalmology) — 3 slots
+    -- Dr. Aquino (Pediatric Ophthalmology). 3 slots
     (d8, c8, '2026-08-20', '08:00', '08:45'),
     (d8, c8, '2026-08-24', '13:00', '13:45'),
     (d8, c8, '2026-08-28', '09:00', '09:45');

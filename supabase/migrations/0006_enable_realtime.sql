@@ -1,6 +1,6 @@
 -- =============================================================
 -- 0006_enable_realtime.sql
--- Civic Access (Team Liquid) — Task 4.4: Realtime Sync
+-- Civic Access (Team Liquid). Task 4.4: Realtime Sync
 --
 -- Enables Supabase Realtime publication for appointments and schedule_slots
 -- tables so that postgres_changes events are broadcast to client listeners.

@@ -129,7 +129,7 @@ export default function ProfileEditor() {
 
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-      setSaveError('Your session expired — please log in again.');
+      setSaveError('Your session expired. Please log in again.');
       setSaving(false);
       return;
     }
@@ -157,21 +157,21 @@ export default function ProfileEditor() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-600 border-t-indigo-500" />
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
       </div>
     );
   }
 
   if (loadError) {
     return (
-      <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-6 py-4 text-sm text-red-400">
+      <div className="rounded-2xl border border-rose-200 bg-rose-50 px-6 py-4 text-sm font-medium text-rose-700">
         {loadError}
       </div>
     );
   }
 
   return (
-    <section className="rounded-3xl border border-slate-100 bg-white p-6 sm:p-7 shadow-[0_8px_30px_rgb(0,0,0,0.03)]">
+    <section className="card p-6 sm:p-7">
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
@@ -179,7 +179,7 @@ export default function ProfileEditor() {
       >
         <div>
           <h2 className="text-lg font-bold text-slate-900">Practitioner Profile</h2>
-          <p className="text-xs text-slate-400 mt-0.5 font-medium">
+          <p className="text-sm text-slate-600 mt-1">
             Update your name, credentials, specialty, and HMO accreditations.
           </p>
         </div>
@@ -200,7 +200,7 @@ export default function ProfileEditor() {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20"
+              className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
             />
           </div>
 
@@ -215,17 +215,13 @@ export default function ProfileEditor() {
               type="file"
               accept=".pdf,.jpg,.jpeg,.png"
               onChange={handleFileChange}
-              className="block w-full text-xs text-slate-500
-                file:mr-4 file:rounded-xl file:border-0
-                file:bg-slate-100 file:px-4 file:py-2.5 file:text-xs
-                file:font-bold file:text-slate-700
-                hover:file:bg-slate-200 file:cursor-pointer file:transition"
+              className="block w-full text-xs text-slate-500 file:mr-4 file:rounded-xl file:border-0 file:bg-slate-100 file:px-4 file:py-2.5 file:text-xs file:font-bold file:text-slate-700 hover:file:bg-slate-200 file:cursor-pointer file:transition"
             />
             {credentialFileName && (
-              <p className="text-xs text-violet-700 font-medium">Current: <span>{credentialFileName}</span></p>
+              <p className="text-xs text-blue-700 font-medium">Current: <span>{credentialFileName}</span></p>
             )}
-            <p className="text-xs text-slate-400">
-              Demo mode — only the filename is stored. No actual file is uploaded.
+            <p className="text-xs text-slate-500">
+              Demo mode: only the filename is stored. No actual file is uploaded.
             </p>
           </div>
 
@@ -238,7 +234,7 @@ export default function ProfileEditor() {
               id="edit-doctor-specialty"
               value={specialty}
               onChange={(e) => handleSpecialtyChange(e.target.value)}
-              className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20"
+              className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
             >
               <option value="">Select specialty</option>
               {specialties.map((s) => (
@@ -263,7 +259,7 @@ export default function ProfileEditor() {
                 value={subSpecialty}
                 onChange={(e) => setSubSpecialty(e.target.value)}
                 disabled={!specialty}
-                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <option value="">
                   {specialty ? 'Select sub-specialty' : 'Pick a specialty first'}
@@ -276,7 +272,7 @@ export default function ProfileEditor() {
           )}
           {isGeneralPractice && (
             <p className="text-xs text-slate-500 -mt-1">
-              General Practice has no sub-specialty — this field will be left blank.
+              General Practice has no sub-specialty, so this field will be left blank.
             </p>
           )}
 
@@ -296,7 +292,7 @@ export default function ProfileEditor() {
                     onClick={() => toggleHmo(hmo)}
                     className={`rounded-2xl border px-4 py-2.5 text-xs font-bold transition ${
                       selected
-                        ? 'border-violet-600 bg-violet-50 text-violet-800'
+                        ? 'border-blue-600 bg-blue-50 text-blue-800'
                         : 'border-slate-200 bg-slate-50/70 text-slate-700 hover:bg-slate-100'
                     }`}
                   >
@@ -323,7 +319,7 @@ export default function ProfileEditor() {
               id="save-profile-submit"
               type="submit"
               disabled={saving}
-              className="rounded-2xl bg-[#2A2338] px-6 py-3.5 min-h-[48px] text-sm font-semibold text-white shadow-sm transition hover:bg-[#1E192C] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+              className="rounded-2xl bg-blue-600 px-6 py-3.5 min-h-[48px] text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
             >
               {saving ? 'Saving…' : 'Save Changes'}
             </button>

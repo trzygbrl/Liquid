@@ -1,17 +1,17 @@
 -- =============================================================
 -- 0001_initial_schema.sql
--- Civic Access (Team Liquid) — PRD Section 6 data models (REWORKED)
+-- Civic Access (Team Liquid). PRD Section 6 data models (REWORKED)
 --
 -- Changes from the original draft:
---   * NEW: clinics table — a doctor can practice at multiple locations, each
+--   * NEW: clinics table. a doctor can practice at multiple locations, each
 --     with its own consultation_fee and room_details. `rate` and `location`
 --     are removed from doctors and now live per-clinic.
 --   * schedule_slots now references a specific clinic_id (a doctor's slot
 --     belongs to one of their clinics), and the old boolean `is_booked` is
 --     now a three-state enum (`available` / `booked` / `doctor_on_leave`)
---     to support marking a doctor unavailable without a booking existing.
+-- to support marking a doctor unavailable without a booking existing.
 --     NOTE: the column is still named `is_booked` per the brief, even
---     though it's no longer a boolean — kept as-is to match spec exactly.
+--     though it's no longer a boolean. kept as-is to match spec exactly.
 --
 -- Design assumptions carried over from the original draft:
 --   * patients and doctors use auth.users(id) as their PK (no separate auth_user_id)

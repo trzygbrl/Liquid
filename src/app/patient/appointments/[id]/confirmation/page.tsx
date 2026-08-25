@@ -2,12 +2,12 @@
 
 // /patient/appointments/[id]/confirmation
 //
-// Task 4.3 — Booking Confirmation Screen
+// Task 4.3. Booking Confirmation Screen
 //
 // Shown immediately after a successful appointment booking (redirected from
 // Task 4.2's booking handler on the doctor detail page). Fetches the
 // appointment server-side to show doctor name, date/time (Asia/Manila), and
-// clinic location from real joined tables, not from in-memory state — so the
+// clinic location from real joined tables, not from in-memory state, so the
 // screen survives a browser refresh and remains linkable.
 //
 // Auth pattern: client-side, consistent with the rest of the app (no
@@ -15,7 +15,7 @@
 // as a defense-in-depth check on top of the RLS "appointments_select_own"
 // policy already enforced at the DB level.
 //
-// "View my appointments" links to /patient/dashboard — the AppointmentsDashboard
+// "View my appointments" links to /patient/dashboard, since the AppointmentsDashboard
 // component is currently only mounted on the doctor side. This is the correct
 // destination for patients per the current route structure. Flagged in BUILD_LOG
 // for Task 5 to add a dedicated patient appointments view.
@@ -24,9 +24,9 @@ import { Suspense, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import RequireRole from '@/components/RequireRole';
 import { supabase } from '@/lib/supabaseClient';
+import { IconCheck } from '@/components/Icons';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
+// Types
 interface ConfirmationData {
   doctorName: string;
   clinicName: string | null;
@@ -37,9 +37,8 @@ interface ConfirmationData {
   status: string;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-/** 'HH:MM:SS' → '9:00 AM' */
+// Helpers
+/** Formats 'HH:MM:SS' as '9:00 AM' */
 function fmt24to12(t: string): string {
   const [hStr, mStr] = t.split(':');
   const h = parseInt(hStr, 10);
@@ -50,7 +49,7 @@ function fmt24to12(t: string): string {
 }
 
 /**
- * 'YYYY-MM-DD' → e.g. 'Wednesday, August 20, 2026' in Asia/Manila local time.
+ * Formats 'YYYY-MM-DD' as e.g. 'Wednesday, August 20, 2026' in Asia/Manila local time.
  * We parse with T00:00:00 to avoid UTC-midnight drift.
  */
 function fmtDateLong(iso: string): string {
@@ -63,8 +62,7 @@ function fmtDateLong(iso: string): string {
   });
 }
 
-// ─── Inner content (needs useParams — must be under Suspense) ─────────────────
-
+// Inner content (needs useParams, so it must be under Suspense)
 function ConfirmationContent() {
   const params = useParams();
   const appointmentId = Array.isArray(params.id) ? params.id[0] : (params.id as string);
@@ -96,9 +94,9 @@ function ConfirmationContent() {
       }
 
       // 2. Fetch the appointment joined to schedule_slots, clinics, doctors
-      //    FK path: appointments.slot_id → schedule_slots.id
-      //             schedule_slots.clinic_id → clinics.id
-      //             appointments.doctor_id → doctors.id
+      //    FK path: appointments.slot_id references schedule_slots.id,
+      //             schedule_slots.clinic_id references clinics.id,
+      //             appointments.doctor_id references doctors.id
       //
       //    Confirmed column names from 0001_initial_schema.sql:
       //      appointments:    id, patient_id, doctor_id, slot_id, status
@@ -137,7 +135,7 @@ function ConfirmationContent() {
 
       // 3. Defense-in-depth: confirm this appointment belongs to the current patient.
       //    RLS policy "appointments_select_own" already blocks cross-patient reads at
-      //    the DB level — this is an additional app-layer check.
+      //    the DB level. This is an additional app-layer check.
       if (appt.patient_id !== user.id) {
         setNotFound(true);
         setLoading(false);
@@ -173,23 +171,23 @@ function ConfirmationContent() {
     load();
   }, [appointmentId]);
 
-  // ─── Loading ─────────────────────────────────────────────────────────────────
+  // Loading
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#F8F7FA]">
+      <main className="flex min-h-screen items-center justify-center">
         <div className="flex items-center gap-3 text-slate-500">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-violet-200 border-t-violet-600" />
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600" />
           <span className="text-sm font-medium">Loading your booking confirmation…</span>
         </div>
       </main>
     );
   }
 
-  // ─── Not found / unauthorized ─────────────────────────────────────────────────
+  // Not found / unauthorized
   if (notFound || !data) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-[#F8F7FA] px-4 py-12 text-center">
-        <div className="w-full max-w-md rounded-3xl border border-slate-100 bg-white p-8 shadow-sm">
+      <main className="flex min-h-screen flex-col items-center justify-center px-4 py-12 text-center">
+        <div className="w-full max-w-md card p-8">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
             <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -202,7 +200,7 @@ function ConfirmationContent() {
           <div className="mt-6 flex flex-col gap-3">
             <a
               href="/patient/doctors"
-              className="rounded-2xl bg-[#2A2338] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#1E192C]"
+              className="rounded-2xl bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-blue-700"
             >
               Browse Doctors
             </a>
@@ -218,31 +216,31 @@ function ConfirmationContent() {
     );
   }
 
-  // ─── Success ──────────────────────────────────────────────────────────────────
+  // Success
   const timeRange = data.slotStartTime && data.slotEndTime
-    ? `${fmt24to12(data.slotStartTime)} – ${fmt24to12(data.slotEndTime)}`
+    ? `${fmt24to12(data.slotStartTime)} to ${fmt24to12(data.slotEndTime)}`
     : null;
   const formattedDate = data.slotDate ? fmtDateLong(data.slotDate) : null;
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-[#F8F7FA] px-4 py-12 sm:px-6">
+    <main className="flex min-h-screen flex-col items-center justify-center px-4 py-12 sm:px-6">
       <div className="w-full max-w-lg">
 
         {/* Success Card */}
-        <div className="rounded-3xl border border-slate-100 bg-white p-8 sm:p-9 shadow-[0_8px_30px_rgb(0,0,0,0.04)] text-center">
+        <div className="card p-8 sm:p-9 text-center">
 
           {/* Checkmark Icon */}
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-50 text-violet-600 text-3xl shadow-sm">
-            ✓
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 shadow-sm">
+            <IconCheck className="h-8 w-8" />
           </div>
 
           {/* Status pill */}
-          <span className="mt-4 inline-block rounded-full bg-violet-50 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-violet-700 border border-violet-100">
+          <span className="mt-4 inline-block rounded-full bg-blue-50 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-blue-700 border border-blue-100">
             Appointment Requested
           </span>
 
           {/* Headline */}
-          <h1 className="mt-2 text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+          <h1 className="mt-2 text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
             You&apos;re all set!
           </h1>
           <p className="mt-2 text-xs leading-relaxed text-slate-500">
@@ -304,13 +302,13 @@ function ConfirmationContent() {
             <a
               id="view-appointments-link"
               href="/patient/dashboard"
-              className="w-full rounded-2xl bg-[#2A2338] px-6 py-4 text-base font-semibold text-white shadow-md transition hover:bg-[#1E192C] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+              className="w-full rounded-2xl bg-blue-600 px-6 py-4 text-base font-semibold text-white shadow-md transition hover:bg-blue-700 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-500/50"
             >
-              View My Appointments →
+              View My Appointments
             </a>
             <a
               href="/patient/doctors"
-              className="w-full rounded-2xl border border-slate-200 bg-white px-6 py-3.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 shadow-sm"
+              className="w-full card px-6 py-3.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
             >
               Browse more doctors
             </a>
@@ -318,7 +316,7 @@ function ConfirmationContent() {
         </div>
 
         {/* Footer note */}
-        <p className="mt-5 text-center text-xs text-slate-400">
+        <p className="mt-5 text-center text-xs text-slate-500">
           Appointment Reference:{' '}
           <span className="font-mono text-slate-600">{appointmentId}</span>
         </p>
@@ -327,16 +325,15 @@ function ConfirmationContent() {
   );
 }
 
-// ─── Page Export (RequireRole + Suspense boundary) ────────────────────────────
-
+// Page Export (RequireRole + Suspense boundary)
 export default function AppointmentConfirmationPage() {
   return (
     <RequireRole role="patient">
       <Suspense
         fallback={
-          <main className="flex min-h-screen items-center justify-center bg-[#F8F7FA]">
+          <main className="flex min-h-screen items-center justify-center">
             <div className="flex items-center gap-3 text-slate-500">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-violet-200 border-t-violet-600" />
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600" />
               <span className="text-sm font-medium">Loading confirmation…</span>
             </div>
           </main>

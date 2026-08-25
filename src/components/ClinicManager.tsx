@@ -43,18 +43,18 @@ export default function ClinicManager() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // ── Add-form state
+  // Add-form state
   const [form, setForm] = useState<ClinicFormState>(BLANK_FORM);
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // ── Per-row edit state
+  // Per-row edit state
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<ClinicFormState>(BLANK_FORM);
   const [editError, setEditError] = useState<string | null>(null);
   const [editSubmitting, setEditSubmitting] = useState(false);
 
-  // ── delete state (track which clinic id is mid-delete)
+  // delete state (track which clinic id is mid-delete)
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -117,7 +117,7 @@ export default function ClinicManager() {
     };
   }, []);
 
-  // ── Add clinic
+  // Add clinic
   async function handleAddClinic(e: FormEvent) {
     e.preventDefault();
     const err = validate(form);
@@ -130,7 +130,7 @@ export default function ClinicManager() {
 
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-      setFormError('Your session expired — please log in again.');
+      setFormError('Your session expired. Please log in again.');
       setSubmitting(false);
       return;
     }
@@ -159,7 +159,7 @@ export default function ClinicManager() {
     setForm(BLANK_FORM);
   }
 
-  // ── Edit clinic
+  // Edit clinic
   function startEdit(clinic: Clinic) {
     setEditingId(clinic.id);
     setEditForm({
@@ -214,7 +214,7 @@ export default function ClinicManager() {
     setEditingId(null);
   }
 
-  // ── Delete clinic (a doctor must keep at least one -- profile-setup/dashboard
+  // Delete clinic (a doctor must keep at least one -- profile-setup/dashboard
   // gating requires >=1 clinics row to be considered onboarded)
   async function handleDelete(clinicId: string) {
     if (clinics.length <= 1) return;
@@ -229,19 +229,17 @@ export default function ClinicManager() {
     setClinics((prev) => prev.filter((c) => c.id !== clinicId));
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-600 border-t-indigo-500" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
       </div>
     );
   }
 
   if (loadError) {
     return (
-      <div className="mt-8 rounded-xl border border-red-500/30 bg-red-500/10 px-6 py-4 text-sm text-red-400">
+      <div className="mt-8 rounded-2xl border border-rose-200 bg-rose-50 px-6 py-4 text-sm font-medium text-rose-700">
         {loadError}
       </div>
     );
@@ -250,11 +248,11 @@ export default function ClinicManager() {
   return (
     <div className="flex flex-col gap-8">
 
-      {/* ── Add clinic form ───────────────────────────────────────────────── */}
-      <section className="rounded-3xl border border-slate-100 bg-white p-6 sm:p-7 shadow-[0_8px_30px_rgb(0,0,0,0.03)]">
+      {/* Add clinic form */}
+      <section className="card p-6 sm:p-7">
         <div className="border-b border-slate-100 pb-4 mb-5">
           <h2 className="text-lg font-bold text-slate-900">Add a Clinic Location</h2>
-          <p className="text-xs text-slate-400 mt-0.5 font-medium">Add another practice location patients can book at.</p>
+          <p className="text-sm text-slate-600 mt-1">Add another practice location patients can book at.</p>
         </div>
 
         <form onSubmit={handleAddClinic} className="flex flex-col gap-4.5">
@@ -269,7 +267,7 @@ export default function ClinicManager() {
                 placeholder="e.g. Angeles University Foundation Medical Center"
                 value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20"
+                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
               />
             </div>
 
@@ -284,7 +282,7 @@ export default function ClinicManager() {
                 placeholder="e.g. 3rd Floor, Suite 210"
                 value={form.roomDetails}
                 onChange={(e) => setForm((f) => ({ ...f, roomDetails: e.target.value }))}
-                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20"
+                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
               />
             </div>
 
@@ -298,7 +296,7 @@ export default function ClinicManager() {
                 placeholder="e.g. MacArthur Highway, Angeles City, Pampanga"
                 value={form.location}
                 onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
-                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20"
+                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
               />
             </div>
 
@@ -316,7 +314,7 @@ export default function ClinicManager() {
                   placeholder="500.00"
                   value={form.consultationFee}
                   onChange={(e) => setForm((f) => ({ ...f, consultationFee: e.target.value }))}
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50/60 py-3.5 pl-8 pr-4 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20"
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50/60 py-3.5 pl-8 pr-4 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
                 />
               </div>
             </div>
@@ -333,7 +331,7 @@ export default function ClinicManager() {
               id="add-clinic-submit"
               type="submit"
               disabled={submitting}
-              className="rounded-2xl bg-[#2A2338] px-7 py-3.5 min-h-[48px] text-sm font-semibold text-white shadow-sm transition hover:bg-[#1E192C] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+              className="rounded-2xl bg-blue-600 px-7 py-3.5 min-h-[48px] text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
             >
               {submitting ? 'Adding clinic…' : '+ Add Clinic Location'}
             </button>
@@ -341,16 +339,16 @@ export default function ClinicManager() {
         </form>
       </section>
 
-      {/* ── Existing clinics list ────────────────────────────────────────── */}
-      <section className="rounded-3xl border border-slate-100 bg-white p-6 sm:p-7 shadow-[0_8px_30px_rgb(0,0,0,0.03)]">
+      {/* Existing clinics list */}
+      <section className="card p-6 sm:p-7">
         <div className="border-b border-slate-100 pb-4 mb-5">
           <h2 className="text-lg font-bold text-slate-900">Your Practice Locations</h2>
-          <p className="text-xs text-slate-400 mt-0.5 font-medium">Patients see these clinics on your public profile.</p>
+          <p className="text-sm text-slate-600 mt-1">Patients see these clinics on your public profile.</p>
         </div>
 
         {clinics.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 px-6 py-10 text-center">
-            <p className="text-xs font-medium text-slate-500">No clinics yet — add one above.</p>
+            <p className="text-xs font-medium text-slate-500">No clinics yet. Add one above.</p>
           </div>
         ) : (
           <div className="flex flex-col gap-2.5">
@@ -360,28 +358,28 @@ export default function ClinicManager() {
 
               if (isEditing) {
                 return (
-                  <div key={clinic.id} className="rounded-2xl border border-violet-200 bg-violet-50/30 p-4">
+                  <div key={clinic.id} className="rounded-2xl border border-blue-200 bg-blue-50/30 p-4">
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <input
                         type="text"
                         value={editForm.name}
                         onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
                         placeholder="Clinic name"
-                        className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
+                        className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                       />
                       <input
                         type="text"
                         value={editForm.roomDetails}
                         onChange={(e) => setEditForm((f) => ({ ...f, roomDetails: e.target.value }))}
                         placeholder="Room / suite (optional)"
-                        className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
+                        className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                       />
                       <input
                         type="text"
                         value={editForm.location}
                         onChange={(e) => setEditForm((f) => ({ ...f, location: e.target.value }))}
                         placeholder="Location"
-                        className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
+                        className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                       />
                       <div className="relative">
                         <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">₱</span>
@@ -392,7 +390,7 @@ export default function ClinicManager() {
                           value={editForm.consultationFee}
                           onChange={(e) => setEditForm((f) => ({ ...f, consultationFee: e.target.value }))}
                           placeholder="Consultation fee"
-                          className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-7 pr-3.5 text-sm text-slate-900 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
+                          className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-7 pr-3.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                         />
                       </div>
                     </div>
@@ -402,7 +400,7 @@ export default function ClinicManager() {
                         type="button"
                         onClick={() => handleSaveEdit(clinic.id)}
                         disabled={editSubmitting}
-                        className="rounded-2xl bg-[#2A2338] px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-[#1E192C] disabled:opacity-50"
+                        className="rounded-2xl bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-50"
                       >
                         {editSubmitting ? '…' : 'Save'}
                       </button>
@@ -430,7 +428,7 @@ export default function ClinicManager() {
                       <p className="text-xs text-slate-600 mt-0.5">{clinic.room_details}</p>
                     )}
                     <p className="text-xs text-slate-500 mt-0.5">
-                      📍 {clinic.location} · ₱
+                      {clinic.location} · ₱
                       {Number(clinic.consultation_fee).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                     </p>
                   </div>
@@ -439,7 +437,7 @@ export default function ClinicManager() {
                     <button
                       type="button"
                       onClick={() => startEdit(clinic)}
-                      className="rounded-2xl border border-slate-200 bg-white px-3.5 py-1.5 min-h-[38px] text-xs font-semibold text-slate-700 transition hover:border-violet-300 hover:text-violet-700 hover:bg-violet-50/50 shadow-sm"
+                      className="card px-3.5 py-1.5 min-h-[38px] text-xs font-semibold text-slate-700 transition hover:border-blue-300 hover:text-blue-700 hover:bg-blue-50/50"
                     >
                       Edit
                     </button>
@@ -448,7 +446,7 @@ export default function ClinicManager() {
                       onClick={() => handleDelete(clinic.id)}
                       disabled={isDeleting || clinics.length <= 1}
                       title={clinics.length <= 1 ? 'You must have at least one clinic location' : undefined}
-                      className="rounded-2xl border border-slate-200 bg-white px-3.5 py-1.5 min-h-[38px] text-xs font-semibold text-slate-700 transition hover:border-rose-300 hover:text-rose-600 hover:bg-rose-50/50 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="card px-3.5 py-1.5 min-h-[38px] text-xs font-semibold text-slate-700 transition hover:border-rose-300 hover:text-rose-600 hover:bg-rose-50/50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isDeleting ? '…' : 'Delete'}
                     </button>

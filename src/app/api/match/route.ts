@@ -1,11 +1,11 @@
 // src/app/api/match/route.ts
 //
 // POST /api/match
-// AI Symptom → Specialty Matching — Pipeline stages 1-3 (Task 3.2)
+// AI Symptom to Specialty Matching. Pipeline stages 1-3 (Task 3.2)
 //
 // Pipeline (per PRD 8.1):
-//   Symptoms → [AI: stages 1-3 in one call] → specialty + sub-specialty + reason
-//                                            → OR clarifying question
+//   Symptoms go through AI stages 1-3 in one call, producing specialty
+//   plus sub-specialty plus reason, or a clarifying question instead.
 //
 // Stages NOT implemented here: 4 (HMO verification), 5 (doctor ranking), 6 (booking)
 //
@@ -15,16 +15,16 @@
 // TODO: harden with session check before production / public demo.
 //
 // ENV VARS REQUIRED (add to .env.local + any deployment env):
-//   GEMINI_API_KEY             — Google AI Studio API key (server-only)
-//   SUPABASE_SERVICE_ROLE_KEY  — Supabase service-role key (server-only, bypasses RLS)
-//   NEXT_PUBLIC_SUPABASE_URL   — already present in .env.local
+//   GEMINI_API_KEY             Google AI Studio API key (server-only)
+//   SUPABASE_SERVICE_ROLE_KEY  Supabase service-role key (server-only, bypasses RLS)
+//   NEXT_PUBLIC_SUPABASE_URL   already present in .env.local
 
 import { GoogleGenAI } from '@google/genai';
 import { createClient } from '@supabase/supabase-js';
 import type { MatchResult, ClarifyResult, EmergencyResult, MatchApiResult } from '@/lib/matchApi';
 import { checkEmergencySymptoms } from '@/lib/safetyGate';
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// Types
 
 interface RequestBody {
   symptomText: string;
@@ -36,7 +36,7 @@ interface RequestBody {
   conversationHistory?: Array<{ role: 'user' | 'model'; text: string }>;
 }
 
-// ─── Response parser ─────────────────────────────────────────────────────────
+// Response parser
 
 function parseAIResponse(raw: string): MatchApiResult | null {
   // Strip markdown code fences if the model wraps its output (Assumption 8)
@@ -77,18 +77,18 @@ function parseAIResponse(raw: string): MatchApiResult | null {
   }
 }
 
-// ─── Graceful fallback used when the AI response can't be parsed ──────────────
+// Graceful fallback used when the AI response can't be parsed
 
 const PARSE_FALLBACK: ClarifyResult = {
   type: 'clarify',
   question:
-    "We couldn't quite understand — could you describe what you're feeling in a bit more detail?",
+    "We couldn't quite understand. Could you describe what you're feeling in a bit more detail?",
 };
 
-// ─── Route Handler ────────────────────────────────────────────────────────────
+// Route Handler
 
 export async function POST(request: Request): Promise<Response> {
-  // ── 1. Validate env vars ──────────────────────────────────────────────────
+  // 1. Validate env vars
   const geminiKey = process.env.GEMINI_API_KEY;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -105,7 +105,7 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
-  // ── 2. Parse + validate request body ─────────────────────────────────────
+  // 2. Parse + validate request body
   let body: RequestBody;
   try {
     body = (await request.json()) as RequestBody;
@@ -127,7 +127,7 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: 'symptomText is required.' }, { status: 400 });
   }
 
-  // ── 2.5 Emergency Safety Gate (PRD Section 8.2 / Task 3.3) ────────────────
+  // 2.5 Emergency Safety Gate (PRD Section 8.2 / Task 3.3)
   // Runs BEFORE any AI/specialty mapping call. Deterministic rule check on
   // calibrated objective symptom combinations. Short-circuits immediately if
   // an emergency condition is detected.
@@ -143,8 +143,8 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json(emergencyResponse);
   }
 
-  // ── 3. Fetch taxonomy from Supabase (Assumption 3) ───────────────────────
-  // Use the service-role client so this bypasses RLS — no patient session
+  // 3. Fetch taxonomy from Supabase (Assumption 3)
+  // Use the service-role client so this bypasses RLS. No patient session
   // needed for a table read that only touches public lookup data.
   const serviceClient = createClient(supabaseUrl, serviceRoleKey);
 
@@ -162,7 +162,7 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
-  // ── 4. Fetch no-sub-specialty specialties (e.g. General Practice) ─────────
+  // 4. Fetch no-sub-specialty specialties (e.g. General Practice)
   // These appear in the specialties table but have no rows in specialty_taxonomy.
   // The model must return sub_specialty: null for these.
   const allTaxonomySpecialties = new Set(
@@ -178,15 +178,15 @@ export async function POST(request: Request): Promise<Response> {
     .map((r: { specialty: string }) => r.specialty)
     .filter((s: string) => !allTaxonomySpecialties.has(s));
 
-  // ── 5. Build the system prompt ────────────────────────────────────────────
+  // 5. Build the system prompt
   const taxonomyLines = (taxonomyRows ?? [])
-    .map((r: { specialty: string; sub_specialty: string }) => `${r.specialty} → ${r.sub_specialty}`)
+    .map((r: { specialty: string; sub_specialty: string }) => `${r.specialty}: ${r.sub_specialty}`)
     .join('\n');
 
   const noSubLines =
     noSubSpecialtyList.length > 0 ? noSubSpecialtyList.join('\n') : '(none)';
 
-  const systemPrompt = `You are a non-diagnostic clinical triage assistant for CivicAccess, a Philippine healthcare navigation platform.
+  const systemPrompt = `You are a non-diagnostic clinical triage assistant for KayApp, a Philippine healthcare navigation platform.
 
 Your job is to read a patient's symptom description and demographic details, then identify the ONE most appropriate medical specialty and sub-specialty from the fixed taxonomy list below.
 
@@ -194,7 +194,7 @@ RULES:
 - Do NOT diagnose any condition.
 - Do NOT suggest any medication or prescription.
 - Do NOT recommend any specialty or sub-specialty outside the fixed list below. If symptoms don't fit any entry, pick the closest match.
-- Return ONLY valid JSON — no markdown fences, no extra commentary outside the JSON value.
+- Return ONLY valid JSON. No markdown fences, no extra commentary outside the JSON value.
 - If confident in the match, return:
   {"type":"match","specialty":"...","sub_specialty":"..." or null,"reason":"one sentence in plain language"}
 - If the symptoms are too ambiguous or vague, return:
@@ -202,7 +202,7 @@ RULES:
 - If the patient has already answered a clarifying question (you will see it in the conversation history), you MUST now return a {"type":"match",...} response. Do not ask another question if the history already contains a patient answer.
 
 ACCESSIBILITY, PLAIN-LANGUAGE & NURSE-TONE RULES (PRD 8.7 - CRITICAL):
-1. The "reason" field MUST sound like a warm, caring clinic nurse explaining to a worried relative — NOT a medical textbook.
+1. The "reason" field MUST sound like a warm, caring clinic nurse explaining to a worried relative, NOT a medical textbook.
 2. ELIMINATE all dense clinical jargon (e.g. do NOT say "etiology", "pathology", "bilateral presentation", "manifests", "symptomatology").
    - Instead of: "Symptoms manifest classic retinal detachment etiology."
    - Say: "These dark spots and flashes of light often involve the back of the eye, so an eye specialist should examine it promptly."
@@ -215,13 +215,13 @@ ACCESSIBILITY, PLAIN-LANGUAGE & NURSE-TONE RULES (PRD 8.7 - CRITICAL):
 5. The "reason" must be concise and reassuring. Maximum 25 words.
 6. The "question" field (if asking a follow-up) must be a single short question in the patient's language. No numbered lists, no bullet points.
 
-VALID SPECIALTY / SUB-SPECIALTY PAIRS (specialty → sub-specialty):
+VALID SPECIALTY / SUB-SPECIALTY PAIRS (specialty: sub-specialty):
 ${taxonomyLines}
 
 SPECIALTIES WITH NO SUB-SPECIALTY (use sub_specialty: null for these):
 ${noSubLines}`;
 
-  // ── 6. Build the user turn content ───────────────────────────────────────
+  // 6. Build the user turn content
   // Demographic preamble for the model's context
   const demoParts: string[] = [];
   if (name) demoParts.push(`Patient: ${name}${body.isForFamilyMember ? ' (Family Member)' : ''}`);
@@ -241,7 +241,7 @@ ${noSubLines}`;
   const currentUserText =
     `${demoContext}Symptoms: ${symptomText.trim()}${forceMatchNote}`;
 
-  // Build the full contents array — history turns first, then the current user turn
+  // Build the full contents array: history turns first, then the current user turn
   const contents = [
     ...conversationHistory.map((turn) => ({
       role: turn.role as 'user' | 'model',
@@ -253,7 +253,7 @@ ${noSubLines}`;
     },
   ];
 
-  // ── 7. Call the Gemini API with automatic model fallback ──────────────────
+  // 7. Call the Gemini API with automatic model fallback
   const modelsToTry = [
     'gemini-flash-lite-latest',
     'gemini-2.5-flash',
@@ -295,16 +295,16 @@ ${noSubLines}`;
     );
   }
 
-  // ── 8. Parse the response ─────────────────────────────────────────────────
+  // 8. Parse the response
   const parsed = parseAIResponse(rawText);
 
   if (!parsed) {
-    // Log for hackathon debugging — this is the most common failure mode
+    // Log for hackathon debugging. This is the most common failure mode
     console.error('[match] Failed to parse AI response. Raw text:', rawText);
-    // Graceful fallback — never return a 500 for an AI parse failure (Assumption 8)
+    // Graceful fallback. Never return a 500 for an AI parse failure (Assumption 8)
     return Response.json(PARSE_FALLBACK);
   }
 
-  // ── 9. Return ─────────────────────────────────────────────────────────────
+  // 9. Return
   return Response.json(parsed);
 }
