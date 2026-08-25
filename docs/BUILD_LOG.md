@@ -29,6 +29,38 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-25: HITL doctor verification, self-service taxonomy, and 2-step booking flow
+**Task:** 7.1–7.4 (personal Phase 7 pivot roadmap — see `.claude/roadmap.md`; not merged into the shared `docs/liquid-roadmap.md`, per team decision to keep it as an assigned personal task list rather than the whole team's roadmap)
+**Owner:** Coding agent
+**What changed:** Doctor verification stopped being decorative and became a real gate, doctors can add a specialty the seeded taxonomy doesn't have, and booking asks which clinic before which time slot.
+- **Task 7.1 — Schema:** New migration `0008` replaces `doctors.verified` (an always-`true`, never-set boolean) with `verification_status` (`pending`/`verified`/`rejected`) plus `verification_notes`/`reviewed_by`/`reviewed_at`, backfilling every existing doctor to `verified`. A trigger locks those columns to service-role-only writes so a doctor can't self-verify from the browser console. A new RLS policy lets an authenticated doctor insert a new `specialty_taxonomy` row (checked via the `user_metadata.role` JWT claim, not an existing `doctors` row, so it works mid-onboarding).
+- **Task 7.2 — HITL PRC verification:** `profile-setup/page.tsx`'s `credentials` field changed from a file-upload-filename stub to a real required text input prompting for the PRC license number. Doctor dashboard shows a status banner (amber for pending, red with notes + a "Resubmit for Review" button for rejected, wired to new `POST /api/doctor/resubmit-verification`). Patient-facing doctor search/profile pages now filter on `verification_status = 'verified'`. Built a passcode-gated internal admin tool (env var `ADMIN_VERIFY_PASSCODE`) for a human reviewer to approve/reject after manually checking https://verification.prc.gov.ph/ (no PRC API exists).
+- **Task 7.3 — Self-service taxonomy:** New `src/lib/taxonomySelfService.ts` (`findOrCreateTaxonomyEntry`) backs a "+ Other (please specify)" option on both the specialty and sub-specialty pickers in `profile-setup/page.tsx` and `ProfileEditor.tsx`, case-insensitively deduped against existing rows. Also fixed two live bugs found while touching this area: `api/match/route.ts` was silently querying a `specialties` table that was never applied to the live DB (from the dead `0003` migration design) — removed, deriving the no-sub-specialty list from the `specialty_taxonomy` fetch already happening; and the hardcoded `'General Practice'` specialty-list entry in both picker files matched nothing in the real taxonomy (`'General Medicine'`) — removed.
+- **Task 7.4 — Booking flow:** Redesigned `patient/doctors/[id]/page.tsx`'s booking section from a flat "pick any slot from any clinic" grid into a 2-step flow — pick a clinic first (skipped automatically when a doctor has only one), then that clinic's time slots. Both pickers use `role="radiogroup"`/`role="radio"` + `aria-checked` instead of color-only toggle feedback; the whole slot grid is disabled during submission, not just Confirm/Cancel; Cancel now clears the symptom note and any booking error, not just the selected slot. Also removed the now-redundant "Practice Locations & Rates" block from the profile hero card, since Step 1 of the booking flow already shows each clinic's name/location/fee.
+- **Admin UI iteration:** Original draft was two separate pages (`/admin/verify-doctors`, `/admin/manage-taxonomy`) with ad-hoc slate/emerald styling. Per feedback, consolidated into one page (`/admin/verify-doctors`, tabbed) sharing a passcode gate, restyled to match the app's actual design tokens (`.card`, `bg-blue-600`, `field-label`, `fluid-hover` — not the stale violet/obsidian scheme from an older BUILD_LOG entry), and given the real `Logo` (KayApp) header. Added `/admin` as a landing page linking into it.
+**Files touched:**
+- `supabase/migrations/0008_doctor_verification_and_taxonomy_rls.sql` [NEW] — verification columns/trigger, taxonomy insert RLS policy.
+- `src/lib/taxonomySelfService.ts` [NEW] — case-insensitive find-or-create for `specialty_taxonomy`.
+- `src/lib/adminAuth.ts` [NEW] — shared passcode check for admin API routes.
+- `src/components/AdminGate.tsx` [NEW] — shared passcode-gate UI, verifies against a real API call rather than trusting cached input.
+- `src/components/admin/DoctorVerificationQueue.tsx`, `src/components/admin/TaxonomyManager.tsx` [NEW] — the two admin tool tabs' content.
+- `src/app/admin/page.tsx`, `src/app/admin/verify-doctors/page.tsx` [NEW] — admin landing page and the combined tabbed tools page.
+- `src/app/api/admin/doctors/route.ts`, `src/app/api/admin/doctors/[id]/route.ts` [NEW] — list/approve/reject doctors.
+- `src/app/api/admin/taxonomy/route.ts`, `src/app/api/admin/taxonomy/[id]/route.ts` [NEW] — list (with doctor-usage counts) / delete taxonomy entries.
+- `src/app/api/doctor/resubmit-verification/route.ts` [NEW] — lets a rejected doctor return to `pending`.
+- `src/app/doctor/profile-setup/page.tsx`, `src/components/ProfileEditor.tsx` [MODIFIED] — real credentials text input, "+ Other" specialty/sub-specialty, removed hardcoded `'General Practice'`.
+- `src/app/doctor/dashboard/page.tsx` [MODIFIED] — verification status banner + resubmit action.
+- `src/app/patient/doctors/page.tsx`, `src/app/patient/doctors/[id]/page.tsx` [MODIFIED] — `verification_status` filter/type rename; `[id]/page.tsx` additionally gets the 2-step booking redesign and drops the Practice Locations & Rates block.
+- `src/lib/doctorRanking.ts` [MODIFIED] — `DoctorRecord.verified` → `verification_status`.
+- `src/app/api/match/route.ts` [MODIFIED] — removed the dead `specialties` table query.
+- `.env.local` [MODIFIED, not committed] — added `ADMIN_VERIFY_PASSCODE`.
+**Notes/trade-offs:**
+- **No new `license_number` column.** The PRC license number deliberately lives in the existing `credentials` text field, per direct product decision — the seed data already formats it as `"PRC Lic. No. 123456 | MD, FPAFP"`.
+- **HMO accreditation stays doctor-level, unchanged.** A Doctor×Clinic×HMO junction/bridge table was scoped in an early draft of this pivot and explicitly dropped mid-plan: if a doctor doesn't take a patient's HMO at one clinic, the patient can simply be booked at a different clinic of that same doctor.
+- **The admin passcode is a disclosed speed bump, not real authentication** — deliberately not wired into `RequireRole`/the patient-doctor auth system, same spirit as the PRD's existing "no live HMO verification, disclosed as a known gap" framing.
+- **Migration `0008` was applied to the live DB by the user directly**, not through this agent — `DATABASE_URL` is never passed through the agent, consistent with established project practice (see the 2026-08-19 "Seed apply instructions" entry).
+- **Deleting a `specialty_taxonomy` row is schema-safe against existing doctors** (migration `0005` replaced the old FK with an insert/update-only trigger, so nothing cascades), but the admin tool surfaces a live doctor-usage count per entry so it's an informed choice, not a silent trap for a doctor who later re-saves their profile unchanged.
+
 ### 2026-08-20: Multi-clinic doctor profiles, in-app profile editing, and required decline/cancel reasons
 **Task:** Doctor Portal follow-ups (no single roadmap number, post-5.4 polish pass)
 **Owner:** Coding agent

@@ -399,7 +399,7 @@ function PatientDashboardContent() {
                           <div className="flex items-center gap-3 self-end sm:self-center">
                             {appt.status === 'pending' && (
                               <span className="rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-xs font-bold text-amber-700">
-                                Pending Confirmation
+                                Pending
                               </span>
                             )}
                             {appt.status === 'confirmed' && (
