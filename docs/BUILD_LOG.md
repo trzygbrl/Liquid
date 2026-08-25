@@ -29,6 +29,22 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-25: Speech-to-text symptom input via Web Speech API
+**Task:** 1.1 (`docs/kayapp-additional-features.md` Phase 3 — Speech-to-text for symptom input)
+**Owner:** Coding agent
+**What changed:** Added live voice dictation (speech-to-text) to Step 3 (symptom description) of the patient intake flow using the native browser Web Speech API (`SpeechRecognition` / `webkitSpeechRecognition`), enabling users in pain or on mobile devices to speak their symptoms naturally.
+- **Web Speech Integration (`src/components/IntakeFlow.tsx`):** Added client-side feature detection for Web Speech API on mount. Built a continuous, interim-result listening engine that streams transcribed words live into the existing symptom textarea. Dictated words append cleanly to previously typed notes without duplication or loss of manual edits.
+- **Accessible Mic Controls & Visual Listening Feedback (`src/components/IntakeFlow.tsx` & `src/components/Icons.tsx`):** Added `IconMic` and `IconMicOff` icons. Positioned an accessible button beside the "Describe symptoms" label with full `aria-pressed`, `aria-label`, and keyboard focus support. Displays a glowing, pulsing rose listening state (`"Listening… (Click to stop)"`) and real-time guidance banner.
+- **Silent Fallback:** If the browser or environment does not support speech recognition, the mic button is silently omitted, gracefully falling back to typing without any error messages.
+- **Zero Audio Persistence & No Auto-Submit:** Raw audio is processed locally by the browser engine and is never uploaded, recorded, or stored on servers. Dictation populates the `symptomText` React state for user review and editing before they choose to submit; submission is never triggered automatically from voice input alone.
+**Files touched:**
+- `src/components/Icons.tsx` [MODIFIED] — added `IconMic` and `IconMicOff` SVG icons.
+- `src/components/IntakeFlow.tsx` [MODIFIED] — added Web Speech API detection, speech recognition lifecycle, live transcription into textarea, and pulsing listening UI.
+- `docs/kayapp-additional-features.md` [MODIFIED] — marked Feature 1.1 as shipped `[x]`.
+**Notes/trade-offs:**
+- **Zero backend infrastructure/cost:** Running Web Speech API directly in the browser incurs zero LLM or transcription API costs while providing instant streaming feedback.
+- **Editable before submit:** Keeps the patient in full control of their symptom narrative before initiating the clinical matching pipeline.
+
 ### 2026-08-25: Symptom-specific specialist matching rationale & fluid side-by-side result view
 **Task:** 1.3 (`docs/kayapp-additional-features.md` Phase 2 — "Why this specialist" explanation)
 **Owner:** Coding agent
