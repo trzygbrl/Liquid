@@ -91,9 +91,11 @@ function IntakePageContent() {
     setState('intake');
   }
 
+  const isMatchResult = state === 'result' && matchResult?.type === 'match';
+
   return (
     <main className="flex min-h-screen flex-col px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto w-full max-w-2xl">
+      <div className={`mx-auto w-full ${isMatchResult ? 'max-w-4xl' : 'max-w-2xl'} transition-all duration-300`}>
         {/* Header */}
         <div className="border-b border-slate-200/80 pb-6 mb-8 flex items-center justify-between">
           <div>

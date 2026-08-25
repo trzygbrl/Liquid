@@ -8,9 +8,9 @@
 // Supports booking for self vs. a family member (e.g. child or elderly parent).
 // Clinical triage and specialist matching depends on the person's actual age and sex.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import { IconCheck, IconInfo } from '@/components/Icons';
+import { IconCheck, IconInfo, IconMic } from '@/components/Icons';
 
 // Types
 type Sex = 'male' | 'female' | 'other';
@@ -167,6 +167,105 @@ export default function IntakeFlow({ onComplete, initialData = null, initialStep
 
   // Prefill flag -- skipped entirely when initialData is already supplied
   const [prefillLoading, setPrefillLoading] = useState(!initialData);
+
+  // Speech Recognition (Web Speech API) - Feature 1.1
+  const [isSpeechSupported, setIsSpeechSupported] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+  const baseTextRef = useRef('');
+
+  // Detect Web Speech API support safely on client mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const SpeechRecognition =
+        (window as any).SpeechRecognition ||
+        (window as any).webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        setIsSpeechSupported(true);
+      }
+    }
+  }, []);
+
+  // Stop listening helper
+  const stopListening = () => {
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch {
+        // Ignore
+      }
+    }
+    setIsListening(false);
+  };
+
+  // Toggle voice recognition
+  const toggleListening = () => {
+    if (typeof window === 'undefined') return;
+    const SpeechRecognition =
+      (window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    if (isListening) {
+      stopListening();
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = navigator.language || 'en-US';
+
+      baseTextRef.current = symptomText;
+
+      recognition.onstart = () => {
+        setIsListening(true);
+      };
+
+      recognition.onresult = (event: any) => {
+        let sessionTranscript = '';
+        for (let i = 0; i < event.results.length; i++) {
+          sessionTranscript += event.results[i][0].transcript;
+        }
+
+        const prefix = baseTextRef.current.trim();
+        const combined = prefix
+          ? `${prefix} ${sessionTranscript.trim()}`
+          : sessionTranscript.trim();
+
+        setSymptomText(combined);
+      };
+
+      recognition.onerror = (event: any) => {
+        console.warn('[IntakeFlow] Speech recognition error:', event.error);
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    } catch (err) {
+      console.warn('[IntakeFlow] Failed to start speech recognition:', err);
+      setIsListening(false);
+    }
+  };
+
+  // Abort / clean up speech recognition on step change or unmount
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.abort();
+        } catch {
+          // Ignore
+        }
+      }
+    };
+  }, [step]);
 
   // Prefill user profile from existing patients row on mount
   useEffect(() => {
@@ -550,9 +649,39 @@ export default function IntakeFlow({ onComplete, initialData = null, initialStep
           </div>
 
           <div className="flex flex-col gap-2">
-            <label htmlFor="intake-symptoms" className="text-xs font-bold uppercase tracking-wider text-slate-700">
-              Describe symptoms
-            </label>
+            <div className="flex items-center justify-between gap-2">
+              <label htmlFor="intake-symptoms" className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                Describe symptoms
+              </label>
+              {isSpeechSupported && (
+                <button
+                  id="voice-dictation-btn"
+                  type="button"
+                  onClick={toggleListening}
+                  aria-pressed={isListening}
+                  aria-label={isListening ? 'Stop voice recording' : 'Speak symptoms with voice input'}
+                  className={`fluid-hover inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition ${
+                    isListening
+                      ? 'bg-rose-50 text-rose-700 border border-rose-200 ring-2 ring-rose-500/20 shadow-xs animate-pulse'
+                      : 'bg-slate-100 text-slate-700 hover:bg-blue-50 hover:text-blue-700 border border-slate-200'
+                  }`}
+                >
+                  {isListening ? (
+                    <>
+                      <span className="h-2 w-2 rounded-full bg-rose-600 animate-ping" />
+                      <IconMic className="h-3.5 w-3.5 text-rose-600" />
+                      <span>Listening… (Click to stop)</span>
+                    </>
+                  ) : (
+                    <>
+                      <IconMic className="h-3.5 w-3.5 text-slate-500" />
+                      <span>Voice Input</span>
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+
             <textarea
               id="intake-symptoms"
               rows={6}
@@ -565,6 +694,13 @@ export default function IntakeFlow({ onComplete, initialData = null, initialStep
               }
               className="rounded-2xl border border-slate-200 bg-slate-50/60 px-5 py-4 text-base text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20 resize-none leading-relaxed"
             />
+
+            {isListening && (
+              <p className="text-xs text-rose-700 bg-rose-50/80 p-2.5 rounded-xl border border-rose-200/80 font-medium flex items-center gap-2 animate-fade-slide-up">
+                <span className="h-2 w-2 rounded-full bg-rose-500 animate-pulse" />
+                <span>Transcribing live… Speak clearly. You can edit the text before submitting.</span>
+              </p>
+            )}
           </div>
 
           {submitError && (

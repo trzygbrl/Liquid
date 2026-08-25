@@ -32,6 +32,8 @@ export type MatchResult = {
 export type ClarifyResult = {
   type: 'clarify';
   question: string;
+  isGentlePrompt?: boolean;
+  examples?: string[];
 };
 
 export type EmergencyResult = {

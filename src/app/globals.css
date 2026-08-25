@@ -80,6 +80,40 @@ body {
   animation: fade-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+@keyframes slide-in-right {
+  0% {
+    opacity: 0;
+    transform: translateX(28px) scale(0.97);
+  }
+  60% {
+    opacity: 1;
+    transform: translateX(-3px) scale(1.004);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes slide-in-left {
+  0% {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 /* Card: the single elevated white surface used across every screen. */
 .card {
   background: var(--surface);
@@ -116,7 +150,9 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-fade-slide-up {
+  .animate-fade-slide-up,
+  .animate-slide-in-right,
+  .animate-slide-in-left {
     animation: none;
   }
   .card-interactive:hover {
