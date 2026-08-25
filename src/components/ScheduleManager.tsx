@@ -299,22 +299,25 @@ export default function ScheduleManager() {
     <div className="mt-8 flex flex-col gap-8">
 
       {/* ── Add slot form ─────────────────────────────────────────────────── */}
-      <section className="rounded-xl border border-slate-700/60 bg-slate-900/60 p-6">
-        <h2 className="mb-5 text-base font-semibold text-white">Add a slot</h2>
+      <section className="rounded-3xl border border-slate-100 bg-white p-6 sm:p-7 shadow-[0_8px_30px_rgb(0,0,0,0.03)]">
+        <div className="border-b border-slate-100 pb-4 mb-5">
+          <h2 className="text-lg font-bold text-slate-900">Add Schedule Slot</h2>
+          <p className="text-xs text-slate-400 mt-0.5 font-medium">Post open consultation hours for patient booking.</p>
+        </div>
 
-        <form onSubmit={handleAddSlot} className="flex flex-col gap-4">
+        <form onSubmit={handleAddSlot} className="flex flex-col gap-4.5">
 
           {/* Clinic */}
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="slot-clinic" className="text-sm font-medium text-slate-300">
-              Clinic <span className="text-red-400">*</span>
+            <label htmlFor="slot-clinic" className="text-xs font-bold uppercase tracking-wider text-slate-600">
+              Practice Clinic <span className="text-rose-500">*</span>
             </label>
             <select
               id="slot-clinic"
               value={selectedClinicId}
               onChange={(e) => setSelectedClinicId(e.target.value)}
               required
-              className="rounded-lg border border-slate-600 bg-slate-800/60 px-4 py-2.5 text-sm text-white outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition disabled:opacity-50"
+              className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20 disabled:opacity-50"
             >
               <option value="">Select clinic</option>
               {clinics.map((c) => (
@@ -324,7 +327,7 @@ export default function ScheduleManager() {
               ))}
             </select>
             {clinics.length === 0 && (
-              <p className="text-xs text-amber-400">
+              <p className="text-xs text-amber-700 bg-amber-50 p-2.5 rounded-xl border border-amber-200">
                 No clinics found. Complete profile setup to add a clinic.
               </p>
             )}
@@ -333,8 +336,8 @@ export default function ScheduleManager() {
           {/* Date + times row */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="slot-date" className="text-sm font-medium text-slate-300">
-                Date <span className="text-red-400">*</span>
+              <label htmlFor="slot-date" className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                Date <span className="text-rose-500">*</span>
               </label>
               <input
                 id="slot-date"
@@ -343,13 +346,13 @@ export default function ScheduleManager() {
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
                 required
-                className="rounded-lg border border-slate-600 bg-slate-800/60 px-4 py-2.5 text-sm text-white outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition [color-scheme:dark]"
+                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20"
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="slot-start" className="text-sm font-medium text-slate-300">
-                Start time <span className="text-red-400">*</span>
+              <label htmlFor="slot-start" className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                Start Time <span className="text-rose-500">*</span>
               </label>
               <input
                 id="slot-start"
@@ -357,13 +360,13 @@ export default function ScheduleManager() {
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
                 required
-                className="rounded-lg border border-slate-600 bg-slate-800/60 px-4 py-2.5 text-sm text-white outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition [color-scheme:dark]"
+                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20"
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="slot-end" className="text-sm font-medium text-slate-300">
-                End time <span className="text-red-400">*</span>
+              <label htmlFor="slot-end" className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                End Time <span className="text-rose-500">*</span>
               </label>
               <input
                 id="slot-end"
@@ -371,48 +374,51 @@ export default function ScheduleManager() {
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
                 required
-                className="rounded-lg border border-slate-600 bg-slate-800/60 px-4 py-2.5 text-sm text-white outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition [color-scheme:dark]"
+                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20"
               />
             </div>
           </div>
 
           {formError && (
-            <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm text-red-400">
+            <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-medium text-rose-700">
               {formError}
             </p>
           )}
 
-          <div className="flex justify-end">
+          <div className="flex justify-end pt-1">
             <button
               id="add-slot-submit"
               type="submit"
               disabled={submitting || clinics.length === 0}
-              className="rounded-xl bg-indigo-600 px-6 py-3 min-h-[44px] text-sm font-semibold text-white transition hover:bg-indigo-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+              className="rounded-2xl bg-[#2A2338] px-7 py-3.5 min-h-[48px] text-sm font-semibold text-white shadow-sm transition hover:bg-[#1E192C] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-violet-500/50"
             >
-              {submitting ? 'Adding…' : '+ Add slot'}
+              {submitting ? 'Adding slot…' : '+ Add Schedule Slot'}
             </button>
           </div>
         </form>
       </section>
 
       {/* ── Upcoming slots list ───────────────────────────────────────────── */}
-      <section>
-        <h2 className="mb-4 text-base font-semibold text-white">Upcoming slots</h2>
+      <section className="rounded-3xl border border-slate-100 bg-white p-6 sm:p-7 shadow-[0_8px_30px_rgb(0,0,0,0.03)]">
+        <div className="border-b border-slate-100 pb-4 mb-5">
+          <h2 className="text-lg font-bold text-slate-900">Upcoming Posted Slots</h2>
+          <p className="text-xs text-slate-400 mt-0.5 font-medium">All upcoming available and booked slots in your calendar.</p>
+        </div>
 
         {slots.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-slate-700 bg-slate-900/40 px-6 py-10 text-center">
-            <p className="text-sm text-slate-500">No upcoming slots — add one above.</p>
+          <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 px-6 py-10 text-center">
+            <p className="text-xs font-medium text-slate-500">No upcoming slots posted — add one above to receive patient bookings.</p>
           </div>
         ) : (
           <div className="flex flex-col gap-6">
             {Array.from(grouped.entries()).map(([dateStr, daySlots]) => (
               <div key={dateStr}>
                 {/* Date header */}
-                <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-slate-400">
-                  {fmtDate(dateStr)}
+                <p className="mb-2.5 text-xs font-bold uppercase tracking-wider text-violet-700">
+                  📅 {fmtDate(dateStr)}
                 </p>
 
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-2.5">
                   {daySlots.map((slot) => {
                     const badge = STATUS_BADGE[slot.is_booked];
                     const isAvailable = slot.is_booked === 'available';
@@ -421,21 +427,21 @@ export default function ScheduleManager() {
                     return (
                       <div
                         key={slot.id}
-                        className="flex items-center justify-between gap-4 rounded-xl border border-slate-700/60 bg-slate-900/60 px-5 py-3.5"
+                        className="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-slate-50/70 px-5 py-3.5"
                       >
                         {/* Left: time + clinic */}
                         <div className="flex flex-col gap-0.5 min-w-0">
-                          <p className="text-sm font-medium text-white">
+                          <p className="text-sm font-bold text-slate-900">
                             {fmt24to12(slot.start_time)} – {fmt24to12(slot.end_time)}
                           </p>
-                          <p className="truncate text-xs text-slate-300">
+                          <p className="truncate text-xs text-slate-600 font-medium">
                             {clinicNameById(slot.clinic_id)}
                           </p>
                           {!isAvailable && (
-                            <p className="text-xs text-slate-400 mt-0.5">
+                            <p className="text-xs text-amber-800 mt-0.5 font-medium">
                               {slot.is_booked === 'booked'
-                                ? 'A patient has booked this slot'
-                                : 'Marked unavailable'}
+                                ? '• Patient consultation booked'
+                                : '• Marked unavailable'}
                             </p>
                           )}
                         </div>
@@ -443,7 +449,13 @@ export default function ScheduleManager() {
                         {/* Right: badge + delete */}
                         <div className="flex shrink-0 items-center gap-3">
                           <span
-                            className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${badge.className}`}
+                            className={`rounded-full border px-3 py-1 text-xs font-bold ${
+                              slot.is_booked === 'available'
+                                ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                                : slot.is_booked === 'booked'
+                                ? 'border-amber-200 bg-amber-50 text-amber-800'
+                                : 'border-slate-200 bg-slate-100 text-slate-600'
+                            }`}
                           >
                             {badge.label}
                           </span>
@@ -454,7 +466,7 @@ export default function ScheduleManager() {
                               onClick={() => handleDelete(slot.id)}
                               disabled={isDeleting}
                               aria-label="Delete slot"
-                              className="rounded-xl border border-slate-700 bg-slate-800/80 px-3.5 py-2 min-h-[38px] text-xs font-semibold text-slate-300 transition hover:border-red-500/60 hover:text-red-400 disabled:opacity-50"
+                              className="rounded-2xl border border-slate-200 bg-white px-3.5 py-1.5 min-h-[38px] text-xs font-semibold text-slate-700 transition hover:border-rose-300 hover:text-rose-600 hover:bg-rose-50/50 shadow-sm disabled:opacity-50"
                             >
                               {isDeleting ? '…' : 'Delete'}
                             </button>

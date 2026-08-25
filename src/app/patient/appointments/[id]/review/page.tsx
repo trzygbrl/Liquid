@@ -244,10 +244,10 @@ function ReviewPageContent() {
   // ─── Loading State ──────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-950 px-6 py-12 text-slate-400">
+      <main className="flex min-h-screen items-center justify-center bg-[#F8F7FA] px-6 py-12 text-slate-500">
         <div className="flex items-center gap-3">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-600 border-t-teal-400" />
-          <span>Verifying consultation status…</span>
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-violet-200 border-t-violet-600" />
+          <span className="text-sm font-medium">Verifying consultation status…</span>
         </div>
       </main>
     );
@@ -257,39 +257,37 @@ function ReviewPageContent() {
   if (errorStatus && errorStatus.startsWith('not_completed')) {
     const rawStatus = errorStatus.split(':')[1] || 'pending';
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-slate-950 px-4 py-12 sm:px-6">
-        <div className="w-full max-w-lg rounded-2xl border border-amber-500/30 bg-slate-900/90 p-8 text-center shadow-2xl backdrop-blur">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-amber-500/10 text-amber-400">
-            <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-            </svg>
+      <main className="flex min-h-screen flex-col items-center justify-center bg-[#F8F7FA] px-4 py-12 sm:px-6">
+        <div className="w-full max-w-lg rounded-3xl border border-slate-100 bg-white p-8 text-center shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 text-3xl">
+            ⚠️
           </div>
 
-          <span className="mt-4 inline-block rounded-md bg-amber-500/15 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-amber-300 border border-amber-500/30">
+          <span className="mt-4 inline-block rounded-full bg-amber-50 px-3 py-1 text-xs font-bold uppercase tracking-wider text-amber-800 border border-amber-200">
             Verified-Visit Only
           </span>
 
-          <h1 className="mt-2 text-2xl font-bold text-white">Review Unavailable</h1>
-          <p className="mt-3 text-sm leading-relaxed text-slate-300">
+          <h1 className="mt-2 text-2xl font-bold text-slate-900">Review Unavailable</h1>
+          <p className="mt-2 text-xs leading-relaxed text-slate-500">
             To ensure authentic, high-quality patient feedback, reviews can only be submitted after your consultation has been marked as{' '}
-            <strong className="text-emerald-400">completed</strong> by the clinic.
+            <strong className="text-emerald-700 font-bold">completed</strong> by the clinic.
           </p>
 
-          <div className="mt-6 rounded-xl border border-slate-800 bg-slate-800/50 p-4 text-xs text-slate-400 space-y-2">
+          <div className="mt-6 rounded-2xl border border-slate-100 bg-slate-50/80 p-4 text-xs text-slate-600 space-y-2">
             <div className="flex justify-between items-center">
               <span>Appointment ID:</span>
-              <span className="font-mono text-slate-300">{appointmentId.slice(0, 8)}…</span>
+              <span className="font-mono text-slate-900 font-semibold">{appointmentId.slice(0, 8)}…</span>
             </div>
             <div className="flex justify-between items-center">
               <span>Current Status:</span>
-              <span className="capitalize font-semibold text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded">
+              <span className="capitalize font-bold text-amber-800 bg-amber-100/60 px-2.5 py-0.5 rounded-full">
                 {rawStatus}
               </span>
             </div>
             {appointment?.doctor && (
               <div className="flex justify-between items-center">
                 <span>Doctor:</span>
-                <span className="font-semibold text-white">{appointment.doctor.name}</span>
+                <span className="font-bold text-slate-900">{appointment.doctor.name}</span>
               </div>
             )}
           </div>
@@ -297,14 +295,14 @@ function ReviewPageContent() {
           <div className="mt-8 flex flex-col gap-3">
             <a
               href="/patient/dashboard"
-              className="w-full rounded-xl bg-teal-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg transition hover:bg-teal-500"
+              className="w-full rounded-2xl bg-[#2A2338] px-6 py-3.5 text-sm font-semibold text-white shadow-md transition hover:bg-[#1E192C]"
             >
               Return to Patient Dashboard →
             </a>
             {appointment?.doctor && (
               <a
                 href={`/patient/doctors/${appointment.doctor.id}`}
-                className="w-full rounded-xl border border-slate-700 bg-slate-800/60 px-6 py-3 text-xs font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-6 py-3 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 shadow-sm"
               >
                 View Doctor Profile
               </a>
@@ -318,20 +316,18 @@ function ReviewPageContent() {
   // ─── Error State: Not Found / Unauthorized ─────────────────────────────────
   if (errorStatus || !appointment) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-slate-950 px-4 py-12 text-center">
-        <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900/60 p-8 shadow-2xl">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-slate-800 text-slate-400">
-            <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-            </svg>
+      <main className="flex min-h-screen flex-col items-center justify-center bg-[#F8F7FA] px-4 py-12 text-center">
+        <div className="w-full max-w-md rounded-3xl border border-slate-100 bg-white p-8 shadow-sm">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 text-2xl">
+            ✕
           </div>
-          <h1 className="mt-4 text-lg font-bold text-white">Consultation Not Found</h1>
-          <p className="mt-2 text-sm text-slate-400">
+          <h1 className="mt-4 text-lg font-bold text-slate-900">Consultation Not Found</h1>
+          <p className="mt-2 text-xs text-slate-500 leading-relaxed">
             This appointment could not be verified or does not belong to your account.
           </p>
           <a
             href="/patient/dashboard"
-            className="mt-6 inline-block rounded-xl bg-slate-800 px-6 py-2.5 text-xs font-semibold text-white transition hover:bg-slate-700"
+            className="mt-6 inline-block rounded-2xl bg-[#2A2338] px-6 py-3 text-xs font-bold text-white transition hover:bg-[#1E192C]"
           >
             ← Return to Dashboard
           </a>
@@ -346,50 +342,44 @@ function ReviewPageContent() {
   if (existingReview || submittedSuccessfully) {
     const rev = existingReview!;
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-slate-950 px-4 py-12 sm:px-6">
-        <div className="w-full max-w-lg rounded-2xl border border-teal-500/40 bg-slate-900/90 p-8 text-center shadow-2xl backdrop-blur">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-teal-500/20 text-teal-400">
-            <svg className="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
-              <path
-                fillRule="evenodd"
-                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                clipRule="evenodd"
-              />
-            </svg>
+      <main className="flex min-h-screen flex-col items-center justify-center bg-[#F8F7FA] px-4 py-12 sm:px-6">
+        <div className="w-full max-w-lg rounded-3xl border border-slate-100 bg-white p-8 text-center shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-50 text-violet-600 text-3xl">
+            ✓
           </div>
 
-          <span className="mt-4 inline-block rounded-md bg-teal-500/15 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-teal-300 border border-teal-500/30">
+          <span className="mt-4 inline-block rounded-full bg-violet-50 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-violet-700 border border-violet-100">
             ✓ Verified Review Submitted
           </span>
 
-          <h1 className="mt-2 text-2xl font-bold text-white">Thank You For Your Feedback!</h1>
-          <p className="mt-2 text-sm text-slate-300">
-            Your review for <span className="font-semibold text-white">{appointment.doctor?.name}</span> helps other patients make informed healthcare choices.
+          <h1 className="mt-2 text-2xl font-bold text-slate-900">Thank You For Your Feedback!</h1>
+          <p className="mt-2 text-xs leading-relaxed text-slate-500">
+            Your review for <span className="font-bold text-slate-900">{appointment.doctor?.name}</span> helps other patients make informed healthcare choices.
           </p>
 
           {/* Submitted Review Card */}
-          <div className="mt-6 rounded-xl border border-slate-800 bg-slate-800/60 p-5 text-left text-xs space-y-3 text-slate-300">
+          <div className="mt-6 rounded-2xl border border-slate-100 bg-slate-50/80 p-5 text-left text-xs space-y-3 text-slate-700">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1 text-amber-400">
+              <div className="flex items-center gap-1 text-amber-500">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <span key={star} className="text-lg">
                     {star <= rev.rating ? '★' : '☆'}
                   </span>
                 ))}
-                <span className="ml-2 font-bold text-white">{rev.rating}.0 / 5.0</span>
+                <span className="ml-2 font-bold text-slate-900">{rev.rating}.0 / 5.0</span>
               </div>
-              <span className="text-[11px] text-slate-400">
+              <span className="text-xs text-slate-500 font-medium">
                 {RATING_LABELS[rev.rating]}
               </span>
             </div>
 
             {rev.comment && (
-              <p className="border-t border-slate-700/60 pt-3 text-sm italic text-slate-200 leading-relaxed">
+              <p className="border-t border-slate-200/60 pt-3 text-xs italic text-slate-700 leading-relaxed font-medium">
                 &ldquo;{rev.comment}&rdquo;
               </p>
             )}
 
-            <div className="border-t border-slate-700/60 pt-2 flex justify-between text-[11px] text-slate-400">
+            <div className="border-t border-slate-200/60 pt-2 flex justify-between text-xs text-slate-500 font-medium">
               <span>Doctor: {appointment.doctor?.name}</span>
               <span>{formatDate(appointment.slot?.date || rev.created_at.split('T')[0])}</span>
             </div>
@@ -399,14 +389,14 @@ function ReviewPageContent() {
             {appointment.doctor && (
               <a
                 href={`/patient/doctors/${appointment.doctor.id}`}
-                className="w-full rounded-xl bg-teal-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg transition hover:bg-teal-500"
+                className="w-full rounded-2xl bg-[#2A2338] px-6 py-3.5 text-sm font-semibold text-white shadow-md transition hover:bg-[#1E192C]"
               >
                 View Doctor Profile & Ratings →
               </a>
             )}
             <a
               href="/patient/dashboard"
-              className="w-full rounded-xl border border-slate-700 bg-slate-800/60 px-6 py-3 text-xs font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white"
+              className="w-full rounded-2xl border border-slate-200 bg-white px-6 py-3 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
             >
               Return to Patient Dashboard
             </a>
@@ -418,37 +408,39 @@ function ReviewPageContent() {
 
   // ─── Render: Review Form ───────────────────────────────────────────────────
   return (
-    <main className="min-h-screen bg-slate-950 px-4 py-10 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-[#F8F7FA] px-4 py-10 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-xl">
         {/* Navigation Breadcrumb */}
-        <div className="mb-6 flex items-center justify-between border-b border-slate-800 pb-4">
+        <div className="mb-6 flex items-center justify-between border-b border-slate-200/80 pb-4">
           <a
             href="/patient/dashboard"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-teal-400 transition hover:text-teal-300"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-900 transition"
           >
             ← Back to dashboard
           </a>
-          <span className="text-xs text-slate-500">Verified Patient Review</span>
+          <span className="rounded-full bg-violet-50 px-3 py-1 text-xs font-bold text-violet-700 border border-violet-100">
+            Verified Patient Review
+          </span>
         </div>
 
         {/* Form Container */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-6 shadow-2xl backdrop-blur sm:p-8">
+        <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.03)] sm:p-8">
           <div className="text-center">
-            <span className="inline-block rounded-md bg-teal-500/15 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-teal-300 border border-teal-500/30">
+            <span className="inline-block rounded-full bg-violet-50 px-3 py-1 text-xs font-bold uppercase tracking-wider text-violet-700 border border-violet-100">
               Verified Consultation
             </span>
-            <h1 className="mt-3 text-2xl font-bold text-white">
+            <h1 className="mt-3 text-2xl font-extrabold text-slate-900 tracking-tight">
               How was your consultation?
             </h1>
-            <p className="mt-1 text-sm text-slate-300">
+            <p className="mt-1 text-xs text-slate-500">
               Share your experience with{' '}
-              <strong className="text-white">{appointment.doctor?.name}</strong>{' '}
+              <strong className="text-slate-900 font-bold">{appointment.doctor?.name}</strong>{' '}
               ({appointment.doctor?.specialty}
               {appointment.doctor?.sub_specialty ? ` — ${appointment.doctor?.sub_specialty}` : ''})
             </p>
 
             {appointment.slot && (
-              <div className="mt-4 inline-flex items-center gap-2 rounded-xl bg-slate-800/60 px-4 py-2 text-xs text-slate-400 border border-slate-800">
+              <div className="mt-4 inline-flex items-center gap-2 rounded-2xl bg-slate-50 px-4 py-2 text-xs text-slate-600 border border-slate-100 font-medium">
                 <span>📅 {formatDate(appointment.slot.date)}</span>
                 {appointment.slot.clinic && (
                   <>
@@ -463,7 +455,7 @@ function ReviewPageContent() {
           <form onSubmit={handleSubmitReview} className="mt-8 space-y-6">
             {/* Interactive Star Rating Picker */}
             <div>
-              <label className="block text-center text-xs font-bold uppercase tracking-wider text-slate-300 mb-3">
+              <label className="block text-center text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
                 Overall Rating (Required)
               </label>
               <div className="flex items-center justify-center gap-3">
@@ -476,14 +468,14 @@ function ReviewPageContent() {
                       onClick={() => setRating(star)}
                       onMouseEnter={() => setHoverRating(star)}
                       onMouseLeave={() => setHoverRating(null)}
-                      className="group p-2 min-h-[48px] min-w-[48px] text-4xl sm:text-5xl transition transform active:scale-125 focus:outline-none focus:ring-2 focus:ring-amber-400/40 rounded-xl"
+                      className="group p-2 min-h-[48px] min-w-[48px] text-4xl sm:text-5xl transition transform active:scale-125 focus:outline-none rounded-2xl"
                       aria-label={`${star} star`}
                     >
                       <span
                         className={`transition-colors duration-150 ${
                           isFilled
-                            ? 'text-amber-400 drop-shadow-[0_0_10px_rgba(251,191,36,0.6)]'
-                            : 'text-slate-700 hover:text-slate-500'
+                            ? 'text-amber-400 drop-shadow-[0_0_10px_rgba(251,191,36,0.5)]'
+                            : 'text-slate-200 hover:text-slate-300'
                         }`}
                       >
                         ★
@@ -494,14 +486,14 @@ function ReviewPageContent() {
               </div>
 
               {/* Rating Label Text */}
-              <p className="mt-3 text-center text-sm font-semibold text-amber-300">
+              <p className="mt-3 text-center text-sm font-bold text-amber-600">
                 {RATING_LABELS[activeStars]}
               </p>
             </div>
 
             {/* Written Comment Textarea */}
             <div>
-              <label htmlFor="review-comment" className="block text-sm font-medium text-slate-200 mb-2">
+              <label htmlFor="review-comment" className="block text-sm font-semibold text-slate-700 mb-2">
                 Written Feedback & Experience (Optional)
               </label>
               <textarea
@@ -510,15 +502,15 @@ function ReviewPageContent() {
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 placeholder="How was the doctor's communication? Was the clinic staff helpful? Did the consultation address your concerns?"
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3.5 text-sm leading-relaxed text-white placeholder-slate-500 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-500/40"
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm leading-relaxed text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20"
               />
-              <p className="mt-1.5 text-right text-xs text-slate-400">
+              <p className="mt-1.5 text-right text-xs text-slate-400 font-medium">
                 {comment.length} / 1000 characters
               </p>
             </div>
 
             {submitError && (
-              <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3.5 text-xs text-red-300">
+              <div className="rounded-2xl border border-rose-200 bg-rose-50 p-3.5 text-xs font-medium text-rose-700">
                 {submitError}
               </div>
             )}
@@ -528,7 +520,7 @@ function ReviewPageContent() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full sm:flex-1 rounded-xl bg-teal-600 px-8 py-4 text-base font-semibold text-white shadow-lg transition hover:bg-teal-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-teal-500/50"
+                className="w-full sm:flex-1 rounded-2xl bg-[#2A2338] px-8 py-4 text-base font-semibold text-white shadow-md transition hover:bg-[#1E192C] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-violet-500/50"
               >
                 {submitting ? 'Submitting review…' : 'Submit Verified Review →'}
               </button>
@@ -536,7 +528,7 @@ function ReviewPageContent() {
                 type="button"
                 onClick={() => router.push('/patient/dashboard')}
                 disabled={submitting}
-                className="w-full sm:w-auto rounded-xl border border-slate-700 bg-slate-800/80 px-6 py-4 text-sm font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white"
+                className="w-full sm:w-auto rounded-2xl border border-slate-200 bg-white px-6 py-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
               >
                 Cancel
               </button>
@@ -553,10 +545,10 @@ export default function ReviewPage() {
     <RequireRole role="patient">
       <Suspense
         fallback={
-          <main className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-400">
+          <main className="flex min-h-screen items-center justify-center bg-[#F8F7FA] text-slate-500">
             <div className="flex items-center gap-3">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-600 border-t-teal-400" />
-              <span>Loading consultation review…</span>
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-violet-200 border-t-violet-600" />
+              <span className="text-sm font-medium">Loading consultation review…</span>
             </div>
           </main>
         }

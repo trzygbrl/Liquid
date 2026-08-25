@@ -72,7 +72,19 @@ function IntakePageContent() {
     }
   }
 
+  // Returns to the symptoms step with prior answers intact -- patientData is
+  // deliberately left alone so <IntakeFlow> below re-seeds from it and jumps
+  // straight to Step 3 instead of a blank Step 1.
+  function handleEditSymptoms() {
+    setMatchResult(null);
+    setConversationHistory([]);
+    setApiError(null);
+    setState('intake');
+  }
+
+  // Full reset back to a blank Step 1.
   function handleRestart() {
+    setPatientData(null);
     setMatchResult(null);
     setConversationHistory([]);
     setApiError(null);
@@ -80,70 +92,88 @@ function IntakePageContent() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col bg-slate-950 px-6 py-10">
-      {/* Header */}
-      <div className="border-b border-slate-800 pb-6 mb-8">
-        <span className="text-lg font-bold text-white">
-          <span className="text-teal-400">Civic</span>Access
-        </span>
-        <h1 className="mt-1 text-2xl font-semibold text-white">
-          {state === 'result' && matchResult?.type === 'match'
-            ? 'Specialist Recommendation'
-            : state === 'result' && matchResult?.type === 'emergency'
-            ? 'Emergency Triage Advisory'
-            : 'Check my symptoms'}
-        </h1>
-        <p className="mt-1 text-sm text-slate-400">
-          {state === 'result' && matchResult?.type === 'match'
-            ? 'Based on your symptoms and clinical criteria, here is the matched specialty.'
-            : state === 'result' && matchResult?.type === 'emergency'
-            ? 'Important medical safety notice based on your reported symptoms.'
-            : "Tell us what you're feeling and our AI navigator will help find the right specialist."}
-        </p>
-      </div>
-
-      {/* Global API Error Alert */}
-      {apiError && (
-        <div className="mb-6 w-full max-w-lg rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-400 flex items-center justify-between">
-          <span>{apiError}</span>
-          <button
-            onClick={() => setApiError(null)}
-            className="text-xs text-red-300 underline hover:text-white"
-          >
-            Dismiss
-          </button>
-        </div>
-      )}
-
-      {/* Main Content Area */}
-      <div className="w-full max-w-lg">
-        {state === 'intake' && (
-          <IntakeFlow onComplete={handleIntakeComplete} />
-        )}
-
-        {state === 'matching' && (
-          <div className="rounded-2xl border border-teal-500/20 bg-slate-900/60 p-12 text-center shadow-xl backdrop-blur">
-            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-teal-500/10">
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-600 border-t-teal-400" />
+    <main className="flex min-h-screen flex-col bg-[#F8F7FA] px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-2xl">
+        {/* Header */}
+        <div className="border-b border-slate-200/80 pb-6 mb-8 flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <a
+                href="/patient/dashboard"
+                className="text-xs font-bold text-slate-500 hover:text-slate-900 transition flex items-center gap-1"
+              >
+                ← Dashboard
+              </a>
+              <span className="text-slate-300">•</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-violet-600 bg-violet-50 px-2 py-0.5 rounded-full border border-violet-100">
+                ✨ AI Clinical Triage
+              </span>
             </div>
-            <h2 className="text-xl font-semibold text-white">
-              Analyzing symptoms…
-            </h2>
-            <p className="mt-2 text-sm text-slate-400 leading-relaxed">
-              Evaluating your symptom description and matching with our clinical specialty taxonomy.
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              {state === 'result' && matchResult?.type === 'match'
+                ? 'Specialist Recommendation'
+                : state === 'result' && matchResult?.type === 'emergency'
+                ? 'Emergency Triage Advisory'
+                : 'Check Symptoms'}
+            </h1>
+            <p className="mt-1 text-xs text-slate-500">
+              {state === 'result' && matchResult?.type === 'match'
+                ? 'Based on clinical criteria and symptoms, here is your recommended specialist.'
+                : state === 'result' && matchResult?.type === 'emergency'
+                ? 'Important medical safety notice based on reported symptoms.'
+                : "Tell us what is being felt in your own words. We'll map you to the exact medical field."}
             </p>
+          </div>
+        </div>
+
+        {/* Global API Error Alert */}
+        {apiError && (
+          <div className="mb-6 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-xs font-medium text-rose-700 flex items-center justify-between">
+            <span>{apiError}</span>
+            <button
+              onClick={() => setApiError(null)}
+              className="text-xs font-bold text-rose-800 underline hover:text-rose-950"
+            >
+              Dismiss
+            </button>
           </div>
         )}
 
-        {state === 'result' && matchResult && patientData && (
-          <MatchResultView
-            result={matchResult}
-            patientData={patientData}
-            onClarifySubmit={handleClarifySubmit}
-            onRestart={handleRestart}
-            isLoadingClarification={loadingClarify}
-          />
-        )}
+        {/* Main Card Container */}
+        <div className="rounded-3xl border border-slate-100 bg-white p-7 sm:p-9 shadow-[0_8px_30px_rgb(0,0,0,0.03)]">
+          {state === 'intake' && (
+            <IntakeFlow
+              onComplete={handleIntakeComplete}
+              initialData={patientData}
+              initialStep={patientData ? 3 : 1}
+            />
+          )}
+
+          {state === 'matching' && (
+            <div className="py-14 text-center">
+              <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-3xl bg-violet-50 text-violet-600 shadow-sm">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-200 border-t-violet-600" />
+              </div>
+              <h2 className="text-xl font-bold text-slate-900">
+                Finding the right specialist…
+              </h2>
+              <p className="mt-2 text-xs text-slate-500 leading-relaxed max-w-sm mx-auto">
+                Evaluating symptoms against 33 medical specialties and checking provider availability.
+              </p>
+            </div>
+          )}
+
+          {state === 'result' && matchResult && patientData && (
+            <MatchResultView
+              result={matchResult}
+              patientData={patientData}
+              onClarifySubmit={handleClarifySubmit}
+              onEditSymptoms={handleEditSymptoms}
+              onRestart={handleRestart}
+              isLoadingClarification={loadingClarify}
+            />
+          )}
+        </div>
       </div>
     </main>
   );

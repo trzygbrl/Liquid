@@ -276,10 +276,10 @@ function DoctorDetailPageContent() {
   // ─── Render: Loading State ──────────────────────────────────────────────────
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-950 px-6 py-12 text-slate-400">
+      <main className="flex min-h-screen items-center justify-center bg-[#F8F7FA] px-6 py-12 text-slate-500">
         <div className="flex items-center gap-3">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-600 border-t-teal-400" />
-          <span>Loading doctor profile…</span>
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-violet-200 border-t-violet-600" />
+          <span className="text-sm font-medium">Loading doctor profile…</span>
         </div>
       </main>
     );
@@ -288,15 +288,15 @@ function DoctorDetailPageContent() {
   // ─── Render: Error State ────────────────────────────────────────────────────
   if (error || !doctor) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-slate-950 px-6 py-12 text-center">
-        <div className="max-w-md rounded-2xl border border-red-500/30 bg-red-500/10 p-8">
-          <h2 className="text-lg font-bold text-red-300">Doctor Profile Not Found</h2>
-          <p className="mt-2 text-sm text-slate-300">
+      <main className="flex min-h-screen flex-col items-center justify-center bg-[#F8F7FA] px-6 py-12 text-center">
+        <div className="max-w-md rounded-3xl border border-rose-200 bg-white p-8 shadow-sm">
+          <h2 className="text-lg font-bold text-rose-700">Doctor Profile Not Found</h2>
+          <p className="mt-2 text-xs text-slate-600 leading-relaxed">
             {error || "The requested doctor profile could not be found or has been moved."}
           </p>
           <a
             href="/patient/doctors"
-            className="mt-6 inline-block rounded-xl bg-slate-800 px-6 py-2.5 text-xs font-semibold text-white transition hover:bg-slate-700"
+            className="mt-6 inline-block rounded-2xl bg-[#2A2338] px-6 py-3 text-xs font-bold text-white transition hover:bg-[#1E192C]"
           >
             ← Return to doctor list
           </a>
@@ -323,10 +323,10 @@ function DoctorDetailPageContent() {
   const primaryClinic = doctor.clinics[0] || null;
 
   return (
-    <main className="min-h-screen bg-slate-950 px-4 py-8 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-[#F8F7FA] px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-4xl">
         {/* Navigation Breadcrumb */}
-        <div className="mb-6 flex items-center justify-between border-b border-slate-800 pb-4">
+        <div className="mb-6 flex items-center justify-between border-b border-slate-200/80 pb-4">
           <a
             href={`/patient/doctors?specialty=${encodeURIComponent(
               doctor.specialty
@@ -335,23 +335,29 @@ function DoctorDetailPageContent() {
                 ? `&sub_specialty=${encodeURIComponent(doctor.sub_specialty)}`
                 : ''
             }${patientHmo ? `&hmo=${encodeURIComponent(patientHmo)}` : ''}`}
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-teal-400 transition hover:text-teal-300"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-900 transition"
           >
             ← Back to doctor list
           </a>
-          <span className="text-xs text-slate-500">Doctor Profile & Booking</span>
+          <span className="rounded-full bg-violet-50 px-3 py-1 text-xs font-bold text-violet-700 border border-violet-100">
+            Doctor Profile & Booking
+          </span>
         </div>
 
         {/* Doctor Hero Profile Card */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl backdrop-blur sm:p-8">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
+        <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white/95 backdrop-blur-xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.03)] sm:p-8">
+          {/* Ambient soft background glow */}
+          <div className="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-violet-400/15 blur-3xl pointer-events-none animate-pulse-gentle" />
+          <div className="absolute -left-16 -bottom-16 h-56 w-56 rounded-full bg-indigo-300/15 blur-3xl pointer-events-none" />
+
+          <div className="relative z-10 flex flex-col sm:flex-row sm:items-stretch sm:justify-between gap-6">
             <div className="flex-1">
               <div className="flex flex-wrap items-center gap-2.5">
-                <h1 className="text-2xl font-bold text-white sm:text-3xl">
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
                   {doctor.name}
                 </h1>
                 {doctor.verified && (
-                  <span className="inline-flex items-center gap-1 rounded-md bg-teal-500/10 px-2 py-0.5 text-xs font-medium text-teal-300 border border-teal-500/20">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2.5 py-0.5 text-xs font-bold text-violet-700 border border-violet-100 shadow-xs">
                     <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
                       <path
                         fillRule="evenodd"
@@ -366,50 +372,50 @@ function DoctorDetailPageContent() {
 
               {/* Specialty & Rating Row */}
               <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-                <span className="font-semibold text-teal-300 text-base">
+                <span className="font-bold text-violet-700 text-base">
                   {doctor.specialty}
                 </span>
                 {doctor.sub_specialty && (
                   <>
-                    <span className="text-slate-600">•</span>
-                    <span className="rounded-md bg-slate-800 px-3 py-1 text-xs font-medium text-slate-200">
+                    <span className="text-slate-300">•</span>
+                    <span className="rounded-md bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
                       {doctor.sub_specialty}
                     </span>
                   </>
                 )}
                 {avgRating !== null ? (
                   <>
-                    <span className="text-slate-600">•</span>
-                    <span className="inline-flex items-center gap-1 font-semibold text-amber-300 text-xs">
+                    <span className="text-slate-300">•</span>
+                    <span className="inline-flex items-center gap-1 font-bold text-amber-600 text-xs bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
                       ★ {avgRating} ({doctor.reviews.length} {doctor.reviews.length === 1 ? 'review' : 'reviews'})
                     </span>
                   </>
                 ) : (
                   <>
-                    <span className="text-slate-600">•</span>
-                    <span className="text-slate-400 text-xs">★ New (No reviews yet)</span>
+                    <span className="text-slate-300">•</span>
+                    <span className="text-slate-400 text-xs">★ New Doctor</span>
                   </>
                 )}
               </div>
 
               {/* Plain-Language Specialty Subtitle */}
-              <p className="mt-1.5 text-xs text-slate-300">
-                <span className="text-teal-200 font-medium">
+              <p className="mt-1.5 text-xs text-slate-600">
+                <span className="text-violet-700 font-semibold">
                   {getPlainSpecialtyInfo(doctor.specialty).plainName}
                 </span>
-                <span className="text-slate-500 mx-1.5">•</span>
-                <span className="italic text-slate-400">
+                <span className="text-slate-300 mx-1.5">•</span>
+                <span className="italic text-slate-500">
                   {getPlainSpecialtyInfo(doctor.specialty).tagalogName}
                 </span>
               </p>
 
               {/* Credentials / Bio */}
               {doctor.credentials && (
-                <div className="mt-4 rounded-xl border border-slate-800/80 bg-slate-800/40 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                <div className="mt-4 rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
+                  <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
                     Credentials & Experience
                   </p>
-                  <p className="mt-1.5 text-xs leading-relaxed text-slate-200">
+                  <p className="mt-1.5 text-xs leading-relaxed text-slate-700">
                     {doctor.credentials}
                   </p>
                 </div>
@@ -417,18 +423,18 @@ function DoctorDetailPageContent() {
             </div>
 
             {/* HMO Coverage Status Card */}
-            <div className="rounded-xl border border-slate-800 bg-slate-800/60 p-4 sm:w-64 shrink-0 text-xs">
-              <span className="font-semibold uppercase tracking-wider text-slate-400 text-xs block">
+            <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-4 sm:w-64 shrink-0 text-xs">
+              <span className="font-bold uppercase tracking-wider text-slate-500 text-xs block">
                 HMO Accreditations
               </span>
               {isHmoCovered && patientHmo ? (
-                <div className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-teal-500 px-3 py-1.5 text-xs font-bold text-slate-950 shadow-sm">
+                <div className="mt-2 inline-flex items-center gap-1.5 rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-1.5 text-xs font-bold text-emerald-800 shadow-sm">
                   <span>✓ Covered by {patientHmo}</span>
                 </div>
               ) : patientHmo ? (
-                <div className="mt-2 rounded-lg bg-slate-900/80 p-2.5 text-slate-300 border border-slate-700">
-                  <span className="text-xs text-amber-300 block font-semibold">Not accredited with {patientHmo}</span>
-                  <span className="text-xs text-slate-400 mt-0.5 block">Consultation available via cash rate.</span>
+                <div className="mt-2 rounded-xl bg-white p-2.5 text-slate-700 border border-amber-200 shadow-sm">
+                  <span className="text-xs text-amber-800 block font-bold">Not in {patientHmo} network</span>
+                  <span className="text-xs text-slate-500 mt-0.5 block">Direct cash rate applies.</span>
                 </div>
               ) : null}
 
@@ -437,7 +443,7 @@ function DoctorDetailPageContent() {
                   doctor.hmo_accreditations.map((hmo) => (
                     <span
                       key={hmo}
-                      className="rounded-md bg-slate-900 px-2.5 py-1 text-xs text-slate-300 border border-slate-700/80"
+                      className="rounded-xl bg-white px-2.5 py-1 text-xs font-medium text-slate-700 border border-slate-200/80 shadow-sm"
                     >
                       {hmo}
                     </span>
@@ -451,26 +457,26 @@ function DoctorDetailPageContent() {
 
           {/* Clinics Information */}
           {doctor.clinics && doctor.clinics.length > 0 && (
-            <div className="mt-6 border-t border-slate-800/80 pt-6">
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">
+            <div className="mt-6 border-t border-slate-100 pt-6">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
                 Practice Locations & Rates
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {doctor.clinics.map((clinic) => (
                   <div
                     key={clinic.id}
-                    className="rounded-xl border border-slate-800 bg-slate-800/30 p-4 text-xs flex flex-col justify-between"
+                    className="rounded-2xl border border-slate-100 bg-slate-50/80 p-4 text-xs flex flex-col justify-between"
                   >
                     <div>
-                      <h4 className="font-semibold text-white text-sm">{clinic.name}</h4>
+                      <h4 className="font-bold text-slate-900 text-sm">{clinic.name}</h4>
                       {clinic.room_details && (
-                        <p className="text-slate-400 mt-0.5">{clinic.room_details}</p>
+                        <p className="text-slate-600 text-xs mt-0.5">{clinic.room_details}</p>
                       )}
-                      <p className="text-slate-400 mt-1">📍 {clinic.location}</p>
+                      <p className="text-slate-500 text-xs mt-1">📍 {clinic.location}</p>
                     </div>
-                    <div className="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-between">
-                      <span className="text-slate-400">Consultation Fee</span>
-                      <span className="font-bold text-teal-300 text-sm">
+                    <div className="mt-3 pt-3 border-t border-slate-200/60 flex items-center justify-between">
+                      <span className="text-slate-500 font-medium">Consultation Fee</span>
+                      <span className="font-extrabold text-slate-900 text-sm">
                         ₱{Number(clinic.consultation_fee).toLocaleString('en-US', {
                           minimumFractionDigits: 2,
                         })}
@@ -484,36 +490,36 @@ function DoctorDetailPageContent() {
         </div>
 
         {/* Schedule Slots Picker Section */}
-        <div className="mt-8 rounded-2xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl backdrop-blur sm:p-8">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-6">
+        <div className="mt-8 rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.03)] sm:p-8">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
             <div>
-              <h2 className="text-xl font-bold text-white">Select a Consultation Slot</h2>
-              <p className="mt-1 text-xs text-slate-400">
+              <h2 className="text-xl font-bold text-slate-900">Select a Consultation Slot</h2>
+              <p className="mt-1 text-xs text-slate-500">
                 Choose an open schedule time to request your appointment.
               </p>
             </div>
             {selectedSlot && (
-              <span className="rounded-lg bg-teal-500/20 px-3 py-1 text-xs font-semibold text-teal-300 border border-teal-500/30">
+              <span className="rounded-full bg-violet-50 px-3 py-1 text-xs font-bold text-violet-700 border border-violet-100">
                 Slot Selected
               </span>
             )}
           </div>
 
           {datesWithSlots.length === 0 ? (
-            <div className="rounded-xl border border-slate-800 bg-slate-800/30 p-8 text-center text-slate-400 text-sm">
-              <p>No available appointment slots posted at this time.</p>
-              <p className="mt-1 text-xs text-slate-500">Please check back later or contact the clinic directly.</p>
+            <div className="rounded-2xl border border-slate-100 bg-slate-50 p-8 text-center text-slate-500 text-sm">
+              <p className="font-medium">No available appointment slots posted at this time.</p>
+              <p className="mt-1 text-xs text-slate-400">Please check back later or contact the clinic directly.</p>
             </div>
           ) : (
             <div className="space-y-6">
               {datesWithSlots.map((dateStr) => {
                 const slotsForDate = groupedSlots[dateStr];
                 return (
-                  <div key={dateStr} className="rounded-xl border border-slate-800/80 bg-slate-800/20 p-4">
-                    <h3 className="text-xs font-semibold uppercase tracking-wider text-teal-400 mb-3">
+                  <div key={dateStr} className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4 sm:p-5">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-violet-700 mb-3.5">
                       📅 {formatDateHeader(dateStr)}
                     </h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                       {slotsForDate.map((slot) => {
                         const isSelected = selectedSlotId === slot.id;
                         return (
@@ -524,18 +530,18 @@ function DoctorDetailPageContent() {
                               setSelectedSlotId(slot.id);
                               setBookingError(null);
                             }}
-                            className={`flex flex-col items-start rounded-xl p-3.5 min-h-[56px] text-left transition ${
+                            className={`fluid-hover flex flex-col items-start rounded-2xl p-4 min-h-[58px] text-left focus:outline-none ${
                               isSelected
-                                ? 'bg-teal-500 text-slate-950 font-bold shadow-md ring-2 ring-teal-400'
-                                : 'bg-slate-800/90 border border-slate-700 text-white hover:border-teal-500/60 hover:bg-slate-800'
+                                ? 'bg-[#2A2338] text-white font-bold shadow-md ring-2 ring-violet-500/40'
+                                : 'bg-white border border-slate-200/80 text-slate-800 hover:border-violet-300 hover:bg-violet-50/40 shadow-xs'
                             }`}
                           >
-                            <span className="text-sm font-semibold">
+                            <span className="text-sm font-bold">
                               {formatTime(slot.start_time)} – {formatTime(slot.end_time)}
                             </span>
                             <span
-                              className={`text-xs mt-1 ${
-                                isSelected ? 'text-slate-950 font-semibold' : 'text-slate-300'
+                              className={`text-xs mt-1 font-medium ${
+                                isSelected ? 'text-slate-200' : 'text-emerald-700 font-bold'
                               }`}
                             >
                               Available for Booking
@@ -552,24 +558,24 @@ function DoctorDetailPageContent() {
 
           {/* Booking Confirmation Box (Active when a slot is chosen) */}
           {selectedSlot && (
-            <div className="mt-8 rounded-2xl border border-teal-500/40 bg-teal-500/5 p-6 backdrop-blur">
-              <h3 className="text-base font-bold text-white mb-2">Confirm Your Booking</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-slate-300 mb-4 bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+            <div className="mt-8 rounded-3xl border border-violet-100 bg-violet-50/50 p-6 sm:p-7">
+              <h3 className="text-base font-bold text-slate-900 mb-2">Confirm Your Booking</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-slate-700 mb-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
                 <div>
-                  <span className="text-slate-400 block text-[11px]">Selected Time:</span>
-                  <span className="font-semibold text-white">
+                  <span className="text-slate-400 block text-xs font-medium">Selected Time:</span>
+                  <span className="font-bold text-slate-900 mt-0.5 block">
                     {formatDateHeader(selectedSlot.date)} at {formatTime(selectedSlot.start_time)}
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block text-[11px]">Clinic Location:</span>
-                  <span className="font-semibold text-white">
+                  <span className="text-slate-400 block text-xs font-medium">Clinic Location:</span>
+                  <span className="font-bold text-slate-900 mt-0.5 block">
                     {selectedClinic?.name || 'Clinic'}
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block text-[11px]">Coverage / Rate:</span>
-                  <span className="font-semibold text-teal-300">
+                  <span className="text-slate-400 block text-xs font-medium">Coverage / Rate:</span>
+                  <span className="font-bold text-violet-700 mt-0.5 block">
                     {isHmoCovered ? `Covered by ${patientHmo}` : `₱${Number(selectedClinic?.consultation_fee || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} (Cash)`}
                   </span>
                 </div>
@@ -577,7 +583,7 @@ function DoctorDetailPageContent() {
 
               {/* Optional brief symptom note */}
               <div className="mb-4">
-                <label htmlFor="symptom-note" className="block text-xs font-medium text-slate-300 mb-1.5">
+                <label htmlFor="symptom-note" className="block text-xs font-semibold text-slate-700 mb-1.5">
                   Reason for Consultation / Symptom Note (Optional)
                 </label>
                 <input
@@ -586,12 +592,12 @@ function DoctorDetailPageContent() {
                   value={symptomSummary}
                   onChange={(e) => setSymptomSummary(e.target.value)}
                   placeholder="e.g. Follow-up on blurry vision and dark spots in right eye..."
-                  className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-2.5 text-xs text-white placeholder-slate-500 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
                 />
               </div>
 
               {bookingError && (
-                <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-300">
+                <div className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 p-3.5 text-xs font-medium text-rose-700">
                   {bookingError}
                 </div>
               )}
@@ -602,7 +608,7 @@ function DoctorDetailPageContent() {
                   type="button"
                   onClick={handleConfirmBooking}
                   disabled={isSubmitting}
-                  className="w-full sm:flex-1 rounded-xl bg-teal-600 px-8 py-3.5 text-sm font-semibold text-white shadow-lg transition hover:bg-teal-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-teal-500/50"
+                  className="w-full sm:flex-1 rounded-2xl bg-[#2A2338] px-8 py-4 text-base font-semibold text-white shadow-md transition hover:bg-[#1E192C] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-violet-500/50"
                 >
                   {isSubmitting ? 'Requesting appointment…' : 'Confirm & Request Appointment →'}
                 </button>
@@ -610,7 +616,7 @@ function DoctorDetailPageContent() {
                   type="button"
                   onClick={() => setSelectedSlotId(null)}
                   disabled={isSubmitting}
-                  className="w-full sm:w-auto rounded-xl border border-slate-700 bg-slate-800/80 px-6 py-3.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white"
+                  className="w-full sm:w-auto rounded-2xl border border-slate-200 bg-white px-6 py-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
                 >
                   Cancel
                 </button>
@@ -620,23 +626,23 @@ function DoctorDetailPageContent() {
         </div>
 
         {/* ─── Patient Reviews & Ratings Section ────────────────────────────── */}
-        <div className="mt-8 rounded-2xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl backdrop-blur sm:p-8">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800 pb-4 mb-6 gap-2">
+        <div className="mt-8 rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.03)] sm:p-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-4 mb-6 gap-2">
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold text-white">Patient Reviews & Ratings</h2>
-                <span className="rounded-md bg-teal-500/15 px-2 py-0.5 text-[10px] font-semibold text-teal-300 border border-teal-500/20">
-                  ✓ Verified Consultations
+                <h2 className="text-xl font-bold text-slate-900">Patient Reviews & Ratings</h2>
+                <span className="rounded-full bg-violet-50 px-2.5 py-0.5 text-xs font-bold text-violet-700 border border-violet-100">
+                  ✓ Verified Visits
                 </span>
               </div>
-              <p className="mt-1 text-xs text-slate-400">
+              <p className="mt-1 text-xs text-slate-500">
                 Authentic feedback from patients who completed consultations with {doctor.name}.
               </p>
             </div>
             {avgRating && (
               <div className="text-right">
-                <span className="text-2xl font-black text-amber-400">★ {avgRating}</span>
-                <span className="text-xs text-slate-400 block">
+                <span className="text-2xl font-black text-amber-500">★ {avgRating}</span>
+                <span className="text-xs text-slate-400 block font-medium">
                   {doctor.reviews.length} {doctor.reviews.length === 1 ? 'review' : 'reviews'}
                 </span>
               </div>
@@ -644,45 +650,45 @@ function DoctorDetailPageContent() {
           </div>
 
           {/* Rating Breakdown / Summary Card */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 rounded-xl border border-slate-800/80 bg-slate-800/30 p-5 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 rounded-2xl border border-slate-100 bg-slate-50/80 p-5 mb-8">
             {/* Score & Stars */}
-            <div className="flex flex-col items-center justify-center text-center border-b md:border-b-0 md:border-r border-slate-800/80 pb-4 md:pb-0 md:pr-4">
-              <span className="text-4xl font-extrabold text-white">
+            <div className="flex flex-col items-center justify-center text-center border-b md:border-b-0 md:border-r border-slate-200/80 pb-4 md:pb-0 md:pr-4">
+              <span className="text-4xl font-extrabold text-slate-900">
                 {avgRating ?? '—'}
               </span>
-              <div className="flex items-center gap-1 my-1 text-amber-400 text-lg">
+              <div className="flex items-center gap-1 my-1 text-amber-500 text-lg">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <span key={star}>
                     {avgRating && star <= Math.round(Number(avgRating)) ? '★' : '☆'}
                   </span>
                 ))}
               </div>
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-slate-500 font-medium">
                 {doctor.reviews.length > 0
                   ? `Based on ${doctor.reviews.length} verified ${doctor.reviews.length === 1 ? 'review' : 'reviews'}`
                   : 'No reviews yet'}
               </span>
-              <span className="mt-2 text-[10px] text-teal-400 bg-teal-500/10 px-2 py-0.5 rounded border border-teal-500/20">
-                100% Verified Visits Only
+              <span className="mt-2 text-xs text-violet-700 bg-violet-50 px-2.5 py-0.5 rounded-full border border-violet-100 font-bold">
+                100% Verified Patients
               </span>
             </div>
 
             {/* Distribution Bars */}
-            <div className="md:col-span-2 space-y-1.5 justify-center flex flex-col">
+            <div className="md:col-span-2 space-y-2 justify-center flex flex-col">
               {[5, 4, 3, 2, 1].map((star) => {
                 const count = starDistribution[star] || 0;
                 const total = doctor.reviews.length || 1;
                 const percentage = doctor.reviews.length > 0 ? Math.round((count / total) * 100) : 0;
                 return (
                   <div key={star} className="flex items-center gap-3 text-xs">
-                    <span className="w-12 text-slate-400 text-right">{star} ★</span>
-                    <div className="flex-1 h-2 rounded-full bg-slate-800 overflow-hidden">
+                    <span className="w-12 text-slate-600 text-right font-medium">{star} ★</span>
+                    <div className="flex-1 h-2.5 rounded-full bg-slate-200 overflow-hidden">
                       <div
                         className="h-full bg-amber-400 rounded-full transition-all duration-300"
                         style={{ width: `${percentage}%` }}
                       />
                     </div>
-                    <span className="w-16 text-[11px] text-slate-400 text-right">
+                    <span className="w-16 text-xs text-slate-500 text-right font-medium">
                       {count} ({percentage}%)
                     </span>
                   </div>
@@ -693,44 +699,44 @@ function DoctorDetailPageContent() {
 
           {/* Individual Reviews List */}
           {sortedReviews.length === 0 ? (
-            <div className="rounded-xl border border-slate-800/80 bg-slate-800/20 p-8 text-center text-slate-400 text-xs">
-              <p className="text-sm font-medium text-slate-300">No patient reviews yet.</p>
-              <p className="mt-1 text-slate-500">
+            <div className="rounded-2xl border border-slate-100 bg-slate-50 p-8 text-center text-slate-500 text-xs">
+              <p className="text-sm font-semibold text-slate-800">No patient reviews yet.</p>
+              <p className="mt-1 text-slate-400">
                 Reviews appear here once patients complete their consultations with this doctor.
               </p>
             </div>
           ) : (
             <div className="space-y-4">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
                 Recent Patient Feedback ({sortedReviews.length})
               </h3>
               <div className="grid grid-cols-1 gap-3">
                 {sortedReviews.map((rev) => (
                   <div
                     key={rev.id}
-                    className="rounded-xl border border-slate-800 bg-slate-800/40 p-4 transition hover:border-slate-700"
+                    className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4 transition hover:bg-slate-50"
                   >
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <div className="flex items-center text-amber-400 text-xs">
+                        <div className="flex items-center text-amber-500 text-xs">
                           {[1, 2, 3, 4, 5].map((s) => (
                             <span key={s}>{s <= rev.rating ? '★' : '☆'}</span>
                           ))}
                         </div>
-                        <span className="rounded bg-teal-500/10 px-1.5 py-0.5 text-[10px] font-medium text-teal-300 border border-teal-500/20">
-                          ✓ Verified Patient
+                        <span className="rounded-full bg-violet-50 px-2 py-0.5 text-[11px] font-bold text-violet-700 border border-violet-100">
+                          ✓ Verified Visit
                         </span>
                       </div>
-                      <span className="text-[11px] text-slate-500">
+                      <span className="text-xs text-slate-400">
                         {formatReviewDate(rev.created_at)}
                       </span>
                     </div>
                     {rev.comment ? (
-                      <p className="text-xs leading-relaxed text-slate-200">
+                      <p className="text-xs leading-relaxed text-slate-700 font-medium">
                         &ldquo;{rev.comment}&rdquo;
                       </p>
                     ) : (
-                      <p className="text-[11px] italic text-slate-500">
+                      <p className="text-xs italic text-slate-400">
                         Rated {rev.rating} out of 5 stars without written comments.
                       </p>
                     )}

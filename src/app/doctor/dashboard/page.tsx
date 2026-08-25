@@ -6,6 +6,8 @@ import RequireRole from '@/components/RequireRole';
 import { supabase } from '@/lib/supabaseClient';
 import ScheduleManager from '@/components/ScheduleManager';
 import AppointmentsDashboard from '@/components/AppointmentsDashboard';
+import ClinicManager from '@/components/ClinicManager';
+import ProfileEditor from '@/components/ProfileEditor';
 
 function DashboardContent() {
   const router = useRouter();
@@ -58,33 +60,44 @@ function DashboardContent() {
 
   if (checkingProfile) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-600 border-t-indigo-500" />
+      <div className="flex min-h-screen items-center justify-center bg-[#F8F7FA]">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-200 border-t-violet-600" />
       </div>
     );
   }
 
   return (
-    <main className="flex min-h-screen flex-col bg-slate-950 px-6 py-10">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-800 pb-6">
-        <div>
-          <span className="text-lg font-bold text-white">
-            <span className="text-indigo-400">Civic</span>Access
-          </span>
-          <h1 className="mt-1 text-2xl font-semibold text-white">Doctor Dashboard</h1>
+    <main className="flex min-h-screen flex-col bg-[#F8F7FA] px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-5xl">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-slate-200/80 pb-6 mb-8">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-sm font-extrabold text-slate-900">
+                Civic<span className="text-violet-600">Access</span>
+              </span>
+              <span className="rounded-full bg-violet-50 px-2.5 py-0.5 text-xs font-bold text-violet-700 border border-violet-100">
+                Doctor Portal
+              </span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Practice Dashboard</h1>
+          </div>
+          <button
+            id="doctor-sign-out"
+            onClick={handleSignOut}
+            className="rounded-2xl border border-slate-200 bg-white px-5 py-2.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 shadow-sm"
+          >
+            Sign out
+          </button>
         </div>
-        <button
-          id="doctor-sign-out"
-          onClick={handleSignOut}
-          className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-300 transition hover:border-slate-500 hover:text-white"
-        >
-          Sign out
-        </button>
-      </div>
 
-      <AppointmentsDashboard />
-      <ScheduleManager />
+        <div className="space-y-8">
+          <ProfileEditor />
+          <AppointmentsDashboard />
+          <ScheduleManager />
+          <ClinicManager />
+        </div>
+      </div>
     </main>
   );
 }

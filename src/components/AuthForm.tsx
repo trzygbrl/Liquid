@@ -47,9 +47,9 @@ export default function AuthForm({ mode, role }: AuthFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-sm">
-      <div className="flex flex-col gap-1">
-        <label htmlFor="email" className="text-sm font-medium text-slate-300">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4.5 w-full max-w-sm">
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="email" className="text-sm font-semibold text-slate-700">
           Email address
         </label>
         <input
@@ -59,12 +59,12 @@ export default function AuthForm({ mode, role }: AuthFormProps) {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          className="rounded-lg border border-slate-600 bg-slate-800/60 px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition"
+          className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20"
         />
       </div>
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="password" className="text-sm font-medium text-slate-300">
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="password" className="text-sm font-semibold text-slate-700">
           Password
         </label>
         <input
@@ -75,12 +75,12 @@ export default function AuthForm({ mode, role }: AuthFormProps) {
           onChange={(e) => setPassword(e.target.value)}
           required
           minLength={6}
-          className="rounded-lg border border-slate-600 bg-slate-800/60 px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition"
+          className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20"
         />
       </div>
 
       {error && (
-        <p className="rounded-lg bg-red-500/10 border border-red-500/30 px-4 py-2.5 text-sm text-red-400">
+        <p className="rounded-2xl bg-rose-50 border border-rose-200 px-4 py-3 text-xs font-medium text-rose-700">
           {error}
         </p>
       )}
@@ -88,7 +88,7 @@ export default function AuthForm({ mode, role }: AuthFormProps) {
       <button
         type="submit"
         disabled={loading}
-        className="mt-1 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+        className="mt-2 min-h-[48px] rounded-2xl bg-[#2A2338] px-6 py-3.5 text-sm font-semibold text-white shadow-md transition hover:bg-[#1E192C] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-violet-500/50"
       >
         {loading ? 'Please wait…' : mode === 'signup' ? 'Create account' : 'Log in'}
       </button>
