@@ -288,7 +288,7 @@ export default function ScheduleManager() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-brand-600" />
       </div>
     );
   }
@@ -339,7 +339,7 @@ export default function ScheduleManager() {
               value={selectedClinicId}
               onChange={(e) => setSelectedClinicId(e.target.value)}
               required
-              className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50"
+              className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20 disabled:opacity-50"
             >
               <option value="">Select clinic</option>
               {clinics.map((c) => (
@@ -368,7 +368,7 @@ export default function ScheduleManager() {
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
                 required
-                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
+                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20"
               />
             </div>
 
@@ -382,7 +382,7 @@ export default function ScheduleManager() {
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
                 required
-                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
+                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20"
               />
             </div>
 
@@ -396,7 +396,7 @@ export default function ScheduleManager() {
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
                 required
-                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
+                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20"
               />
             </div>
           </div>
@@ -412,7 +412,7 @@ export default function ScheduleManager() {
               id="add-slot-submit"
               type="submit"
               disabled={submitting || clinics.length === 0}
-              className="rounded-2xl bg-blue-600 px-7 py-3.5 min-h-[48px] text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              className="rounded-2xl bg-brand-600 px-7 py-3.5 min-h-[48px] text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-brand-500/50"
             >
               {submitting ? 'Adding slot…' : '+ Add Schedule Slot'}
             </button>
@@ -437,7 +437,7 @@ export default function ScheduleManager() {
             <button
               type="button"
               onClick={() => handleSelectDate(null)}
-              className="rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-blue-300 hover:text-blue-700"
+              className="rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-brand-300 hover:text-brand-700"
             >
               Show all days
             </button>
@@ -459,7 +459,7 @@ export default function ScheduleManager() {
                 {/* Date header. Redundant when a single day is selected --
                     the section heading above already names that day. */}
                 {!selectedDate && (
-                  <p className="mb-2.5 text-xs font-bold uppercase tracking-wider text-blue-700">
+                  <p className="mb-2.5 text-xs font-bold uppercase tracking-wider text-brand-700">
                     {fmtDate(dateStr)}
                   </p>
                 )}

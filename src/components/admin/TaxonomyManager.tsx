@@ -104,7 +104,7 @@ export default function TaxonomyManager({ passcode }: { passcode: string }) {
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder="Search specialties or sub-specialties…"
-        className="mb-6 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+        className="mb-6 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
       />
 
       {loadError && (
@@ -120,7 +120,7 @@ export default function TaxonomyManager({ passcode }: { passcode: string }) {
 
       {loading ? (
         <div className="flex justify-center py-16">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-brand-600" />
         </div>
       ) : grouped.length === 0 ? (
         <div className="card px-6 py-10 text-center text-sm text-slate-500">No matching entries.</div>

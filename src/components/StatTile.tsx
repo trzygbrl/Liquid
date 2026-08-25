@@ -8,7 +8,7 @@ import type { ReactNode } from 'react';
 export type StatTone = 'brand' | 'emerald' | 'amber' | 'slate';
 
 const TONES: Record<StatTone, string> = {
-  brand: 'bg-blue-50 text-blue-600',
+  brand: 'bg-brand-50 text-brand-600',
   emerald: 'bg-emerald-50 text-emerald-600',
   amber: 'bg-amber-50 text-amber-600',
   slate: 'bg-slate-100 text-slate-600',

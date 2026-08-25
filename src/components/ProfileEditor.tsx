@@ -202,7 +202,7 @@ export default function ProfileEditor() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-200 border-t-brand-600" />
       </div>
     );
   }
@@ -245,7 +245,7 @@ export default function ProfileEditor() {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
+              className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20"
             />
           </div>
 
@@ -260,7 +260,7 @@ export default function ProfileEditor() {
               placeholder="PRC Lic. No. 123456 | MD, FPAFP"
               value={credentials}
               onChange={(e) => setCredentials(e.target.value)}
-              className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
+              className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20"
             />
             <p className="text-xs text-slate-500">
               Changing this does not affect your current verification status.
@@ -276,7 +276,7 @@ export default function ProfileEditor() {
               id="edit-doctor-specialty"
               value={specialty}
               onChange={(e) => handleSpecialtyChange(e.target.value)}
-              className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
+              className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20"
             >
               <option value="">Select specialty</option>
               {specialties.map((s) => (
@@ -300,7 +300,7 @@ export default function ProfileEditor() {
                 placeholder="e.g. Sports Medicine"
                 value={customSpecialty}
                 onChange={(e) => setCustomSpecialty(e.target.value)}
-                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
+                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20"
               />
               <label htmlFor="edit-doctor-custom-sub-specialty" className="mt-2 text-xs font-bold uppercase tracking-wider text-slate-700">
                 Sub-specialty
@@ -312,7 +312,7 @@ export default function ProfileEditor() {
                 placeholder="Leave blank if this specialty has none"
                 value={customSubSpecialty}
                 onChange={(e) => setCustomSubSpecialty(e.target.value)}
-                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
+                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20"
               />
               <p className="text-xs text-slate-500">
                 This becomes available for every doctor to select going forward.
@@ -339,7 +339,7 @@ export default function ProfileEditor() {
                   if (e.target.value !== OTHER_VALUE) setCustomSubSpecialty('');
                 }}
                 disabled={!specialty}
-                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <option value="">
                   {specialty ? 'Select sub-specialty' : 'Pick a specialty first'}
@@ -355,7 +355,7 @@ export default function ProfileEditor() {
                   placeholder="New sub-specialty name"
                   value={customSubSpecialty}
                   onChange={(e) => setCustomSubSpecialty(e.target.value)}
-                  className="mt-1 rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
+                  className="mt-1 rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20"
                 />
               )}
             </div>
@@ -382,7 +382,7 @@ export default function ProfileEditor() {
                     onClick={() => toggleHmo(hmo)}
                     className={`rounded-2xl border px-4 py-2.5 text-xs font-bold transition ${
                       selected
-                        ? 'border-blue-600 bg-blue-50 text-blue-800'
+                        ? 'border-brand-600 bg-brand-50 text-brand-800'
                         : 'border-slate-200 bg-slate-50/70 text-slate-700 hover:bg-slate-100'
                     }`}
                   >
@@ -409,7 +409,7 @@ export default function ProfileEditor() {
               id="save-profile-submit"
               type="submit"
               disabled={saving}
-              className="rounded-2xl bg-blue-600 px-6 py-3.5 min-h-[48px] text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              className="rounded-2xl bg-brand-600 px-6 py-3.5 min-h-[48px] text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-brand-500/50"
             >
               {saving ? 'Saving…' : 'Save Changes'}
             </button>

@@ -247,7 +247,7 @@ function ReviewPageContent() {
     return (
       <main className="flex min-h-screen items-center justify-center px-6 py-12 text-slate-500">
         <div className="flex items-center gap-3">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600" />
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600" />
           <span className="text-sm font-medium">Verifying consultation status…</span>
         </div>
       </main>
@@ -296,7 +296,7 @@ function ReviewPageContent() {
           <div className="mt-8 flex flex-col gap-3">
             <a
               href="/patient/dashboard"
-              className="w-full rounded-2xl bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white shadow-md transition hover:bg-blue-700"
+              className="w-full rounded-2xl bg-brand-600 px-6 py-3.5 text-sm font-semibold text-white shadow-md transition hover:bg-brand-700"
             >
               Return to Patient Dashboard
             </a>
@@ -328,7 +328,7 @@ function ReviewPageContent() {
           </p>
           <a
             href="/patient/dashboard"
-            className="mt-6 inline-block rounded-2xl bg-blue-600 px-6 py-3 text-xs font-bold text-white transition hover:bg-blue-700"
+            className="mt-6 inline-block rounded-2xl bg-brand-600 px-6 py-3 text-xs font-bold text-white transition hover:bg-brand-700"
           >
             Return to Dashboard
           </a>
@@ -345,11 +345,11 @@ function ReviewPageContent() {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center px-4 py-12 sm:px-6">
         <div className="w-full max-w-lg card p-8 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
             <IconCheck className="h-8 w-8" />
           </div>
 
-          <span className="mt-4 inline-flex items-center gap-1 rounded-full bg-blue-50 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-blue-700 border border-blue-100">
+          <span className="mt-4 inline-flex items-center gap-1 rounded-full bg-brand-50 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-brand-700 border border-brand-100">
             <IconCheck className="h-3 w-3" /> Verified Review Submitted
           </span>
 
@@ -388,7 +388,7 @@ function ReviewPageContent() {
             {appointment.doctor && (
               <a
                 href={`/patient/doctors/${appointment.doctor.id}`}
-                className="w-full rounded-2xl bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white shadow-md transition hover:bg-blue-700"
+                className="w-full rounded-2xl bg-brand-600 px-6 py-3.5 text-sm font-semibold text-white shadow-md transition hover:bg-brand-700"
               >
                 View Doctor Profile & Ratings
               </a>
@@ -417,7 +417,7 @@ function ReviewPageContent() {
           >
             Back to dashboard
           </a>
-          <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700 border border-blue-100">
+          <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700 border border-brand-100">
             Verified Patient Review
           </span>
         </div>
@@ -425,7 +425,7 @@ function ReviewPageContent() {
         {/* Form Container */}
         <div className="card p-6 sm:p-8">
           <div className="text-center">
-            <span className="inline-block rounded-full bg-blue-50 px-3 py-1 text-xs font-bold uppercase tracking-wider text-blue-700 border border-blue-100">
+            <span className="inline-block rounded-full bg-brand-50 px-3 py-1 text-xs font-bold uppercase tracking-wider text-brand-700 border border-brand-100">
               Verified Consultation
             </span>
             <h1 className="mt-3 text-2xl font-bold text-slate-900 tracking-tight">
@@ -499,7 +499,7 @@ function ReviewPageContent() {
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 placeholder="How was the doctor's communication? Was the clinic staff helpful? Did the consultation address your concerns?"
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm leading-relaxed text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm leading-relaxed text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20"
               />
               <p className="mt-1.5 text-right text-xs text-slate-500 font-medium">
                 {comment.length} / 1000 characters
@@ -517,7 +517,7 @@ function ReviewPageContent() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full sm:flex-1 rounded-2xl bg-blue-600 px-8 py-4 text-base font-semibold text-white shadow-md transition hover:bg-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                className="w-full sm:flex-1 rounded-2xl bg-brand-600 px-8 py-4 text-base font-semibold text-white shadow-md transition hover:bg-brand-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-brand-500/50"
               >
                 {submitting ? 'Submitting review…' : 'Submit Verified Review'}
               </button>
@@ -544,7 +544,7 @@ export default function ReviewPage() {
         fallback={
           <main className="flex min-h-screen items-center justify-center text-slate-500">
             <div className="flex items-center gap-3">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600" />
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600" />
               <span className="text-sm font-medium">Loading consultation review…</span>
             </div>
           </main>

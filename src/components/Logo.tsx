@@ -42,7 +42,7 @@ export default function Logo({ size = 34, markOnly = false, href = '/', classNam
           className="font-bold tracking-tight text-slate-900"
           style={{ fontSize: Math.round(size * 0.55) }}
         >
-          Kay<span className="text-blue-600">App</span>
+          Kay<span className="text-brand-600">App</span>
         </span>
       )}
     </span>

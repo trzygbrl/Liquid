@@ -56,7 +56,7 @@ export default function DoctorAvatar({ name, id, src, size = 56, className = '' 
       <div
         aria-hidden="true"
         style={{ width: size, height: size, fontSize: Math.round(size * 0.36) }}
-        className={`flex shrink-0 items-center justify-center rounded-full bg-blue-100 font-bold text-blue-700 ${className}`}
+        className={`flex shrink-0 items-center justify-center rounded-full bg-brand-100 font-bold text-brand-700 ${className}`}
       >
         {initials(name)}
       </div>

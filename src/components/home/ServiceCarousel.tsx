@@ -50,7 +50,7 @@ export default function ServiceCarousel({ cards }: { cards: ServiceCard[] }) {
           onClick={() => scrollBy(-1)}
           disabled={atStart}
           aria-label="Show previous services"
-          className="fluid-hover flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:text-blue-700 disabled:opacity-40"
+          className="fluid-hover flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 hover:border-brand-300 hover:text-brand-700 disabled:opacity-40"
         >
           <IconChevronLeft className="h-4 w-4" />
         </button>
@@ -59,7 +59,7 @@ export default function ServiceCarousel({ cards }: { cards: ServiceCard[] }) {
           onClick={() => scrollBy(1)}
           disabled={atEnd}
           aria-label="Show more services"
-          className="fluid-hover flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40"
+          className="fluid-hover flex h-10 w-10 items-center justify-center rounded-full bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-40"
         >
           <IconChevronRight className="h-4 w-4" />
         </button>
@@ -87,7 +87,7 @@ export default function ServiceCarousel({ cards }: { cards: ServiceCard[] }) {
               <h3 className="text-base font-bold leading-snug text-white">{card.title}</h3>
               <Link
                 href={card.href}
-                className="fluid-hover mt-3 inline-flex rounded-full bg-white px-4 py-2 text-xs font-bold text-blue-700 hover:bg-blue-50"
+                className="fluid-hover mt-3 inline-flex rounded-full bg-white px-4 py-2 text-xs font-bold text-brand-700 hover:bg-brand-50"
               >
                 {card.action}
               </Link>

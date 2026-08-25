@@ -145,7 +145,7 @@ export default function DoctorVerificationQueue({ passcode }: { passcode: string
           href="https://verification.prc.gov.ph/"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-blue-700 underline hover:text-blue-900"
+          className="text-brand-700 underline hover:text-brand-900"
         >
           the PRC verification portal
         </a>{' '}
@@ -153,7 +153,7 @@ export default function DoctorVerificationQueue({ passcode }: { passcode: string
       </p>
 
       {/* Status sub-tabs */}
-      <div className="mb-6 flex gap-1 overflow-x-auto border-b border-slate-200 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="mb-6 flex gap-8 overflow-x-auto shadow-[inset_0_-1px_0_0_var(--color-slate-200)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {STATUS_TABS.map((t) => {
           const count = t.id === 'all' ? doctors.length : doctors.filter((d) => d.verification_status === t.id).length;
           const active = tab === t.id;
@@ -163,8 +163,8 @@ export default function DoctorVerificationQueue({ passcode }: { passcode: string
               type="button"
               onClick={() => setTab(t.id)}
               aria-current={active ? 'page' : undefined}
-              className={`shrink-0 border-b-2 px-4 py-3 text-sm font-semibold transition ${
-                active ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-600 hover:text-slate-900'
+              className={`shrink-0 border-b-2 py-3 text-sm font-semibold transition ${
+                active ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-600 hover:text-slate-900'
               }`}
             >
               {t.label} <span className="text-xs text-slate-400">({count})</span>
@@ -181,7 +181,7 @@ export default function DoctorVerificationQueue({ passcode }: { passcode: string
 
       {loading ? (
         <div className="flex justify-center py-16">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-brand-600" />
         </div>
       ) : visibleDoctors.length === 0 ? (
         <div className="card px-6 py-10 text-center text-sm text-slate-500">No doctors in this category.</div>
