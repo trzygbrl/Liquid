@@ -313,7 +313,7 @@ function DoctorDetailPageContent() {
     return (
       <main className="flex min-h-screen items-center justify-center px-6 py-12 text-slate-500">
         <div className="flex items-center gap-3">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600" />
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600" />
           <span className="text-sm font-medium">Loading doctor profile…</span>
         </div>
       </main>
@@ -331,7 +331,7 @@ function DoctorDetailPageContent() {
           </p>
           <a
             href="/patient/doctors"
-            className="mt-6 inline-block rounded-2xl bg-blue-600 px-6 py-3 text-xs font-bold text-white transition hover:bg-blue-700"
+            className="mt-6 inline-block rounded-2xl bg-brand-600 px-6 py-3 text-xs font-bold text-white transition hover:bg-brand-700"
           >
             Return to doctor list
           </a>
@@ -373,7 +373,7 @@ function DoctorDetailPageContent() {
           >
             Back to doctor list
           </a>
-          <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700 border border-blue-100">
+          <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700 border border-brand-100">
             Doctor Profile & Booking
           </span>
         </div>
@@ -389,7 +389,7 @@ function DoctorDetailPageContent() {
                   {doctor.name}
                 </h1>
                 {doctor.verification_status === 'verified' && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-bold text-blue-700 border border-blue-100 shadow-xs">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-bold text-brand-700 border border-brand-100 shadow-xs">
                     <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
                       <path
                         fillRule="evenodd"
@@ -404,7 +404,7 @@ function DoctorDetailPageContent() {
 
               {/* Specialty & Rating Row */}
               <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
-                <span className="font-bold text-blue-700 text-lg">
+                <span className="font-bold text-brand-700 text-lg">
                   {doctor.specialty}
                 </span>
                 {doctor.sub_specialty && (
@@ -439,7 +439,7 @@ function DoctorDetailPageContent() {
                 if (!plain) return null;
                 return (
                   <p className="mt-2 text-sm text-slate-700">
-                    <span className="text-blue-700 font-semibold">{plain.plainName}</span>
+                    <span className="text-brand-700 font-semibold">{plain.plainName}</span>
                     <span className="text-slate-400 mx-1.5">•</span>
                     <span className="italic text-slate-600">{plain.tagalogName}</span>
                   </p>
@@ -508,7 +508,7 @@ function DoctorDetailPageContent() {
               </p>
             </div>
             {selectedSlot && (
-              <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700 border border-blue-100">
+              <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700 border border-brand-100">
                 Slot Selected
               </span>
             )}
@@ -534,17 +534,17 @@ function DoctorDetailPageContent() {
                       onClick={() => handleSelectClinic(clinic.id)}
                       className={`fluid-hover flex flex-col items-start rounded-2xl p-4 text-left focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
                         isSelected
-                          ? 'bg-blue-600 text-white font-bold shadow-md ring-2 ring-blue-500/40'
-                          : 'bg-white border border-slate-200/80 text-slate-800 hover:border-blue-300 hover:bg-blue-50/40 shadow-xs'
+                          ? 'bg-brand-600 text-white font-bold shadow-md ring-2 ring-brand-500/40'
+                          : 'bg-white border border-slate-200/80 text-slate-800 hover:border-brand-300 hover:bg-brand-50/40 shadow-xs'
                       }`}
                     >
                       <span className="text-sm font-bold">{clinic.name}</span>
                       {clinic.room_details && (
-                        <span className={`text-xs mt-0.5 ${isSelected ? 'text-blue-100' : 'text-slate-500'}`}>
+                        <span className={`text-xs mt-0.5 ${isSelected ? 'text-brand-100' : 'text-slate-500'}`}>
                           {clinic.room_details}
                         </span>
                       )}
-                      <span className={`text-xs mt-0.5 ${isSelected ? 'text-blue-100' : 'text-slate-500'}`}>
+                      <span className={`text-xs mt-0.5 ${isSelected ? 'text-brand-100' : 'text-slate-500'}`}>
                         {clinic.location}
                       </span>
                       <span className={`text-xs mt-1.5 font-bold ${isSelected ? 'text-white' : 'text-slate-900'}`}>
@@ -573,7 +573,7 @@ function DoctorDetailPageContent() {
                 const slotsForDate = groupedSlots[dateStr];
                 return (
                   <div key={dateStr} className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4 sm:p-5">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-blue-700 mb-3.5">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-brand-700 mb-3.5">
                       {formatDateHeader(dateStr)}
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
@@ -593,8 +593,8 @@ function DoctorDetailPageContent() {
                             }}
                             className={`fluid-hover flex flex-col items-start rounded-2xl p-4 min-h-[58px] text-left focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
                               isSelected
-                                ? 'bg-blue-600 text-white font-bold shadow-md ring-2 ring-blue-500/40'
-                                : 'bg-white border border-slate-200/80 text-slate-800 hover:border-blue-300 hover:bg-blue-50/40 shadow-xs'
+                                ? 'bg-brand-600 text-white font-bold shadow-md ring-2 ring-brand-500/40'
+                                : 'bg-white border border-slate-200/80 text-slate-800 hover:border-brand-300 hover:bg-brand-50/40 shadow-xs'
                             }`}
                           >
                             <span className="text-sm font-bold">
@@ -619,7 +619,7 @@ function DoctorDetailPageContent() {
 
           {/* Booking Confirmation Box (Active when a slot is chosen) */}
           {selectedSlot && (
-            <div ref={confirmationRef} className="mt-8 rounded-2xl border border-blue-100 bg-blue-50/50 p-6 sm:p-7">
+            <div ref={confirmationRef} className="mt-8 rounded-2xl border border-brand-100 bg-brand-50/50 p-6 sm:p-7">
               <h3 className="text-base font-bold text-slate-900 mb-2">Confirm Your Booking</h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-slate-700 mb-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
                 <div>
@@ -636,7 +636,7 @@ function DoctorDetailPageContent() {
                 </div>
                 <div>
                   <span className="text-slate-400 block text-xs font-medium">Coverage / Rate:</span>
-                  <span className="font-bold text-blue-700 mt-0.5 block">
+                  <span className="font-bold text-brand-700 mt-0.5 block">
                     {isHmoCovered ? `Covered by ${patientHmo}` : `₱${Number(selectedClinic?.consultation_fee || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} (Cash)`}
                   </span>
                 </div>
@@ -653,7 +653,7 @@ function DoctorDetailPageContent() {
                   value={symptomSummary}
                   onChange={(e) => setSymptomSummary(e.target.value)}
                   placeholder="e.g. Follow-up on blurry vision and dark spots in right eye..."
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
                 />
               </div>
 
@@ -669,7 +669,7 @@ function DoctorDetailPageContent() {
                   type="button"
                   onClick={handleConfirmBooking}
                   disabled={isSubmitting}
-                  className="w-full sm:flex-1 rounded-2xl bg-blue-600 px-8 py-4 text-base font-semibold text-white shadow-md transition hover:bg-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                  className="w-full sm:flex-1 rounded-2xl bg-brand-600 px-8 py-4 text-base font-semibold text-white shadow-md transition hover:bg-brand-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-brand-500/50"
                 >
                   {isSubmitting ? 'Requesting appointment…' : 'Confirm & Request Appointment'}
                 </button>
@@ -696,7 +696,7 @@ function DoctorDetailPageContent() {
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-bold text-slate-900">Patient Reviews & Ratings</h2>
-                <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-bold text-blue-700 border border-blue-100">
+                <span className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-bold text-brand-700 border border-brand-100">
                   <IconCheck className="h-3 w-3" /> Verified Visits
                 </span>
               </div>
@@ -737,7 +737,7 @@ function DoctorDetailPageContent() {
                   ? `Based on ${doctor.reviews.length} verified ${doctor.reviews.length === 1 ? 'review' : 'reviews'}`
                   : 'No reviews yet'}
               </span>
-              <span className="mt-2 text-xs text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-100 font-bold">
+              <span className="mt-2 text-xs text-brand-700 bg-brand-50 px-2.5 py-0.5 rounded-full border border-brand-100 font-bold">
                 100% Verified Patients
               </span>
             </div>
@@ -794,7 +794,7 @@ function DoctorDetailPageContent() {
                             <IconStar key={s} className="h-3.5 w-3.5" filled={s <= rev.rating} />
                           ))}
                         </div>
-                        <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-bold text-blue-700 border border-blue-100">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2 py-0.5 text-[11px] font-bold text-brand-700 border border-brand-100">
                           <IconCheck className="h-3 w-3" /> Verified Visit
                         </span>
                       </div>
@@ -829,7 +829,7 @@ export default function DoctorDetailPage() {
         fallback={
           <main className="flex min-h-screen items-center justify-center text-slate-500">
             <div className="flex items-center gap-3">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-200 border-t-brand-600" />
               <span>Loading doctor detail…</span>
             </div>
           </main>

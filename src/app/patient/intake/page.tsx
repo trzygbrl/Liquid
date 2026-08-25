@@ -91,9 +91,11 @@ function IntakePageContent() {
     setState('intake');
   }
 
+  const isMatchResult = state === 'result' && matchResult?.type === 'match';
+
   return (
     <main className="flex min-h-screen flex-col px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto w-full max-w-2xl">
+      <div className={`mx-auto w-full ${isMatchResult ? 'max-w-4xl' : 'max-w-2xl'} transition-all duration-300`}>
         {/* Header */}
         <div className="border-b border-slate-200/80 pb-6 mb-8 flex items-center justify-between">
           <div>
@@ -105,7 +107,7 @@ function IntakePageContent() {
                 Dashboard
               </a>
               <span className="text-slate-300">•</span>
-              <span className="text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
+              <span className="text-xs font-bold uppercase tracking-wider text-brand-600 bg-brand-50 px-2 py-0.5 rounded-full border border-brand-100">
                 AI Clinical Triage
               </span>
             </div>
@@ -151,8 +153,8 @@ function IntakePageContent() {
 
           {state === 'matching' && (
             <div className="py-14 text-center">
-              <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 shadow-sm">
-                <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600" />
+              <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-50 text-brand-600 shadow-sm">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600" />
               </div>
               <h2 className="text-xl font-bold text-slate-900">
                 Finding the right specialist…

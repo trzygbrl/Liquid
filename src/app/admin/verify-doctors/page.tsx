@@ -49,7 +49,7 @@ function AdminTools({ passcode, forget }: { passcode: string; forget: () => void
         </div>
 
         {/* Tabs */}
-        <div className="mb-6 flex gap-1 border-b border-slate-200">
+        <div className="mb-6 flex gap-8 shadow-[inset_0_-1px_0_0_var(--color-slate-200)]">
           {TABS.map((t) => {
             const active = tab === t.id;
             return (
@@ -58,8 +58,8 @@ function AdminTools({ passcode, forget }: { passcode: string; forget: () => void
                 type="button"
                 onClick={() => setTab(t.id)}
                 aria-current={active ? 'page' : undefined}
-                className={`border-b-2 px-4 py-3 text-sm font-semibold transition ${
-                  active ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-600 hover:text-slate-900'
+                className={`border-b-2 py-3 text-sm font-semibold transition ${
+                  active ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-600 hover:text-slate-900'
                 }`}
               >
                 {t.label}

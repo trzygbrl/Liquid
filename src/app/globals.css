@@ -5,12 +5,29 @@
   --background: #F4F6FA;
   --foreground: #0F172A;
 
-  /* Blue primary drives CTAs, active nav, progress fills and accents. */
-  --brand: #2563EB;
-  --brand-hover: #1D4ED8;
-  --brand-active: #1E40AF;
-  --brand-surface: #EFF4FF;
-  --brand-border: #DBE6FE;
+  /* Teal primary drives CTAs, active nav, progress fills and accents.
+     --brand-600 (#1E8481) is the KayApp brand colour; every other step is
+     the same hue (178deg) at a different lightness, so the whole ramp reads
+     as one family. Components use the numeric steps (bg-brand-600,
+     text-brand-700, ...); the semantic aliases below name the few roles
+     that plain CSS needs. */
+  --brand-50: #EFFAFA;
+  --brand-100: #D9F2F1;
+  --brand-200: #B5E3E1;
+  --brand-300: #81CFCD;
+  --brand-400: #40BFBB;
+  --brand-500: #2A9D99;
+  --brand-600: #1E8481;
+  --brand-700: #176E6B;
+  --brand-800: #115A58;
+  --brand-900: #0E4947;
+  --brand-950: #072C2B;
+
+  --brand: var(--brand-600);
+  --brand-hover: var(--brand-700);
+  --brand-active: var(--brand-800);
+  --brand-surface: var(--brand-50);
+  --brand-border: var(--brand-100);
 
   --surface: #FFFFFF;
   --surface-muted: #F7F9FC;
@@ -29,6 +46,17 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-brand-50: var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-200: var(--brand-200);
+  --color-brand-300: var(--brand-300);
+  --color-brand-400: var(--brand-400);
+  --color-brand-500: var(--brand-500);
+  --color-brand-600: var(--brand-600);
+  --color-brand-700: var(--brand-700);
+  --color-brand-800: var(--brand-800);
+  --color-brand-900: var(--brand-900);
+  --color-brand-950: var(--brand-950);
   --color-brand: var(--brand);
   --color-brand-hover: var(--brand-hover);
   --color-brand-active: var(--brand-active);
@@ -80,6 +108,40 @@ body {
   animation: fade-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+@keyframes slide-in-right {
+  0% {
+    opacity: 0;
+    transform: translateX(28px) scale(0.97);
+  }
+  60% {
+    opacity: 1;
+    transform: translateX(-3px) scale(1.004);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes slide-in-left {
+  0% {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 /* Card: the single elevated white surface used across every screen. */
 .card {
   background: var(--surface);
@@ -116,7 +178,9 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-fade-slide-up {
+  .animate-fade-slide-up,
+  .animate-slide-in-right,
+  .animate-slide-in-left {
     animation: none;
   }
   .card-interactive:hover {

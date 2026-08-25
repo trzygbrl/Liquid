@@ -298,7 +298,7 @@ function PatientDashboardContent() {
               <div className="p-5 sm:p-6">
           {loadingAppts ? (
             <div className="flex items-center justify-center py-12 text-slate-500 text-xs gap-2">
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-brand-600" />
               <span>Loading consultations…</span>
             </div>
           ) : loadError ? (
@@ -319,7 +319,7 @@ function PatientDashboardContent() {
             </div>
           ) : shownAppts.length === 0 ? (
             <div className="py-10 text-center">
-              <div className="mx-auto h-12 w-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3">
+              <div className="mx-auto h-12 w-12 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center mb-3">
                 <IconCalendar className="h-6 w-6" />
               </div>
               <p className="text-sm font-semibold text-slate-800">
@@ -335,7 +335,7 @@ function PatientDashboardContent() {
               {apptTab === 'upcoming' && (
                 <a
                   href="/patient/intake"
-                  className="fluid-hover mt-5 inline-block rounded-full bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-700"
+                  className="fluid-hover mt-5 inline-block rounded-full bg-brand-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-brand-700"
                 >
                   Check symptoms
                 </a>
@@ -352,7 +352,7 @@ function PatientDashboardContent() {
                       return (
                       <div
                         key={appt.id}
-                        className="card p-5 sm:p-6 fluid-hover hover:border-blue-300/70 hover:shadow-md"
+                        className="card p-5 sm:p-6 fluid-hover hover:border-brand-300/70 hover:shadow-md"
                       >
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                           <div className="flex min-w-0 gap-3.5">
@@ -366,7 +366,7 @@ function PatientDashboardContent() {
                               <h4 className="text-base font-bold text-slate-900">
                                 {appt.doctor?.name || 'Specialist'}
                               </h4>
-                              <span className="text-xs font-semibold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-100">
+                              <span className="text-xs font-semibold text-brand-700 bg-brand-50 px-2.5 py-0.5 rounded-full border border-brand-100">
                                 {appt.doctor?.specialty}
                                 {appt.doctor?.sub_specialty ? ` (${appt.doctor.sub_specialty})` : ''}
                               </span>
@@ -536,7 +536,7 @@ function PatientDashboardContent() {
                             <a
                               id={`write-review-${appt.id}`}
                               href={`/patient/appointments/${appt.id}/review`}
-                              className="fluid-hover inline-flex items-center gap-1 rounded-2xl bg-blue-600 px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-blue-700"
+                              className="fluid-hover inline-flex items-center gap-1 rounded-2xl bg-brand-600 px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-brand-700"
                             >
                               <IconStar className="h-3.5 w-3.5" /> Write a Review
                             </a>
@@ -559,7 +559,7 @@ function PatientDashboardContent() {
               <h2 className="text-sm font-bold text-slate-900">At a glance</h2>
               <dl className="mt-3 divide-y divide-slate-100">
                 {[
-                  { label: 'Upcoming & active', value: activeAppts.length, tone: 'text-blue-700' },
+                  { label: 'Upcoming & active', value: activeAppts.length, tone: 'text-brand-700' },
                   { label: 'Completed visits', value: completedAppts.length, tone: 'text-emerald-700' },
                   { label: 'Awaiting your review', value: awaitingReview, tone: 'text-amber-700' },
                 ].map((row) => (
@@ -577,9 +577,9 @@ function PatientDashboardContent() {
                 <a
                   id="patient-start-intake"
                   href="/patient/intake"
-                  className="fluid-hover flex items-start gap-3 rounded-xl border border-slate-200 p-3 hover:border-blue-300 hover:bg-blue-50/40"
+                  className="fluid-hover flex items-start gap-3 rounded-xl border border-slate-200 p-3 hover:border-brand-300 hover:bg-brand-50/40"
                 >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
                     <IconStethoscope className="h-4.5 w-4.5" />
                   </span>
                   <span className="min-w-0">
@@ -593,9 +593,9 @@ function PatientDashboardContent() {
                 <a
                   id="patient-browse-doctors"
                   href="/patient/doctors"
-                  className="fluid-hover flex items-start gap-3 rounded-xl border border-slate-200 p-3 hover:border-blue-300 hover:bg-blue-50/40"
+                  className="fluid-hover flex items-start gap-3 rounded-xl border border-slate-200 p-3 hover:border-brand-300 hover:bg-brand-50/40"
                 >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
                     <IconUsers className="h-4.5 w-4.5" />
                   </span>
                   <span className="min-w-0">

@@ -145,7 +145,7 @@ function DashboardContent() {
   if (checkingProfile) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600" />
       </div>
     );
   }
@@ -222,7 +222,7 @@ function DashboardContent() {
 
         {/* Section tabs. The four managers are heavy, so only one renders at a
             time instead of stacking into one very long page. */}
-        <div className="mb-6 flex gap-1 overflow-x-auto border-b border-slate-200 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="mb-6 flex gap-8 overflow-x-auto shadow-[inset_0_-1px_0_0_var(--color-slate-200)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {TABS.map((t) => {
             const active = tab === t.id;
             return (
@@ -231,9 +231,9 @@ function DashboardContent() {
                 type="button"
                 onClick={() => setTab(t.id)}
                 aria-current={active ? 'page' : undefined}
-                className={`shrink-0 border-b-2 px-4 py-3 text-sm font-semibold transition ${
+                className={`shrink-0 border-b-2 py-3 text-sm font-semibold transition ${
                   active
-                    ? 'border-blue-600 text-blue-700'
+                    ? 'border-brand-600 text-brand-700'
                     : 'border-transparent text-slate-600 hover:text-slate-900'
                 }`}
               >

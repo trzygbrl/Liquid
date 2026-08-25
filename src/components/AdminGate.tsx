@@ -87,7 +87,7 @@ export default function AdminGate({ title, verify, children }: AdminGateProps) {
             onChange={(e) => setInput(e.target.value)}
             placeholder="Passcode"
             autoFocus
-            className="mt-5 w-full rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
+            className="mt-5 w-full rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20"
           />
           {error && (
             <p className="mt-2 rounded-2xl bg-rose-50 border border-rose-200 px-3.5 py-2.5 text-xs font-medium text-rose-700">
@@ -97,7 +97,7 @@ export default function AdminGate({ title, verify, children }: AdminGateProps) {
           <button
             type="submit"
             disabled={checking}
-            className="fluid-hover mt-4 min-h-[48px] w-full rounded-2xl bg-blue-600 px-4 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-50"
+            className="fluid-hover mt-4 min-h-[48px] w-full rounded-2xl bg-brand-600 px-4 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 disabled:opacity-50"
           >
             {checking ? 'Checking…' : 'Continue'}
           </button>

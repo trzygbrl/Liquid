@@ -29,6 +29,61 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-25: Speech-to-text symptom input via Web Speech API
+**Task:** 1.1 (`docs/kayapp-additional-features.md` Phase 3 — Speech-to-text for symptom input)
+**Owner:** Coding agent
+**What changed:** Added live voice dictation (speech-to-text) to Step 3 (symptom description) of the patient intake flow using the native browser Web Speech API (`SpeechRecognition` / `webkitSpeechRecognition`), enabling users in pain or on mobile devices to speak their symptoms naturally.
+- **Web Speech Integration (`src/components/IntakeFlow.tsx`):** Added client-side feature detection for Web Speech API on mount. Built a continuous, interim-result listening engine that streams transcribed words live into the existing symptom textarea. Dictated words append cleanly to previously typed notes without duplication or loss of manual edits.
+- **Accessible Mic Controls & Visual Listening Feedback (`src/components/IntakeFlow.tsx` & `src/components/Icons.tsx`):** Added `IconMic` and `IconMicOff` icons. Positioned an accessible button beside the "Describe symptoms" label with full `aria-pressed`, `aria-label`, and keyboard focus support. Displays a glowing, pulsing rose listening state (`"Listening… (Click to stop)"`) and real-time guidance banner.
+- **Silent Fallback:** If the browser or environment does not support speech recognition, the mic button is silently omitted, gracefully falling back to typing without any error messages.
+- **Zero Audio Persistence & No Auto-Submit:** Raw audio is processed locally by the browser engine and is never uploaded, recorded, or stored on servers. Dictation populates the `symptomText` React state for user review and editing before they choose to submit; submission is never triggered automatically from voice input alone.
+**Files touched:**
+- `src/components/Icons.tsx` [MODIFIED] — added `IconMic` and `IconMicOff` SVG icons.
+- `src/components/IntakeFlow.tsx` [MODIFIED] — added Web Speech API detection, speech recognition lifecycle, live transcription into textarea, and pulsing listening UI.
+- `docs/kayapp-additional-features.md` [MODIFIED] — marked Feature 1.1 as shipped `[x]`.
+**Notes/trade-offs:**
+- **Zero backend infrastructure/cost:** Running Web Speech API directly in the browser incurs zero LLM or transcription API costs while providing instant streaming feedback.
+- **Editable before submit:** Keeps the patient in full control of their symptom narrative before initiating the clinical matching pipeline.
+
+### 2026-08-25: Symptom-specific specialist matching rationale & fluid side-by-side result view
+**Task:** 1.3 (`docs/kayapp-additional-features.md` Phase 2 — "Why this specialist" explanation)
+**Owner:** Coding agent
+**What changed:** Every specialist recommendation now delivers a tailored, 1–3 sentence non-diagnostic explanation that explains why that specialist is uniquely suited for the symptoms rather than merely enumerating them, displayed in a dedicated card that smoothly slides out beside the main recommendation container on the right side.
+- **Deep Clinical Suitability Rationale (`src/app/api/match/route.ts`):** Upgraded Gemini system prompt instructions with strict suitability rationale rules. The model is instructed not just to restate symptoms or give empty generic statements ("this doctor will evaluate you"), but to explain in simple, accessible everyday vocabulary *why this specialist's specific medical domain and diagnostic focus are needed* for the reported discomfort (connecting the symptom -> to what the specialist specifically investigates and treats -> and how it helps the patient). Full language mirroring in English and Tagalog is maintained.
+- **Fluid Side-by-Side Result View (`src/components/MatchResultView.tsx`, `src/app/patient/intake/page.tsx`, `src/app/globals.css`):** Redesigned the match payoff layout into a responsive 2-column grid (`lg:grid-cols-12`). Added smooth keyframe animations (`animate-slide-in-left` and `animate-slide-in-right` with fluid cubic-bezier easing) so the "Why this specialist was recommended" card fluidly slides out on the right side alongside the main specialist card. The intake page expands to `max-w-4xl` for match results to provide a balanced desktop presentation.
+- **Isolation to Genuine Matches:** The "Why this specialist?" explanation strictly renders for successful match results (`type === 'match'`), and is omitted during clarification turns (`type === 'clarify'`) and emergency advisories (`type === 'emergency'`).
+**Files touched:**
+- `src/app/api/match/route.ts` [MODIFIED] — updated Gemini prompt instructions for deep, lay-friendly specialist suitability rationale.
+- `src/components/MatchResultView.tsx` [MODIFIED] — side-by-side 2-column layout with fluid slide-in animation classes.
+- `src/app/globals.css` [MODIFIED] — added `slide-in-right` and `slide-in-left` fluid keyframes.
+- `src/app/patient/intake/page.tsx` [MODIFIED] — dynamic container max-width (`max-w-4xl` for match outcomes).
+- `docs/kayapp-additional-features.md` [MODIFIED] — marked Feature 1.3 as shipped `[x]`.
+**Notes/trade-offs:**
+- **Strictly non-diagnostic:** Rationale explains why the referral/specialty is suited for the problem, without diagnosing diseases or prescribing treatments.
+- **Fluid desktop slide-out:** The right-hand explanation slides in smoothly with a gentle ease-out curve on desktop, while gracefully stacking on mobile screens.
+
+### 2026-08-25: Symptom plausibility gate & gentle nonsense/off-topic clarification
+**Task:** 1.2 (`docs/kayapp-additional-features.md` Phase 1 — Matching prompt hardening)
+**Owner:** Coding agent
+**What changed:** Added a pre-matching plausibility check so the AI symptom-to-specialist matcher never forces a medical specialty recommendation on gibberish, off-topic prompts, or contextless single words, while still accepting vague-but-genuine health complaints.
+- **Symptom Plausibility Engine (`src/lib/symptomValidation.ts`):** Created a dedicated, deterministic rule engine distinct from the emergency safety gate (`src/lib/safetyGate.ts`). It filters out keyboard mashing (`asdfghjkl`, consonant clusters without vowels, repeated characters), short non-symptom words (`idk`, `hi`, `test`, `wala`, `ewan`, etc.), and obvious off-topic queries (travel booking, weather, food orders, coding/math, trivia). Recognizes vague-but-genuine symptoms (`"I don't feel good"`, `"masama ang pakiramdam ko"`, `"body hurts"`) and valid single-word symptoms (`"fever"`, `"lagnat"`), allowing them to proceed. Features bilingual English/Tagalog language detection and returns warm, non-judgmental guidance with 1–2 practical symptom examples.
+- **Matching Route & Model Prompt (`src/app/api/match/route.ts` & `src/lib/matchApi.ts`):** Added Stage 2.6 (Symptom Plausibility Gate) inside `POST /api/match` after the emergency safety gate to short-circuit nonsense/off-topic queries before making database or Gemini LLM calls. Hardened the Gemini system instruction with explicit rules to never force a specialty on off-topic requests and return gentle clarification prompts instead. Extended `ClarifyResult` to include optional `examples` and `isGentlePrompt` fields.
+- **Clarification Result View (`src/components/MatchResultView.tsx`):** Redesigned the clarification view with empathetic nurse guidance styling. Displays interactive example cards/chips with good symptom descriptions (e.g. clicking an example pre-fills the answer textarea) alongside "Edit original text", "Start over", and "Continue with this detail" actions.
+- **Automated Tests (`src/lib/symptomValidation.test.ts`):** Added 47 automated test cases covering gibberish, off-topic queries, very short input, vague-but-genuine symptoms, specific symptoms, and language detection. Added `npm test` and `npm run test:validation` scripts to `package.json`.
+**Files touched:**
+- `src/lib/symptomValidation.ts` [NEW] — symptom plausibility heuristic rule engine, language detection, and warm clarification prompts.
+- `src/lib/symptomValidation.test.ts` [NEW] — 47 automated test cases for symptom plausibility.
+- `src/lib/matchApi.ts` [MODIFIED] — extended `ClarifyResult` with `isGentlePrompt` and `examples`.
+- `src/app/api/match/route.ts` [MODIFIED] — added Step 2.6 plausibility check, updated Gemini system instructions, and enhanced response parser.
+- `src/components/MatchResultView.tsx` [MODIFIED] — enhanced clarify state with warm nurse guidance and interactive symptom example chips.
+- `package.json` [MODIFIED] — added `test` and `test:validation` scripts.
+- `tsconfig.json` [MODIFIED] — enabled `allowImportingTsExtensions: true` for clean Node test runner execution.
+- `docs/kayapp-additional-features.md` [MODIFIED] — marked Feature 1.2 as shipped `[x]`.
+**Notes/trade-offs:**
+- **Zero latency & zero LLM cost on obvious nonsense:** Catching keyboard mashing and single-word filler locally before the Gemini API call saves latency, token usage, and prevents hallucinations.
+- **Vague-but-genuine symptoms are strictly preserved:** Symptoms like "I don't feel good" or "masama pakiramdam" are deliberately NOT rejected; they pass through to either prompt for specific clinical details or map to General Medicine / Pediatrics.
+- **Plausibility check is separated from emergency safety:** Plausibility validation lives in `src/lib/symptomValidation.ts`, while acute clinical emergency detection (chest pain + dyspnea, stroke, loss of consciousness, uncontrolled bleeding) remains in `src/lib/safetyGate.ts` to keep concerns clean and isolated.
+
 ### 2026-08-25: HITL doctor verification, self-service taxonomy, and 2-step booking flow
 **Task:** 7.1–7.4 (personal Phase 7 pivot roadmap — see `.claude/roadmap.md`; not merged into the shared `docs/liquid-roadmap.md`, per team decision to keep it as an assigned personal task list rather than the whole team's roadmap)
 **Owner:** Coding agent

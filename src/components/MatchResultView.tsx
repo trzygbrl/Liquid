@@ -10,7 +10,7 @@ import { useState } from 'react';
 import type { MatchApiResult, MatchResult, ClarifyResult, EmergencyResult } from '@/lib/matchApi';
 import type { IntakeCompleteData } from '@/components/IntakeFlow';
 import { getPlainSpecialtyInfo } from '@/lib/specialtyHelpers';
-import { IconStethoscope, IconWarning, IconChat, IconCheck } from '@/components/Icons';
+import { IconStethoscope, IconWarning, IconChat, IconCheck, IconInfo } from '@/components/Icons';
 
 interface MatchResultViewProps {
   result: MatchApiResult;
@@ -47,7 +47,7 @@ export default function MatchResultView({
       <div className="animate-fade-slide-up flex flex-col gap-6">
         {/* Pipeline reasoning stepper */}
         <div className="rounded-2xl border border-slate-200/80 bg-white p-4 sm:p-5 shadow-xs">
-          <p className="text-xs font-bold uppercase tracking-wider text-blue-700">
+          <p className="text-xs font-bold uppercase tracking-wider text-brand-700">
             Clinical AI Matching Pipeline
           </p>
           <div className="mt-3 flex items-center gap-2 text-xs text-slate-600 flex-wrap">
@@ -59,63 +59,53 @@ export default function MatchResultView({
               <IconCheck className="h-3.5 w-3.5 text-emerald-600" /> Specialty matched
             </span>
             <span className="text-slate-300">•</span>
-            <span className="inline-flex items-center gap-1 rounded-xl bg-blue-600 px-3 py-1.5 font-bold text-white shadow-sm">
+            <span className="inline-flex items-center gap-1 rounded-xl bg-brand-600 px-3 py-1.5 font-bold text-white shadow-sm">
               Recommendation ready
             </span>
           </div>
         </div>
 
-        {/* Main Recommendation Card with ambient breathing glow */}
-        <div className="relative overflow-hidden rounded-2xl border border-blue-200/80 bg-white p-7 sm:p-9 shadow-lg shadow-blue-500/5">
-          {/* Ambient inner soft glowing aura */}
-
-          <div className="relative z-10">
-            <div className="flex items-start gap-4">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-500/25 mt-0.5">
-                <IconStethoscope className="h-7 w-7" />
+        {/* Side-by-side Layout: Left (Specialist Card), Right ("Why this specialist?" Card) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+          {/* LEFT: Main Specialist Card */}
+          <div className="lg:col-span-7 animate-slide-in-left flex flex-col justify-between rounded-2xl border border-brand-200/80 bg-white p-6 sm:p-7 shadow-sm">
+            <div>
+              <div className="flex items-start gap-4">
+                <div className="flex h-13 w-13 shrink-0 items-center justify-center rounded-2xl bg-brand-600 text-white shadow-lg shadow-brand-500/25 mt-0.5">
+                  <IconStethoscope className="h-6.5 w-6.5" />
+                </div>
+                <div>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1 text-xs font-bold uppercase tracking-wider text-brand-700 border border-brand-200/80 shadow-xs">
+                    Recommended Specialist
+                  </span>
+                  <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mt-2 tracking-tight">
+                    {match.sub_specialty
+                      ? `${match.specialty}: ${match.sub_specialty}`
+                      : match.specialty}
+                  </h2>
+                  {/* Plain-language subtitle & Tagalog translation */}
+                  {plainInfo && (
+                    <div className="mt-1.5 flex flex-wrap items-center gap-2 text-sm">
+                      <span className="font-bold text-brand-700">
+                        {plainInfo.plainName}
+                      </span>
+                      <span className="text-slate-400">•</span>
+                      <span className="italic text-slate-600 font-medium">
+                        {plainInfo.tagalogName}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-blue-700 border border-blue-200/80 shadow-xs">
-                  Recommended Specialist
-                </span>
-                <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mt-2 tracking-tight">
-                  {match.sub_specialty
-                    ? `${match.specialty}: ${match.sub_specialty}`
-                    : match.specialty}
-                </h2>
-                {/* Plain-language subtitle & Tagalog translation, shown only
-                    when the specialty name needs translating. */}
-                {plainInfo && (
-                  <div className="mt-1.5 flex flex-wrap items-center gap-2 text-sm">
-                    <span className="font-bold text-blue-700">
-                      {plainInfo.plainName}
-                    </span>
-                    <span className="text-slate-400">•</span>
-                    <span className="italic text-slate-600 font-medium">
-                      {plainInfo.tagalogName}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Reasoning box (Nurse-tone explanation) */}
-            <div className="mt-6 rounded-2xl border-l-4 border-blue-600 bg-blue-50/80 p-5.5 shadow-xs">
-              <p className="text-xs font-bold uppercase tracking-wider text-blue-900">
-                Why this specialist is right for you
-              </p>
-              <p className="mt-2 text-base leading-relaxed text-slate-800 font-medium">
-                {match.reason}
-              </p>
             </div>
 
             {/* Patient context recap */}
-            <div className="mt-6 flex flex-wrap items-center gap-2.5 border-t border-slate-100 pt-5 text-xs text-slate-600">
+            <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-5 text-xs text-slate-600">
               <span className="inline-flex items-center gap-1.5 rounded-xl bg-slate-50 px-3 py-1.5 text-slate-700 border border-slate-200/60 font-medium">
                 <span>Patient:</span>
                 <strong className="text-slate-900 font-bold">{patientData.name}</strong>
                 {patientData.isForFamilyMember && (
-                  <span className="rounded-md bg-blue-100 px-1.5 py-0.5 text-xs font-bold text-blue-700">
+                  <span className="rounded-md bg-brand-100 px-1.5 py-0.5 text-xs font-bold text-brand-700">
                     Family Member
                   </span>
                 )}
@@ -125,7 +115,7 @@ export default function MatchResultView({
               </span>
               <span className="rounded-xl bg-slate-50 px-3 py-1.5 text-slate-700 border border-slate-200/60 font-medium">
                 HMO:{' '}
-                <strong className="text-blue-700 font-bold">
+                <strong className="text-brand-700 font-bold">
                   {patientData.hmoProvider || 'None (Cash)'}
                 </strong>
               </span>
@@ -136,6 +126,29 @@ export default function MatchResultView({
               )}
             </div>
           </div>
+
+          {/* RIGHT: Dedicated "Why this specialist?" Section */}
+          <div className="lg:col-span-5 animate-slide-in-right flex flex-col justify-between rounded-2xl border-l-4 border-l-brand-600 border border-brand-200/80 bg-brand-50/70 p-6 sm:p-7 shadow-sm">
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-100/80 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider text-brand-900">
+                  <IconInfo className="h-3.5 w-3.5 text-brand-700" />
+                  Referral Rationale
+                </span>
+              </div>
+              <h3 className="text-base font-bold text-slate-900">
+                Why this specialist was recommended
+              </h3>
+              <p className="mt-3 text-sm leading-relaxed text-slate-800 font-medium">
+                {match.reason}
+              </p>
+            </div>
+
+            <div className="mt-5 border-t border-brand-200/60 pt-3.5 text-[11px] text-slate-500 font-medium flex items-center gap-1.5">
+              <span>💡</span>
+              <span>Matched directly to the specific symptoms and keywords you described.</span>
+            </div>
+          </div>
         </div>
 
         {/* Action buttons */}
@@ -143,7 +156,7 @@ export default function MatchResultView({
           <a
             id="find-doctors-btn"
             href={findDoctorsUrl}
-            className="fluid-hover w-full sm:flex-1 text-center rounded-2xl bg-blue-600 px-8 py-4 min-h-[48px] text-base font-bold text-white shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+            className="fluid-hover w-full sm:flex-1 text-center rounded-2xl bg-brand-600 px-8 py-4 min-h-[48px] text-base font-bold text-white shadow-md hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500/50"
           >
             Find Doctors in this Field
           </a>
@@ -226,9 +239,10 @@ export default function MatchResultView({
     );
   }
 
-  // STATE 3: Clarifying Question
+  // STATE 3: Clarifying Question / Gentle Guidance
   if (result.type === 'clarify') {
     const clarify = result as ClarifyResult;
+    const isGentlePrompt = clarify.isGentlePrompt || (clarify.examples && clarify.examples.length > 0);
 
     async function handleClarify(e: React.FormEvent) {
       e.preventDefault();
@@ -237,59 +251,108 @@ export default function MatchResultView({
       setClarifyAnswer('');
     }
 
+    function handleExampleClick(exampleText: string) {
+      // Strip leading "e.g. " or "Halimbawa: " if present, and strip wrapping quotes
+      const cleaned = exampleText
+        .replace(/^(e\.g\.\s*['"]?|halimbawa:\s*['"]?)/i, '')
+        .replace(/['"]$/i, '')
+        .trim();
+      setClarifyAnswer(cleaned);
+    }
+
     return (
-      <form onSubmit={handleClarify} className="flex flex-col gap-6">
-        <div className="rounded-2xl border border-blue-100 bg-white p-7 sm:p-8 shadow-sm">
+      <form onSubmit={handleClarify} className="animate-fade-slide-up flex flex-col gap-6">
+        <div className="rounded-2xl border border-brand-200/80 bg-white p-7 sm:p-8 shadow-sm">
           <div className="flex items-center gap-3.5">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 shadow-sm">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-600 shadow-sm">
               <IconChat className="h-6 w-6" />
             </div>
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-100">
-                Follow-up Question
+              <span className="text-xs font-bold uppercase tracking-wider text-brand-700 bg-brand-50 px-2.5 py-0.5 rounded-full border border-brand-100">
+                {isGentlePrompt ? 'Symptom Clarification' : 'Follow-up Question'}
               </span>
               <h2 className="text-lg font-bold text-slate-900 mt-0.5">
-                We need a bit more detail to match accurately
+                {isGentlePrompt
+                  ? "Help us understand what you're experiencing"
+                  : 'We need a bit more detail to match accurately'}
               </h2>
             </div>
           </div>
 
-          <div className="mt-5 rounded-2xl border border-blue-100 bg-blue-50/70 p-5">
-            <p className="text-base font-bold text-blue-900 leading-relaxed">
+          <div className="mt-5 rounded-2xl border border-brand-200/70 bg-brand-50/80 p-5">
+            <p className="text-xs font-bold uppercase tracking-wider text-brand-900 mb-1">
+              Nurse Guidance
+            </p>
+            <p className="text-base font-semibold text-slate-800 leading-relaxed">
               &ldquo;{clarify.question}&rdquo;
             </p>
           </div>
 
+          {/* Example guidance chips for user convenience */}
+          {clarify.examples && clarify.examples.length > 0 && (
+            <div className="mt-5 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-4 sm:p-5">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-600 mb-2.5 flex items-center gap-1.5">
+                <span>💡</span>
+                <span>Examples of good symptom descriptions (click to use):</span>
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2.5">
+                {clarify.examples.map((ex, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleExampleClick(ex)}
+                    className="fluid-hover text-left flex-1 rounded-xl border border-slate-200 bg-white p-3 text-xs font-medium text-slate-700 hover:border-brand-300 hover:bg-brand-50/60 hover:text-brand-900 transition shadow-2xs"
+                  >
+                    <span className="font-semibold text-brand-600 block text-[11px] mb-0.5">
+                      Example {idx + 1}
+                    </span>
+                    &ldquo;{ex}&rdquo;
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="mt-5 flex flex-col gap-2">
-            <label htmlFor="clarify-answer" className="text-sm font-semibold text-slate-700">
-              Your answer (English or Tagalog)
+            <label htmlFor="clarify-answer" className="text-xs font-bold uppercase tracking-wider text-slate-700">
+              Describe what is being felt (English or Tagalog)
             </label>
             <textarea
               id="clarify-answer"
               rows={4}
               value={clarifyAnswer}
               onChange={(e) => setClarifyAnswer(e.target.value)}
-              placeholder="e.g. Malabo po ang paningin ko lalo na sa malayo, at medyo nanunuyo ang mata ko..."
-              className="rounded-2xl border border-slate-200 bg-slate-50/60 px-5 py-4 text-base text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20 resize-none leading-relaxed"
+              placeholder="e.g. Masakit po ang likod ko at medyo may lagnat mula pa kahapon..."
+              className="rounded-2xl border border-slate-200 bg-slate-50/60 px-5 py-4 text-base text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20 resize-none leading-relaxed"
             />
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-3 pt-2">
-          <button
-            type="button"
-            onClick={onRestart}
-            disabled={isLoadingClarification}
-            className="text-sm font-bold text-slate-500 hover:text-slate-900 transition disabled:opacity-50"
-          >
-            Start over
-          </button>
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={onEditSymptoms}
+              disabled={isLoadingClarification}
+              className="fluid-hover w-full sm:w-auto rounded-2xl border border-slate-200 bg-white px-5 py-3 text-xs font-bold text-slate-600 hover:text-slate-900 transition disabled:opacity-50"
+            >
+              Edit original text
+            </button>
+            <button
+              type="button"
+              onClick={onRestart}
+              disabled={isLoadingClarification}
+              className="text-xs font-bold text-slate-400 hover:text-slate-700 transition disabled:opacity-50 px-2 py-3"
+            >
+              Start over
+            </button>
+          </div>
 
           <button
             id="clarify-submit-btn"
             type="submit"
             disabled={!clarifyAnswer.trim() || isLoadingClarification}
-            className="rounded-2xl bg-blue-600 px-8 py-4 text-base font-semibold text-white shadow-sm transition hover:bg-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+            className="fluid-hover w-full sm:w-auto rounded-2xl bg-brand-600 px-8 py-4 min-h-[48px] text-base font-bold text-white shadow-md transition hover:bg-brand-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-brand-500/50"
           >
             {isLoadingClarification ? 'Analyzing details…' : 'Continue with this detail'}
           </button>

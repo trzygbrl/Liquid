@@ -258,7 +258,7 @@ function ProfileSetupForm() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600" />
       </div>
     );
   }
@@ -268,7 +268,7 @@ function ProfileSetupForm() {
       <div className="mx-auto w-full max-w-xl">
         {/* Header */}
         <div className="border-b border-slate-200/80 pb-6 mb-8">
-          <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-bold text-blue-700 border border-blue-100">
+          <span className="rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-bold text-brand-700 border border-brand-100">
             Doctor Onboarding
           </span>
           <h1 className="mt-2.5 text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Set up your practitioner profile</h1>
@@ -283,7 +283,7 @@ function ProfileSetupForm() {
 
             {/* Doctor details */}
             <div className="border-b border-slate-100 pb-4">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-blue-700">Practitioner Details</h2>
+              <h2 className="text-sm font-bold uppercase tracking-wider text-brand-700">Practitioner Details</h2>
             </div>
 
             {/* Full name */}
@@ -298,7 +298,7 @@ function ProfileSetupForm() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
+                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20"
               />
             </div>
 
@@ -314,7 +314,7 @@ function ProfileSetupForm() {
                 value={credentials}
                 onChange={(e) => setCredentials(e.target.value)}
                 required
-                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
+                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20"
               />
               <p className="text-xs text-slate-500">
                 Include your PRC license number here -- a member of our team manually verifies it against{' '}
@@ -322,7 +322,7 @@ function ProfileSetupForm() {
                   href="https://verification.prc.gov.ph/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-700 underline hover:text-blue-900"
+                  className="text-brand-700 underline hover:text-brand-900"
                 >
                   the PRC's public verification portal
                 </a>{' '}
@@ -340,7 +340,7 @@ function ProfileSetupForm() {
                 value={specialty}
                 onChange={(e) => handleSpecialtyChange(e.target.value)}
                 required
-                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50"
+                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20 disabled:opacity-50"
               >
                 <option value="">Select specialty</option>
                 {specialties.map((s) => (
@@ -370,7 +370,7 @@ function ProfileSetupForm() {
                   value={customSpecialty}
                   onChange={(e) => setCustomSpecialty(e.target.value)}
                   required
-                  className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
+                  className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20"
                 />
                 <label htmlFor="doctor-custom-sub-specialty" className="mt-2 text-xs font-bold uppercase tracking-wider text-slate-700">
                   Sub-specialty
@@ -382,7 +382,7 @@ function ProfileSetupForm() {
                   placeholder="Leave blank if this specialty has none"
                   value={customSubSpecialty}
                   onChange={(e) => setCustomSubSpecialty(e.target.value)}
-                  className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
+                  className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20"
                 />
                 <p className="text-xs text-slate-500">
                   This becomes available for every doctor to select going forward.
@@ -410,7 +410,7 @@ function ProfileSetupForm() {
                   }}
                   required={subSpecialties.length > 0}
                   disabled={!specialty}
-                  className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <option value="">
                     {specialty ? 'Select sub-specialty' : 'Pick a specialty first'}
@@ -427,7 +427,7 @@ function ProfileSetupForm() {
                     value={customSubSpecialty}
                     onChange={(e) => setCustomSubSpecialty(e.target.value)}
                     required
-                    className="mt-1 rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
+                    className="mt-1 rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20"
                   />
                 )}
               </div>
@@ -441,7 +441,7 @@ function ProfileSetupForm() {
             {/* Clinic details */}
 
             <div className="mt-3 border-t border-slate-100 pt-5">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-blue-700">Practice Clinics</h2>
+              <h2 className="text-sm font-bold uppercase tracking-wider text-brand-700">Practice Clinics</h2>
               <p className="mt-1 text-sm text-slate-600">
                 Add every location you practice at. You can also add, edit, or remove clinics later from your dashboard.
               </p>
@@ -479,7 +479,7 @@ function ProfileSetupForm() {
                     value={clinic.name}
                     onChange={(e) => updateClinicField(index, 'name', e.target.value)}
                     required
-                    className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                    className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
                   />
                 </div>
 
@@ -495,7 +495,7 @@ function ProfileSetupForm() {
                     placeholder="e.g. 3rd Floor, Suite 210"
                     value={clinic.roomDetails}
                     onChange={(e) => updateClinicField(index, 'roomDetails', e.target.value)}
-                    className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                    className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
                   />
                 </div>
 
@@ -511,7 +511,7 @@ function ProfileSetupForm() {
                     value={clinic.location}
                     onChange={(e) => updateClinicField(index, 'location', e.target.value)}
                     required
-                    className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                    className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
                   />
                 </div>
 
@@ -531,7 +531,7 @@ function ProfileSetupForm() {
                       value={clinic.consultationFee}
                       onChange={(e) => updateClinicField(index, 'consultationFee', e.target.value)}
                       required
-                      className="w-full rounded-2xl border border-slate-200 bg-white py-3.5 pl-8 pr-4 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                      className="w-full rounded-2xl border border-slate-200 bg-white py-3.5 pl-8 pr-4 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
                     />
                   </div>
                 </div>
@@ -541,7 +541,7 @@ function ProfileSetupForm() {
             <button
               type="button"
               onClick={addClinicRow}
-              className="self-start text-xs font-bold text-blue-700 hover:text-blue-900 transition"
+              className="self-start text-xs font-bold text-brand-700 hover:text-brand-900 transition"
             >
               + Add another clinic
             </button>
@@ -558,7 +558,7 @@ function ProfileSetupForm() {
               id="doctor-profile-submit"
               type="submit"
               disabled={submitting}
-              className="mt-2 min-h-[48px] rounded-2xl bg-blue-600 px-6 py-4 text-base font-semibold text-white shadow-sm transition hover:bg-blue-700 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              className="mt-2 min-h-[48px] rounded-2xl bg-brand-600 px-6 py-4 text-base font-semibold text-white shadow-sm transition hover:bg-brand-700 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-brand-500/50"
             >
               {submitting ? 'Saving profile…' : 'Save profile and continue'}
             </button>
