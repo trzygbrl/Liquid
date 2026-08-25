@@ -82,7 +82,7 @@ function DoctorListContent() {
             specialty,
             sub_specialty,
             hmo_accreditations,
-            verified,
+            verification_status,
             clinics (
               id,
               name,
@@ -102,7 +102,11 @@ function DoctorListContent() {
               rating
             )
           `
-          );
+          )
+          // Only doctors who've cleared HITL license review appear in patient
+          // search (migration 0008 / Task 7.2) -- pending/rejected doctors
+          // are excluded, not just visually unbadged.
+          .eq('verification_status', 'verified');
         if (specialtyParam) {
           doctorQuery = doctorQuery.eq('specialty', specialtyParam);
         }
@@ -120,7 +124,7 @@ function DoctorListContent() {
           specialty: d.specialty,
           sub_specialty: d.sub_specialty,
           hmo_accreditations: Array.isArray(d.hmo_accreditations) ? d.hmo_accreditations : [],
-          verified: Boolean(d.verified),
+          verification_status: d.verification_status,
           clinics: Array.isArray(d.clinics) ? d.clinics : [],
           schedule_slots: Array.isArray(d.schedule_slots) ? d.schedule_slots : [],
           reviews: Array.isArray(d.reviews) ? d.reviews : [],
@@ -391,7 +395,7 @@ function DoctorListContent() {
                         <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
                           {doctor.name}
                         </h2>
-                        {doctor.verified && (
+                        {doctor.verification_status === 'verified' && (
                           <span
                             title="Verified Medical License"
                             className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-bold text-blue-700 border border-blue-100"

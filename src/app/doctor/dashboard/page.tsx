@@ -17,6 +17,13 @@ interface PracticeStats {
   clinics: number;
 }
 
+type VerificationStatus = 'pending' | 'verified' | 'rejected';
+
+interface VerificationInfo {
+  status: VerificationStatus;
+  notes: string | null;
+}
+
 type TabId = 'appointments' | 'schedule' | 'clinics' | 'profile';
 
 const TABS: { id: TabId; label: string }[] = [
@@ -32,6 +39,9 @@ function DashboardContent() {
   const [checkingProfile, setCheckingProfile] = useState(true);
   const [stats, setStats] = useState<PracticeStats>({ pending: 0, upcoming: 0, clinics: 0 });
   const [tab, setTab] = useState<TabId>('appointments');
+  const [verification, setVerification] = useState<VerificationInfo | null>(null);
+  const [resubmitting, setResubmitting] = useState(false);
+  const [resubmitError, setResubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     async function checkProfile() {
@@ -42,7 +52,7 @@ function DashboardContent() {
 
       const { data: doctorRow } = await supabase
         .from('doctors')
-        .select('id')
+        .select('id, verification_status, verification_notes')
         .eq('id', session.user.id)
         .maybeSingle();
 
@@ -51,6 +61,8 @@ function DashboardContent() {
         router.replace('/doctor/profile-setup');
         return;
       }
+
+      setVerification({ status: doctorRow.verification_status, notes: doctorRow.verification_notes });
 
       // "Profile complete" now requires both a doctors row *and* at least one clinics row.
       // If only the doctors row exists (partial failure from a prior attempt), send them
@@ -102,6 +114,34 @@ function DashboardContent() {
     checkProfile();
   }, [router]);
 
+  async function handleResubmit() {
+    setResubmitting(true);
+    setResubmitError(null);
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session) {
+      setResubmitError('Your session expired. Please log in again.');
+      setResubmitting(false);
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/doctor/resubmit-verification', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error || 'Failed to resubmit.');
+      setVerification({ status: 'pending', notes: null });
+    } catch (err) {
+      setResubmitError(err instanceof Error ? err.message : 'Failed to resubmit.');
+    } finally {
+      setResubmitting(false);
+    }
+  }
+
   if (checkingProfile) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -120,6 +160,41 @@ function DashboardContent() {
             Review booking requests, publish open hours, and keep your listing current.
           </p>
         </div>
+
+        {/* License verification status (Task 7.2) -- silent when verified */}
+        {verification?.status === 'pending' && (
+          <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
+            <p className="font-bold">Your license is under review</p>
+            <p className="mt-1 text-xs text-amber-700">
+              Your profile won&apos;t appear in the patient directory until our team verifies your PRC license
+              against the{' '}
+              <a
+                href="https://verification.prc.gov.ph/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline"
+              >
+                PRC verification portal
+              </a>
+              .
+            </p>
+          </div>
+        )}
+        {verification?.status === 'rejected' && (
+          <div className="mb-6 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-800">
+            <p className="font-bold">Your license verification was rejected</p>
+            {verification.notes && <p className="mt-1 text-xs text-rose-700">{verification.notes}</p>}
+            {resubmitError && <p className="mt-1.5 text-xs font-medium text-rose-700">{resubmitError}</p>}
+            <button
+              type="button"
+              onClick={handleResubmit}
+              disabled={resubmitting}
+              className="mt-3 rounded-xl bg-rose-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-rose-700 disabled:opacity-50"
+            >
+              {resubmitting ? 'Resubmitting…' : 'Resubmit for Review'}
+            </button>
+          </div>
+        )}
 
         {/* At-a-glance practice metrics */}
         <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">

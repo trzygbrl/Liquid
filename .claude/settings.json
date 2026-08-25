@@ -2,7 +2,19 @@
   "permissions": {
     "allow": [
       "Bash(npx tsc *)",
-      "Bash(git checkout *)"
+      "Bash(git checkout *)",
+      "Bash(npx eslint *)",
+      "Bash(timeout 40 bash -c 'until curl -sf http://localhost:3000 >/dev/null 2>&1; do sleep 1; done')",
+      "Bash(curl -s -w \"\\\\nHTTP %{http_code}\\\\n\" http://localhost:3000/api/admin/doctors)",
+      "Bash(curl -s -w \"\\\\nHTTP %{http_code}\\\\n\" -H \"x-admin-passcode: wrong\" http://localhost:3000/api/admin/doctors)",
+      "Bash(curl -s -w \"\\\\nHTTP %{http_code}\\\\n\" -H \"x-admin-passcode: civic-access-review-7823\" http://localhost:3000/api/admin/doctors)",
+      "Bash(curl -s -o /dev/null -w \"root: HTTP %{http_code}\\\\n\" http://localhost:3000/)",
+      "Bash(curl -s -o /dev/null -w \"admin page: HTTP %{http_code}\\\\n\" http://localhost:3000/admin/verify-doctors)",
+      "Bash(curl -s -w '\\\\nHTTP %{http_code}\\\\n' -X PATCH -H 'Content-Type: application/json' -H 'x-admin-passcode: civic-access-review-7823' -d '{\"verification_status\":\"verified\"}' http://localhost:3000/api/admin/doctors/00000000-0000-0000-0000-000000000000)",
+      "Bash(curl -s -o /dev/null -w \"verify-doctors page: HTTP %{http_code}\\\\n\" http://localhost:3000/admin/verify-doctors)",
+      "Bash(curl -s -o /dev/null -w \"manage-taxonomy page: HTTP %{http_code}\\\\n\" http://localhost:3000/admin/manage-taxonomy)",
+      "Bash(curl -s -w \"\\\\nHTTP %{http_code}\\\\n\" -H \"x-admin-passcode: civic-access-review-7823\" http://localhost:3000/api/admin/taxonomy)",
+      "Bash(curl -s -o /dev/null -w \"landing page: HTTP %{http_code}\\\\n\" http://localhost:3000/)"
     ]
   }
 }

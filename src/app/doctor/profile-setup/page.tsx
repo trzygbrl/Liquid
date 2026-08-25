@@ -1,11 +1,16 @@
 'use client';
 
-import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import RequireRole from '@/components/RequireRole';
 import { supabase } from '@/lib/supabaseClient';
+import { findOrCreateTaxonomyEntry } from '@/lib/taxonomySelfService';
 
 type TaxonomyRow = { specialty: string; sub_specialty: string };
+
+// Sentinel selected value for "+ Other (please specify)" in the specialty
+// and sub-specialty dropdowns (Task 7.3 -- doctor self-service taxonomy).
+const OTHER_VALUE = '__other__';
 
 interface ClinicFormRow {
   name: string;
@@ -23,9 +28,16 @@ function ProfileSetupForm() {
 
   // Doctor fields
   const [name, setName] = useState('');
-  const [credentialFileName, setCredentialFileName] = useState('');
+  // Real required text now (Task 7.2) -- was a file-upload-filename stub.
+  // The PRC license number this app checks via HITL review lives in this
+  // field; there is no separate license_number column.
+  const [credentials, setCredentials] = useState('');
   const [specialty, setSpecialty] = useState('');
   const [subSpecialty, setSubSpecialty] = useState('');
+  // Free-text names entered when specialty/sub-specialty is OTHER_VALUE
+  // (Task 7.3 -- doctor self-service taxonomy addition).
+  const [customSpecialty, setCustomSpecialty] = useState('');
+  const [customSubSpecialty, setCustomSubSpecialty] = useState('');
 
   // Clinic fields -- a repeatable list so a doctor can register more than
   // one practice location right from onboarding, not just the dashboard.
@@ -65,7 +77,7 @@ function ProfileSetupForm() {
         setName(existingDoctor.name ?? '');
         setSpecialty(existingDoctor.specialty ?? '');
         setSubSpecialty(existingDoctor.sub_specialty ?? '');
-        setCredentialFileName(existingDoctor.credentials ?? '');
+        setCredentials(existingDoctor.credentials ?? '');
       }
 
       const { data: taxonomyRows, error: taxonomyError } = await supabase
@@ -85,28 +97,29 @@ function ProfileSetupForm() {
     init();
   }, [router]);
 
-  // Derive unique specialty list from taxonomy, plus 'General Practice' which has no
-  // sub-specialty entries and therefore won't appear in the taxonomy-derived list.
-  const specialties = [
-    'General Practice',
-    ...Array.from(new Set(taxonomy.map((t) => t.specialty))),
-  ];
+  // Derive unique specialty list straight from taxonomy -- specialties with no
+  // sub-specialty entries (e.g. 'General Medicine') already surface correctly
+  // from this fetch, no hardcoded prepend needed.
+  const specialties = Array.from(new Set(taxonomy.map((t) => t.specialty)));
   const subSpecialties = taxonomy
     .filter((t) => t.specialty === specialty)
     .map((t) => t.sub_specialty);
 
-  // True when the selected specialty has no sub-specialty entries in the taxonomy.
-  // Used to hide the sub-specialty field and skip the sub-specialty validation requirement.
-  const isGeneralPractice = specialty !== '' && subSpecialties.length === 0;
+  const isNewSpecialty = specialty === OTHER_VALUE;
+  const isNewSubSpecialty = subSpecialty === OTHER_VALUE;
+
+  // True when the selected (existing) specialty has no sub-specialty entries in
+  // the taxonomy. Used to hide the sub-specialty field and skip the
+  // sub-specialty validation requirement. Not meaningful for a brand-new
+  // specialty (isNewSpecialty), which always gets an optional free-text
+  // sub-specialty field instead.
+  const isGeneralPractice = !isNewSpecialty && specialty !== '' && subSpecialties.length === 0;
 
   function handleSpecialtyChange(value: string) {
     setSpecialty(value);
     setSubSpecialty(''); // reset sub when specialty changes
-  }
-
-  function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (file) setCredentialFileName(file.name);
+    setCustomSpecialty('');
+    setCustomSubSpecialty('');
   }
 
   function updateClinicField(index: number, field: keyof ClinicFormRow, value: string) {
@@ -126,11 +139,23 @@ function ProfileSetupForm() {
     setError(null);
 
     // Sub-specialty is only required when the selected specialty has taxonomy entries.
-    // Specialties like 'General Practice' have no sub-specialties and submit sub_specialty = null.
-    const subSpecialtyRequired = !isGeneralPractice;
-    if (!name.trim() || !specialty || (subSpecialtyRequired && !subSpecialty)) {
+    // Specialties like 'General Medicine' have no sub-specialties and submit sub_specialty = null.
+    // A brand-new specialty (isNewSpecialty) never requires a sub-specialty.
+    const subSpecialtyRequired = !isNewSpecialty && !isGeneralPractice;
+    if (
+      !name.trim() ||
+      !credentials.trim() ||
+      !specialty ||
+      (isNewSpecialty && !customSpecialty.trim()) ||
+      (!isNewSpecialty && subSpecialtyRequired && !subSpecialty) ||
+      (!isNewSpecialty && isNewSubSpecialty && !customSubSpecialty.trim())
+    ) {
       setError(
-        subSpecialtyRequired
+        !credentials.trim()
+          ? 'Please enter your credentials, including your PRC license number.'
+          : isNewSpecialty
+          ? 'Please fill in your name and the new specialty name.'
+          : subSpecialtyRequired
           ? 'Please fill in your name, specialty, and sub-specialty.'
           : 'Please fill in your name and specialty.'
       );
@@ -162,21 +187,44 @@ function ProfileSetupForm() {
       return;
     }
 
+    // Resolve any "+ Other (please specify)" entry into a real
+    // specialty_taxonomy row *before* the doctors upsert below -- the
+    // check_doctor_specialty_taxonomy trigger (migration 0005) validates the
+    // (specialty, sub_specialty) pair against that table on every insert, so
+    // the taxonomy row has to exist first (Task 7.3).
+    let resolvedSpecialty = specialty;
+    let resolvedSubSpecialty: string | null = subSpecialty || null;
+
+    if (isNewSpecialty || isNewSubSpecialty) {
+      try {
+        const entry = await findOrCreateTaxonomyEntry(
+          supabase,
+          isNewSpecialty ? customSpecialty : specialty,
+          isNewSpecialty ? customSubSpecialty || null : isNewSubSpecialty ? customSubSpecialty : subSpecialty || null
+        );
+        resolvedSpecialty = entry.specialty;
+        resolvedSubSpecialty = entry.sub_specialty;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Could not save the new specialty. Please try again.');
+        setSubmitting(false);
+        return;
+      }
+    }
+
     // upsert, not insert, so it is safe to re-run if a previous attempt saved the doctor
     // row but failed on the clinic insert below (no cross-table transaction available
     // through the Supabase JS client).
     const { error: doctorError } = await supabase.from('doctors').upsert({
       id: session.user.id, // must equal auth.uid(), required by doctors_insert_own RLS policy
       name: name.trim(),
-      credentials: credentialFileName || null,
-      specialty,
-      // Send null (not an empty string) when there is no sub-specialty.
-      // An empty string would not satisfy the composite FK to specialty_taxonomy.
-      // null is correct: the composite FK uses MATCH SIMPLE and skips validation
-      // when sub_specialty is null; the new doctors_specialty_fk still validates specialty.
-      sub_specialty: subSpecialty || null,
+      credentials: credentials.trim(),
+      specialty: resolvedSpecialty,
+      // Send null (not an empty string) when there is no sub-specialty --
+      // validated (both the null and non-null case) by the
+      // check_doctor_specialty_taxonomy trigger from migration 0005.
+      sub_specialty: resolvedSubSpecialty,
       // hmo_accreditations left to DB default '{}', seeded via Task 1.4
-      // verified left to DB default true
+      // verification_status left to DB default 'pending' (migration 0008)
     });
 
     if (doctorError) {
@@ -225,7 +273,7 @@ function ProfileSetupForm() {
           </span>
           <h1 className="mt-2.5 text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Set up your practitioner profile</h1>
           <p className="mt-1.5 text-sm text-slate-600">
-            This is a one-time setup. Once completed, your profile and clinics will be visible in the directory.
+            This is a one-time setup. Your profile will appear in the patient directory once our team verifies your PRC license.
           </p>
         </div>
 
@@ -254,24 +302,31 @@ function ProfileSetupForm() {
               />
             </div>
 
-            {/* Credential file */}
+            {/* Credentials / PRC license number */}
             <div className="flex flex-col gap-1.5">
               <label htmlFor="doctor-credentials" className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                Credential File (License or Certificate)
-                <span className="ml-1.5 text-xs font-normal text-slate-400 normal-case">(optional)</span>
+                Credentials & PRC License Number <span className="text-rose-500">*</span>
               </label>
               <input
                 id="doctor-credentials"
-                type="file"
-                accept=".pdf,.jpg,.jpeg,.png"
-                onChange={handleFileChange}
-                className="block w-full text-xs text-slate-500 file:mr-4 file:rounded-xl file:border-0 file:bg-slate-100 file:px-4 file:py-2.5 file:text-xs file:font-bold file:text-slate-700 hover:file:bg-slate-200 file:cursor-pointer file:transition"
+                type="text"
+                placeholder="PRC Lic. No. 123456 | MD, FPAFP"
+                value={credentials}
+                onChange={(e) => setCredentials(e.target.value)}
+                required
+                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
               />
-              {credentialFileName && (
-                <p className="text-xs text-blue-700 font-medium">Selected: <span>{credentialFileName}</span></p>
-              )}
               <p className="text-xs text-slate-500">
-                Demo mode: only the filename is stored. No actual file is uploaded.
+                Include your PRC license number here -- a member of our team manually verifies it against{' '}
+                <a
+                  href="https://verification.prc.gov.ph/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-700 underline hover:text-blue-900"
+                >
+                  the PRC's public verification portal
+                </a>{' '}
+                before your profile appears in the patient directory.
               </p>
             </div>
 
@@ -291,6 +346,7 @@ function ProfileSetupForm() {
                 {specialties.map((s) => (
                   <option key={s} value={s}>{s}</option>
                 ))}
+                <option value={OTHER_VALUE}>+ Other (please specify)</option>
               </select>
               {specialties.length === 0 && !error && (
                 <p className="text-xs text-amber-700 bg-amber-50 p-2.5 rounded-xl border border-amber-200">
@@ -299,8 +355,43 @@ function ProfileSetupForm() {
               )}
             </div>
 
-            {/* Sub-specialty */}
-            {!isGeneralPractice && (
+            {/* New specialty name, shown instead of the sub-specialty picker below
+                when "+ Other" is selected above -- a brand-new specialty has no
+                existing sub-specialty entries to pick from. */}
+            {isNewSpecialty && (
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="doctor-custom-specialty" className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                  New specialty name <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  id="doctor-custom-specialty"
+                  type="text"
+                  placeholder="e.g. Sports Medicine"
+                  value={customSpecialty}
+                  onChange={(e) => setCustomSpecialty(e.target.value)}
+                  required
+                  className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
+                />
+                <label htmlFor="doctor-custom-sub-specialty" className="mt-2 text-xs font-bold uppercase tracking-wider text-slate-700">
+                  Sub-specialty
+                  <span className="ml-1.5 text-xs font-normal text-slate-400 normal-case">(optional)</span>
+                </label>
+                <input
+                  id="doctor-custom-sub-specialty"
+                  type="text"
+                  placeholder="Leave blank if this specialty has none"
+                  value={customSubSpecialty}
+                  onChange={(e) => setCustomSubSpecialty(e.target.value)}
+                  className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
+                />
+                <p className="text-xs text-slate-500">
+                  This becomes available for every doctor to select going forward.
+                </p>
+              </div>
+            )}
+
+            {/* Sub-specialty (existing specialty selected) */}
+            {!isNewSpecialty && !isGeneralPractice && (
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="doctor-sub-specialty" className="text-xs font-bold uppercase tracking-wider text-slate-700">
                   Sub-specialty{' '}
@@ -313,7 +404,10 @@ function ProfileSetupForm() {
                 <select
                   id="doctor-sub-specialty"
                   value={subSpecialty}
-                  onChange={(e) => setSubSpecialty(e.target.value)}
+                  onChange={(e) => {
+                    setSubSpecialty(e.target.value);
+                    if (e.target.value !== OTHER_VALUE) setCustomSubSpecialty('');
+                  }}
                   required={subSpecialties.length > 0}
                   disabled={!specialty}
                   className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -324,12 +418,23 @@ function ProfileSetupForm() {
                   {subSpecialties.map((s) => (
                     <option key={s} value={s}>{s}</option>
                   ))}
+                  <option value={OTHER_VALUE}>+ Other (please specify)</option>
                 </select>
+                {isNewSubSpecialty && (
+                  <input
+                    type="text"
+                    placeholder="New sub-specialty name"
+                    value={customSubSpecialty}
+                    onChange={(e) => setCustomSubSpecialty(e.target.value)}
+                    required
+                    className="mt-1 rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
+                  />
+                )}
               </div>
             )}
-            {isGeneralPractice && (
+            {!isNewSpecialty && isGeneralPractice && (
               <p className="text-xs text-slate-500 -mt-1">
-                General Practice has no sub-specialty, so this field will be left blank.
+                This specialty has no sub-specialty, so this field will be left blank.
               </p>
             )}
 
