@@ -32,7 +32,7 @@ export interface DoctorRecord {
   specialty: string;
   sub_specialty: string | null;
   hmo_accreditations: string[];
-  verified: boolean;
+  verification_status: 'pending' | 'verified' | 'rejected';
   clinics: Clinic[];
   schedule_slots: ScheduleSlot[];
   reviews: { rating: number }[];

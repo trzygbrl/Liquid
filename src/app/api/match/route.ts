@@ -162,25 +162,22 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
-  // 4. Fetch no-sub-specialty specialties (e.g. General Practice)
-  // These appear in the specialties table but have no rows in specialty_taxonomy.
+  // 4. Derive no-sub-specialty specialties (e.g. General Medicine) directly
+  // from the taxonomy fetch above -- migration 0005 allows a
+  // specialty_taxonomy row to have sub_specialty: null (one per specialty,
+  // enforced by a partial unique index), which is how these are represented.
   // The model must return sub_specialty: null for these.
-  const allTaxonomySpecialties = new Set(
-    (taxonomyRows ?? []).map((r) => r.specialty)
-  );
-
-  const { data: allSpecialtyRows } = await serviceClient
-    .from('specialties')
-    .select('specialty')
-    .order('specialty');
-
-  const noSubSpecialtyList: string[] = (allSpecialtyRows ?? [])
-    .map((r: { specialty: string }) => r.specialty)
-    .filter((s: string) => !allTaxonomySpecialties.has(s));
+  // (Previously queried a separate `specialties` lookup table -- that table
+  // was part of a competing, never-applied migration design; the query
+  // silently no-op'd against the live DB. Removed as part of Task 7.3.)
+  const noSubSpecialtyList: string[] = (taxonomyRows ?? [])
+    .filter((r: { specialty: string; sub_specialty: string | null }) => r.sub_specialty === null)
+    .map((r: { specialty: string; sub_specialty: string | null }) => r.specialty);
 
   // 5. Build the system prompt
   const taxonomyLines = (taxonomyRows ?? [])
-    .map((r: { specialty: string; sub_specialty: string }) => `${r.specialty}: ${r.sub_specialty}`)
+    .filter((r: { specialty: string; sub_specialty: string | null }) => r.sub_specialty !== null)
+    .map((r: { specialty: string; sub_specialty: string | null }) => `${r.specialty}: ${r.sub_specialty}`)
     .join('\n');
 
   const noSubLines =

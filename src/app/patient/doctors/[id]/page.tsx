@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useState, useMemo } from 'react';
+import { Suspense, useEffect, useRef, useState, useMemo } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import RequireRole from '@/components/RequireRole';
 import { supabase } from '@/lib/supabaseClient';
@@ -39,7 +39,7 @@ interface DoctorDetail {
   specialty: string;
   sub_specialty: string | null;
   hmo_accreditations: string[];
-  verified: boolean;
+  verification_status: 'pending' | 'verified' | 'rejected';
   clinics: Clinic[];
   schedule_slots: ScheduleSlot[];
   reviews: Review[];
@@ -90,11 +90,14 @@ function DoctorDetailPageContent() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Booking interaction states
+  // Booking interaction states -- clinic is chosen first (Step A), which
+  // scopes which slots Step B shows (Task 7.4).
+  const [selectedClinicId, setSelectedClinicId] = useState<string | null>(null);
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
   const [symptomSummary, setSymptomSummary] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
+  const confirmationRef = useRef<HTMLDivElement>(null);
 
   // Load doctor details
   useEffect(() => {
@@ -114,7 +117,7 @@ function DoctorDetailPageContent() {
             specialty,
             sub_specialty,
             hmo_accreditations,
-            verified,
+            verification_status,
             clinics (
               id,
               name,
@@ -139,6 +142,11 @@ function DoctorDetailPageContent() {
           `
           )
           .eq('id', doctorId)
+          // Only doctors who've cleared HITL license review are viewable
+          // (migration 0008 / Task 7.2) -- a stale/bookmarked link to a
+          // pending or rejected doctor falls through to the existing
+          // "Doctor Profile Not Found" branch via .single()'s zero-row error.
+          .eq('verification_status', 'verified')
           .single();
 
         if (fetchError) throw fetchError;
@@ -152,7 +160,7 @@ function DoctorDetailPageContent() {
           hmo_accreditations: Array.isArray(data.hmo_accreditations)
             ? data.hmo_accreditations
             : [],
-          verified: Boolean(data.verified),
+          verification_status: data.verification_status,
           clinics: Array.isArray(data.clinics) ? data.clinics : [],
           schedule_slots: Array.isArray(data.schedule_slots) ? data.schedule_slots : [],
           reviews: Array.isArray(data.reviews) ? data.reviews : [],
@@ -170,13 +178,35 @@ function DoctorDetailPageContent() {
     loadDoctor();
   }, [doctorId]);
 
-  // Group open available schedule slots by Date
+  // Step A resolves to a clinic before Step B ever shows slots -- when the
+  // doctor only has one clinic there's nothing to choose, so it's picked
+  // automatically and the picker UI never renders (Task 7.4).
+  const effectiveClinicId = useMemo(() => {
+    if (selectedClinicId) return selectedClinicId;
+    if (doctor?.clinics.length === 1) return doctor.clinics[0].id;
+    return null;
+  }, [selectedClinicId, doctor]);
+
+  const selectedClinic = useMemo(() => {
+    if (!doctor || !effectiveClinicId) return null;
+    return doctor.clinics.find((c) => c.id === effectiveClinicId) || null;
+  }, [doctor, effectiveClinicId]);
+
+  function handleSelectClinic(clinicId: string) {
+    setSelectedClinicId(clinicId);
+    // Changing clinic invalidates whatever slot was picked for the old one.
+    setSelectedSlotId(null);
+    setBookingError(null);
+  }
+
+  // Group open available schedule slots for the chosen clinic by Date --
+  // Step B doesn't render at all until a clinic is chosen (see JSX below).
   const groupedSlots = useMemo(() => {
-    if (!doctor) return {};
+    if (!doctor || !effectiveClinicId) return {};
     const todayStr = new Date().toISOString().split('T')[0];
 
     const available = (doctor.schedule_slots || [])
-      .filter((s) => s.is_booked === 'available' && s.date >= todayStr)
+      .filter((s) => s.clinic_id === effectiveClinicId && s.is_booked === 'available' && s.date >= todayStr)
       .sort((a, b) => {
         if (a.date !== b.date) return a.date.localeCompare(b.date);
         return a.start_time.localeCompare(b.start_time);
@@ -191,17 +221,20 @@ function DoctorDetailPageContent() {
     });
 
     return groups;
-  }, [doctor]);
+  }, [doctor, effectiveClinicId]);
 
   const selectedSlot = useMemo(() => {
     if (!doctor || !selectedSlotId) return null;
     return doctor.schedule_slots.find((s) => s.id === selectedSlotId) || null;
   }, [doctor, selectedSlotId]);
 
-  const selectedClinic = useMemo(() => {
-    if (!doctor || !selectedSlot) return doctor?.clinics?.[0] || null;
-    return doctor.clinics.find((c) => c.id === selectedSlot.clinic_id) || doctor.clinics[0] || null;
-  }, [doctor, selectedSlot]);
+  // Auto-scroll the confirmation box into view on selection -- it can be
+  // far below a long, multi-date slot grid otherwise.
+  useEffect(() => {
+    if (selectedSlotId) {
+      confirmationRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [selectedSlotId]);
 
   // Star rating distribution computation
   const starDistribution = useMemo(() => {
@@ -322,7 +355,6 @@ function DoctorDetailPageContent() {
       : null;
 
   const datesWithSlots = Object.keys(groupedSlots);
-  const primaryClinic = doctor.clinics[0] || null;
 
   return (
     <main className="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
@@ -356,7 +388,7 @@ function DoctorDetailPageContent() {
                 <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
                   {doctor.name}
                 </h1>
-                {doctor.verified && (
+                {doctor.verification_status === 'verified' && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-bold text-blue-700 border border-blue-100 shadow-xs">
                     <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
                       <path
@@ -462,47 +494,17 @@ function DoctorDetailPageContent() {
             </div>
           </div>
 
-          {/* Clinics Information */}
-          {doctor.clinics && doctor.clinics.length > 0 && (
-            <div className="mt-6 border-t border-slate-100 pt-6">
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
-                Practice Locations & Rates
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {doctor.clinics.map((clinic) => (
-                  <div
-                    key={clinic.id}
-                    className="rounded-2xl border border-slate-100 bg-slate-50/80 p-4 text-xs flex flex-col justify-between"
-                  >
-                    <div>
-                      <h4 className="font-bold text-slate-900 text-sm">{clinic.name}</h4>
-                      {clinic.room_details && (
-                        <p className="text-slate-600 text-xs mt-0.5">{clinic.room_details}</p>
-                      )}
-                      <p className="text-slate-500 text-xs mt-1">{clinic.location}</p>
-                    </div>
-                    <div className="mt-3 pt-3 border-t border-slate-200/60 flex items-center justify-between">
-                      <span className="text-slate-500 font-medium">Consultation Fee</span>
-                      <span className="font-bold text-slate-900 text-sm">
-                        ₱{Number(clinic.consultation_fee).toLocaleString('en-US', {
-                          minimumFractionDigits: 2,
-                        })}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Schedule Slots Picker Section */}
         <div className="mt-8 card p-6 sm:p-8">
           <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
             <div>
-              <h2 className="text-xl font-bold text-slate-900">Select a Consultation Slot</h2>
+              <h2 className="text-xl font-bold text-slate-900">Book a Consultation</h2>
               <p className="mt-1 text-xs text-slate-500">
-                Choose an open schedule time to request your appointment.
+                {doctor.clinics.length > 1
+                  ? 'Choose a clinic, then an open schedule time to request your appointment.'
+                  : 'Choose an open schedule time to request your appointment.'}
               </p>
             </div>
             {selectedSlot && (
@@ -512,13 +514,61 @@ function DoctorDetailPageContent() {
             )}
           </div>
 
-          {datesWithSlots.length === 0 ? (
+          {/* Step 1: Clinic -- skipped entirely when the doctor only
+              practices at one location. */}
+          {doctor.clinics.length > 1 && (
+            <div className="mb-7">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
+                Step 1 · Choose a Clinic
+              </h3>
+              <div role="radiogroup" aria-label="Select a clinic" className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {doctor.clinics.map((clinic) => {
+                  const isSelected = effectiveClinicId === clinic.id;
+                  return (
+                    <button
+                      key={clinic.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={isSelected}
+                      disabled={isSubmitting}
+                      onClick={() => handleSelectClinic(clinic.id)}
+                      className={`fluid-hover flex flex-col items-start rounded-2xl p-4 text-left focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
+                        isSelected
+                          ? 'bg-blue-600 text-white font-bold shadow-md ring-2 ring-blue-500/40'
+                          : 'bg-white border border-slate-200/80 text-slate-800 hover:border-blue-300 hover:bg-blue-50/40 shadow-xs'
+                      }`}
+                    >
+                      <span className="text-sm font-bold">{clinic.name}</span>
+                      {clinic.room_details && (
+                        <span className={`text-xs mt-0.5 ${isSelected ? 'text-blue-100' : 'text-slate-500'}`}>
+                          {clinic.room_details}
+                        </span>
+                      )}
+                      <span className={`text-xs mt-0.5 ${isSelected ? 'text-blue-100' : 'text-slate-500'}`}>
+                        {clinic.location}
+                      </span>
+                      <span className={`text-xs mt-1.5 font-bold ${isSelected ? 'text-white' : 'text-slate-900'}`}>
+                        ₱{Number(clinic.consultation_fee).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Step 2: Time slot -- only once a clinic is resolved. */}
+          {!effectiveClinicId ? (
             <div className="rounded-2xl border border-slate-100 bg-slate-50 p-8 text-center text-slate-500 text-sm">
-              <p className="font-medium">No available appointment slots posted at this time.</p>
+              <p className="font-medium">Choose a clinic above to see its open schedule.</p>
+            </div>
+          ) : datesWithSlots.length === 0 ? (
+            <div className="rounded-2xl border border-slate-100 bg-slate-50 p-8 text-center text-slate-500 text-sm">
+              <p className="font-medium">No available appointment slots posted for this clinic at this time.</p>
               <p className="mt-1 text-xs text-slate-500">Please check back later or contact the clinic directly.</p>
             </div>
           ) : (
-            <div className="space-y-6">
+            <div role="radiogroup" aria-label="Select a consultation slot" className="space-y-6">
               {datesWithSlots.map((dateStr) => {
                 const slotsForDate = groupedSlots[dateStr];
                 return (
@@ -533,11 +583,15 @@ function DoctorDetailPageContent() {
                           <button
                             key={slot.id}
                             type="button"
+                            role="radio"
+                            aria-checked={isSelected}
+                            disabled={isSubmitting}
                             onClick={() => {
+                              if (isSubmitting) return;
                               setSelectedSlotId(slot.id);
                               setBookingError(null);
                             }}
-                            className={`fluid-hover flex flex-col items-start rounded-2xl p-4 min-h-[58px] text-left focus:outline-none ${
+                            className={`fluid-hover flex flex-col items-start rounded-2xl p-4 min-h-[58px] text-left focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
                               isSelected
                                 ? 'bg-blue-600 text-white font-bold shadow-md ring-2 ring-blue-500/40'
                                 : 'bg-white border border-slate-200/80 text-slate-800 hover:border-blue-300 hover:bg-blue-50/40 shadow-xs'
@@ -565,7 +619,7 @@ function DoctorDetailPageContent() {
 
           {/* Booking Confirmation Box (Active when a slot is chosen) */}
           {selectedSlot && (
-            <div className="mt-8 rounded-2xl border border-blue-100 bg-blue-50/50 p-6 sm:p-7">
+            <div ref={confirmationRef} className="mt-8 rounded-2xl border border-blue-100 bg-blue-50/50 p-6 sm:p-7">
               <h3 className="text-base font-bold text-slate-900 mb-2">Confirm Your Booking</h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-slate-700 mb-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
                 <div>
@@ -621,9 +675,13 @@ function DoctorDetailPageContent() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setSelectedSlotId(null)}
+                  onClick={() => {
+                    setSelectedSlotId(null);
+                    setSymptomSummary('');
+                    setBookingError(null);
+                  }}
                   disabled={isSubmitting}
-                  className="w-full sm:w-auto rounded-2xl border border-slate-200 bg-white px-6 py-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                  className="w-full sm:w-auto rounded-2xl border border-slate-200 bg-white px-6 py-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Cancel
                 </button>
