@@ -176,7 +176,7 @@ function ConfirmationContent() {
     return (
       <main className="flex min-h-screen items-center justify-center">
         <div className="flex items-center gap-3 text-slate-500">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600" />
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600" />
           <span className="text-sm font-medium">Loading your booking confirmation…</span>
         </div>
       </main>
@@ -200,7 +200,7 @@ function ConfirmationContent() {
           <div className="mt-6 flex flex-col gap-3">
             <a
               href="/patient/doctors"
-              className="rounded-2xl bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+              className="rounded-2xl bg-brand-600 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-brand-700"
             >
               Browse Doctors
             </a>
@@ -230,12 +230,12 @@ function ConfirmationContent() {
         <div className="card p-8 sm:p-9 text-center">
 
           {/* Checkmark Icon */}
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 shadow-sm">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-50 text-brand-600 shadow-sm">
             <IconCheck className="h-8 w-8" />
           </div>
 
           {/* Status pill */}
-          <span className="mt-4 inline-block rounded-full bg-blue-50 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-blue-700 border border-blue-100">
+          <span className="mt-4 inline-block rounded-full bg-brand-50 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-brand-700 border border-brand-100">
             Appointment Requested
           </span>
 
@@ -302,7 +302,7 @@ function ConfirmationContent() {
             <a
               id="view-appointments-link"
               href="/patient/dashboard"
-              className="w-full rounded-2xl bg-blue-600 px-6 py-4 text-base font-semibold text-white shadow-md transition hover:bg-blue-700 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              className="w-full rounded-2xl bg-brand-600 px-6 py-4 text-base font-semibold text-white shadow-md transition hover:bg-brand-700 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-brand-500/50"
             >
               View My Appointments
             </a>
@@ -333,7 +333,7 @@ export default function AppointmentConfirmationPage() {
         fallback={
           <main className="flex min-h-screen items-center justify-center">
             <div className="flex items-center gap-3 text-slate-500">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600" />
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600" />
               <span className="text-sm font-medium">Loading confirmation…</span>
             </div>
           </main>

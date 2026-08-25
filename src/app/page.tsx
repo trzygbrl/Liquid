@@ -98,15 +98,15 @@ export default function Home() {
           <Logo size={38} />
 
           <nav className="flex items-center gap-2 sm:gap-6">
-            <Link href="/patient/doctors" className="hidden text-sm font-semibold text-slate-700 hover:text-blue-700 sm:block">
+            <Link href="/patient/doctors" className="hidden text-sm font-semibold text-slate-700 hover:text-brand-700 sm:block">
               Find a doctor
             </Link>
-            <Link href="/doctor/auth" className="hidden text-sm font-semibold text-slate-700 hover:text-blue-700 sm:block">
+            <Link href="/doctor/auth" className="hidden text-sm font-semibold text-slate-700 hover:text-brand-700 sm:block">
               For clinics
             </Link>
             <Link
               href="/patient/auth"
-              className="fluid-hover rounded-full bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-700"
+              className="fluid-hover rounded-full bg-brand-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-brand-700"
             >
               Get started
             </Link>
@@ -133,7 +133,7 @@ export default function Home() {
           </p>
           <Link
             href="/patient/auth"
-            className="fluid-hover mt-8 rounded-full bg-blue-600 px-8 py-3.5 text-sm font-bold text-white hover:bg-blue-700 sm:text-base"
+            className="fluid-hover mt-8 rounded-full bg-brand-600 px-8 py-3.5 text-sm font-bold text-white hover:bg-brand-700 sm:text-base"
           >
             Check your symptoms
           </Link>
@@ -164,7 +164,7 @@ export default function Home() {
             <div className="mx-auto max-w-2xl text-center">
               <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
                 A search engine sends you links.
-                <span className="mt-1 block text-blue-600">We send you to the right clinic.</span>
+                <span className="mt-1 block text-brand-600">We send you to the right clinic.</span>
               </h2>
               <p className="mt-5 text-base leading-relaxed text-slate-600">
                 Most directories stop at the specialty. We keep going to the sub-specialty, verify
@@ -175,7 +175,7 @@ export default function Home() {
             <div className="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2">
               {PILLARS.map((p) => (
                 <div key={p.title} className="card p-6 sm:p-7">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
                     {p.icon}
                   </div>
                   <h3 className="mt-4 text-lg font-bold text-slate-900">{p.title}</h3>
@@ -210,13 +210,13 @@ export default function Home() {
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link
                   href="/patient/doctors"
-                  className="fluid-hover rounded-full bg-blue-600 px-6 py-3 text-sm font-bold text-white hover:bg-blue-700"
+                  className="fluid-hover rounded-full bg-brand-600 px-6 py-3 text-sm font-bold text-white hover:bg-brand-700"
                 >
                   Browse the directory
                 </Link>
                 <Link
                   href="/patient/auth"
-                  className="fluid-hover rounded-full border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-slate-700 hover:border-blue-300 hover:text-blue-700"
+                  className="fluid-hover rounded-full border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-slate-700 hover:border-brand-300 hover:text-brand-700"
                 >
                   Create an account
                 </Link>
@@ -227,7 +227,7 @@ export default function Home() {
 
         {/* Closing panel */}
         <section className="mx-auto max-w-6xl px-6 pb-20">
-          <div className="rounded-2xl bg-gradient-to-br from-blue-50 via-indigo-50 to-slate-50 p-10 text-center sm:p-14">
+          <div className="rounded-2xl bg-gradient-to-br from-brand-50 via-brand-100 to-slate-50 p-10 text-center sm:p-14">
             <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
               Not sure which doctor you need?
             </h2>
@@ -237,7 +237,7 @@ export default function Home() {
             </p>
             <Link
               href="/patient/auth"
-              className="fluid-hover mt-8 inline-flex rounded-full bg-blue-600 px-8 py-3.5 text-sm font-bold text-white hover:bg-blue-700 sm:text-base"
+              className="fluid-hover mt-8 inline-flex rounded-full bg-brand-600 px-8 py-3.5 text-sm font-bold text-white hover:bg-brand-700 sm:text-base"
             >
               Start a symptom check
             </Link>

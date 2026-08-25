@@ -66,7 +66,7 @@ export default function Navbar({ section }: { section: 'patient' | 'doctor' }) {
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
         <div className="flex items-center gap-3">
           <Logo size={30} />
-          <span className="hidden rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-bold text-blue-700 border border-blue-100 sm:inline">
+          <span className="hidden rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-bold text-brand-700 border border-brand-100 sm:inline">
             {section === 'doctor' ? 'Doctor' : 'Patient'}
           </span>
         </div>
@@ -83,7 +83,7 @@ export default function Navbar({ section }: { section: 'patient' | 'doctor' }) {
                   aria-current={active ? 'page' : undefined}
                   className={`rounded-full px-3.5 py-2 text-sm font-semibold transition ${
                     active
-                      ? 'bg-blue-50 text-blue-700'
+                      ? 'bg-brand-50 text-brand-700'
                       : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                   }`}
                 >
@@ -108,7 +108,7 @@ export default function Navbar({ section }: { section: 'patient' | 'doctor' }) {
             <>
               <Link
                 href={otherPortal.href}
-                className="hidden rounded-full px-3.5 py-2 text-sm font-semibold text-slate-600 hover:text-blue-700 sm:inline-flex"
+                className="hidden rounded-full px-3.5 py-2 text-sm font-semibold text-slate-600 hover:text-brand-700 sm:inline-flex"
               >
                 {otherPortal.label}
               </Link>
@@ -116,7 +116,7 @@ export default function Navbar({ section }: { section: 'patient' | 'doctor' }) {
               {!onAuthPage && (
                 <Link
                   href={section === 'doctor' ? '/doctor/auth' : '/patient/auth'}
-                  className="fluid-hover rounded-full bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700"
+                  className="fluid-hover rounded-full bg-brand-600 px-4 py-2 text-sm font-bold text-white hover:bg-brand-700"
                 >
                   Sign in
                 </Link>
@@ -137,7 +137,7 @@ export default function Navbar({ section }: { section: 'patient' | 'doctor' }) {
                 href={l.href}
                 aria-current={active ? 'page' : undefined}
                 className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-semibold ${
-                  active ? 'bg-blue-50 text-blue-700' : 'text-slate-600'
+                  active ? 'bg-brand-50 text-brand-700' : 'text-slate-600'
                 }`}
               >
                 {l.label}

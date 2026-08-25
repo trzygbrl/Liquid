@@ -113,7 +113,7 @@ export default function ScheduleCalendar({ slots, selectedDate, onSelectDate, to
             disabled={atCurrentMonth}
             aria-label="Previous month"
             title={atCurrentMonth ? 'The calendar starts at the current month' : 'Previous month'}
-            className="shrink-0 rounded-full border border-slate-200 bg-white p-1.5 text-slate-600 transition hover:border-blue-300 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-slate-200 disabled:hover:text-slate-600"
+            className="shrink-0 rounded-full border border-slate-200 bg-white p-1.5 text-slate-600 transition hover:border-brand-300 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-slate-200 disabled:hover:text-slate-600"
           >
             <IconChevronLeft className="h-4 w-4" />
           </button>
@@ -127,7 +127,7 @@ export default function ScheduleCalendar({ slots, selectedDate, onSelectDate, to
             onClick={() => shiftMonth(1)}
             aria-label="Next month"
             title="Next month"
-            className="shrink-0 rounded-full border border-slate-200 bg-white p-1.5 text-slate-600 transition hover:border-blue-300 hover:text-blue-700"
+            className="shrink-0 rounded-full border border-slate-200 bg-white p-1.5 text-slate-600 transition hover:border-brand-300 hover:text-brand-700"
           >
             <IconChevronRight className="h-4 w-4" />
           </button>
@@ -184,12 +184,12 @@ export default function ScheduleCalendar({ slots, selectedDate, onSelectDate, to
               title={day ? describe(day) : undefined}
               className={`flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-lg border p-0.5 transition ${
                 isSelected
-                  ? 'border-blue-600 bg-blue-600 text-white shadow-sm'
+                  ? 'border-brand-600 bg-brand-600 text-white shadow-sm'
                   : isPast
                     ? 'cursor-default border-transparent bg-transparent'
                     : isToday
-                      ? 'border-blue-300 bg-blue-50/70 hover:border-blue-400'
-                      : 'border-slate-100 bg-slate-50/60 hover:border-blue-200 hover:bg-white'
+                      ? 'border-brand-300 bg-brand-50/70 hover:border-brand-400'
+                      : 'border-slate-100 bg-slate-50/60 hover:border-brand-200 hover:bg-white'
               }`}
             >
               <span
@@ -199,7 +199,7 @@ export default function ScheduleCalendar({ slots, selectedDate, onSelectDate, to
                     : isPast
                       ? 'text-slate-400'
                       : isToday
-                        ? 'text-blue-700'
+                        ? 'text-brand-700'
                         : 'text-slate-900'
                 }`}
               >
@@ -231,7 +231,7 @@ export default function ScheduleCalendar({ slots, selectedDate, onSelectDate, to
           <button
             type="button"
             onClick={() => onSelectDate(null)}
-            className="mt-1 w-full rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-blue-300 hover:text-blue-700"
+            className="mt-1 w-full rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-brand-300 hover:text-brand-700"
           >
             Clear selection
           </button>

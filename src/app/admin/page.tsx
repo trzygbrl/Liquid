@@ -23,7 +23,7 @@ export default function AdminIndexPage() {
         </div>
         <Link
           href="/admin/verify-doctors"
-          className="fluid-hover min-h-[48px] w-full rounded-2xl bg-blue-600 px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 flex items-center justify-center"
+          className="fluid-hover min-h-[48px] w-full rounded-2xl bg-brand-600 px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 flex items-center justify-center"
         >
           Open Admin Tools
         </Link>

@@ -299,7 +299,7 @@ export default function AppointmentsDashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600" />
       </div>
     );
   }
@@ -407,7 +407,7 @@ export default function AppointmentsDashboard() {
                         onClick={() => handleAction(appt.id, 'accept')}
                         disabled={isActioning}
                         aria-label={`Accept appointment for ${patient?.name ?? 'patient'}`}
-                        className="rounded-2xl bg-blue-600 px-5 py-2.5 min-h-[44px] text-xs font-bold text-white shadow-sm transition hover:bg-blue-700 active:scale-[0.98] disabled:opacity-50"
+                        className="rounded-2xl bg-brand-600 px-5 py-2.5 min-h-[44px] text-xs font-bold text-white shadow-sm transition hover:bg-brand-700 active:scale-[0.98] disabled:opacity-50"
                       >
                         {isActioning ? '…' : 'Accept Appointment'}
                       </button>

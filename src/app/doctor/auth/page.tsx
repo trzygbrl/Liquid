@@ -29,7 +29,7 @@ export default function DoctorAuthPage() {
               onClick={() => setMode('login')}
               className={`flex-1 rounded-xl py-2.5 text-xs font-bold transition ${
                 mode === 'login'
-                  ? 'bg-blue-600 text-white shadow-sm'
+                  ? 'bg-brand-600 text-white shadow-sm'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -40,7 +40,7 @@ export default function DoctorAuthPage() {
               onClick={() => setMode('signup')}
               className={`flex-1 rounded-xl py-2.5 text-xs font-bold transition ${
                 mode === 'signup'
-                  ? 'bg-blue-600 text-white shadow-sm'
+                  ? 'bg-brand-600 text-white shadow-sm'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -53,7 +53,7 @@ export default function DoctorAuthPage() {
 
         <p className="mt-6 text-center text-xs font-medium text-slate-500">
           Looking for the patient portal?{' '}
-          <a href="/patient/auth" className="text-blue-600 font-semibold underline hover:text-blue-700">
+          <a href="/patient/auth" className="text-brand-600 font-semibold underline hover:text-brand-700">
             Patient portal
           </a>
         </p>

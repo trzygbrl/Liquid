@@ -191,7 +191,7 @@ function DoctorListContent() {
           >
             Back to Dashboard
           </a>
-          <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700 border border-blue-100">
+          <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700 border border-brand-100">
             Verified Doctor Directory
           </span>
         </div>
@@ -214,13 +214,13 @@ function DoctorListContent() {
                 Specialty: <strong className="text-slate-900 font-bold">{specialtyParam}</strong>
               </span>
               {selectedSubSpecialty && (
-                <span className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-1 text-blue-700 font-bold shadow-sm">
+                <span className="rounded-xl border border-brand-200 bg-brand-50 px-3 py-1 text-brand-700 font-bold shadow-sm">
                   Sub-specialty: {selectedSubSpecialty}
                 </span>
               )}
               <span className="rounded-xl border border-slate-200 bg-white px-3 py-1 text-slate-700 font-medium shadow-sm">
                 Your HMO:{' '}
-                <strong className={patientHmo ? 'text-blue-700 font-bold' : 'text-slate-500'}>
+                <strong className={patientHmo ? 'text-brand-700 font-bold' : 'text-slate-500'}>
                   {patientHmo || 'None (Cash Rates)'}
                 </strong>
               </span>
@@ -259,12 +259,12 @@ function DoctorListContent() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search by doctor name, specialty, or clinic..."
-                className="flex-1 rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
+                className="flex-1 rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20"
               />
               <select
                 value={specialtyFilter}
                 onChange={(e) => setSpecialtyFilter(e.target.value)}
-                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20 sm:w-64"
+                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20 sm:w-64"
               >
                 <option value="all">All specialties</option>
                 {availableSpecialties.map((specialty) => (
@@ -285,7 +285,7 @@ function DoctorListContent() {
                 onClick={() => setSelectedSubSpecialty(null)}
                 className={`rounded-2xl px-4 py-2 text-xs font-bold transition ${
                   selectedSubSpecialty === null
-                    ? 'bg-blue-600 text-white shadow-sm'
+                    ? 'bg-brand-600 text-white shadow-sm'
                     : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                 }`}
               >
@@ -298,7 +298,7 @@ function DoctorListContent() {
                   onClick={() => setSelectedSubSpecialty(sub)}
                   className={`rounded-2xl px-4 py-2 text-xs font-bold transition ${
                     selectedSubSpecialty?.toLowerCase() === sub.toLowerCase()
-                      ? 'bg-blue-600 text-white shadow-sm'
+                      ? 'bg-brand-600 text-white shadow-sm'
                       : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                   }`}
                 >
@@ -316,7 +316,7 @@ function DoctorListContent() {
             {selectedSubSpecialty && ` for ${selectedSubSpecialty}`}
           </span>
           {patientHmo && (
-            <span className="text-blue-700 font-semibold">
+            <span className="text-brand-700 font-semibold">
               {coveredCount} accredited with {patientHmo}
             </span>
           )}
@@ -325,8 +325,8 @@ function DoctorListContent() {
         {/* Loading / Error States */}
         {loading && (
           <div className="card p-12 text-center">
-            <div className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600" />
+            <div className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600" />
             </div>
             <p className="text-sm text-slate-700 font-medium">Finding and ranking matching doctors…</p>
           </div>
@@ -349,7 +349,7 @@ function DoctorListContent() {
                 setSearch('');
                 setSpecialtyFilter('all');
               }}
-              className="mt-4 rounded-2xl bg-blue-600 px-5 py-2.5 text-xs font-semibold text-white transition hover:bg-blue-700"
+              className="mt-4 rounded-2xl bg-brand-600 px-5 py-2.5 text-xs font-semibold text-white transition hover:bg-brand-700"
             >
               Reset Filters
             </button>
@@ -372,15 +372,15 @@ function DoctorListContent() {
               return (
                 <div
                   key={doctor.id}
-                  className={`fluid-hover relative flex flex-col justify-between rounded-2xl border bg-white p-6 sm:p-7 shadow-sm hover:border-blue-300/80 hover:shadow-lg ${
+                  className={`fluid-hover relative flex flex-col justify-between rounded-2xl border bg-white p-6 sm:p-7 shadow-sm hover:border-brand-300/80 hover:shadow-lg ${
                     isTopRecommendation
-                      ? 'border-blue-200 ring-2 ring-blue-500/20 shadow-blue-500/5'
+                      ? 'border-brand-200 ring-2 ring-brand-500/20 shadow-brand-500/5'
                       : 'border-slate-200/80'
                   }`}
                 >
                   {/* Top recommendation ribbon */}
                   {isTopRecommendation && (
-                    <div className="mb-4 inline-flex items-center gap-1.5 self-start rounded-full bg-blue-50/90 px-3 py-1 text-xs font-bold text-blue-700 border border-blue-200/80 shadow-xs">
+                    <div className="mb-4 inline-flex items-center gap-1.5 self-start rounded-full bg-brand-50/90 px-3 py-1 text-xs font-bold text-brand-700 border border-brand-200/80 shadow-xs">
                       <IconStar className="h-3.5 w-3.5" />
                       <span>Top Clinical Match</span>
                     </div>
@@ -398,7 +398,7 @@ function DoctorListContent() {
                         {doctor.verification_status === 'verified' && (
                           <span
                             title="Verified Medical License"
-                            className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-bold text-blue-700 border border-blue-100"
+                            className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-bold text-brand-700 border border-brand-100"
                           >
                             <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
                               <path
@@ -414,7 +414,7 @@ function DoctorListContent() {
 
                       {/* Specialty & Sub-specialty Pill */}
                       <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
-                        <span className="font-bold text-blue-700 text-base">
+                        <span className="font-bold text-brand-700 text-base">
                           {doctor.specialty}
                         </span>
                         {doctor.sub_specialty && (
@@ -452,7 +452,7 @@ function DoctorListContent() {
                         if (!plain) return null;
                         return (
                           <p className="mt-2 text-sm text-slate-700">
-                            <span className="text-blue-700 font-semibold">{plain.plainName}</span>
+                            <span className="text-brand-700 font-semibold">{plain.plainName}</span>
                             <span className="text-slate-400 mx-1.5">•</span>
                             <span className="italic text-slate-600">{plain.tagalogName}</span>
                           </p>
@@ -495,7 +495,7 @@ function DoctorListContent() {
                                     return next;
                                   })
                                 }
-                                className="text-xs font-bold text-blue-700 hover:text-blue-900 transition"
+                                className="text-xs font-bold text-brand-700 hover:text-brand-900 transition"
                               >
                                 {expandedClinics.has(doctor.id)
                                   ? 'Hide other locations'
@@ -578,7 +578,7 @@ function DoctorListContent() {
                           Earliest Open Slot
                         </span>
                         {doctor.soonestSlot ? (
-                          <div className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-2xl bg-blue-50 border border-blue-100 px-3.5 py-2 text-xs font-bold text-blue-800">
+                          <div className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-2xl bg-brand-50 border border-brand-100 px-3.5 py-2 text-xs font-bold text-brand-800">
                             <span>{doctor.soonestSlot.formatted}</span>
                           </div>
                         ) : (
@@ -592,7 +592,7 @@ function DoctorListContent() {
                         <a
                           id={`book-doctor-${doctor.id}`}
                           href={`/patient/doctors/${doctor.id}?hmo=${encodeURIComponent(patientHmo || '')}`}
-                          className="w-full text-center block rounded-2xl bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white shadow-md transition hover:bg-blue-700 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                          className="w-full text-center block rounded-2xl bg-brand-600 px-6 py-3.5 text-sm font-semibold text-white shadow-md transition hover:bg-brand-700 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-brand-500/50"
                         >
                           View Profile & Book
                         </a>
@@ -623,7 +623,7 @@ export default function PatientDoctorListPage() {
         fallback={
           <main className="flex min-h-screen items-center justify-center text-slate-500">
             <div className="flex items-center gap-3">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-200 border-t-brand-600" />
               <span>Loading doctor directory…</span>
             </div>
           </main>
