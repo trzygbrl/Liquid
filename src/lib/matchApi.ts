@@ -17,8 +17,8 @@
 //       sex: data.sex,
 //       location: data.location,
 //     });
-//     // if result.type === 'match'  → navigate/show results
-//     // if result.type === 'clarify' → show follow-up question, then re-call
+//     // if result.type === 'match', navigate to show results
+//     // if result.type === 'clarify', show follow-up question, then re-call
 //     //   with conversationHistory appended
 //   }} />
 
@@ -43,20 +43,20 @@ export type EmergencyResult = {
 export type MatchApiResult = MatchResult | ClarifyResult | EmergencyResult;
 
 export interface MatchApiRequest {
-  /** Required — the free-text symptom description from IntakeFlow step 3 */
+  /** Required. The free-text symptom description from IntakeFlow step 3 */
   symptomText: string;
-  /** Optional — patient's first name, used for a humanised prompt preamble */
+  /** Optional. Patient's first name, used for a humanised prompt preamble */
   name?: string;
-  /** Optional — patient's age */
+  /** Optional. Patient's age */
   age?: number;
-  /** Optional — 'male' | 'female' | 'other' */
+  /** Optional. 'male' | 'female' | 'other' */
   sex?: string;
-  /** Optional — city/province, e.g. "Angeles City, Pampanga" */
+  /** Optional. City/province, e.g. "Angeles City, Pampanga" */
   location?: string;
-  /** Optional — true if consultation is being booked on behalf of a family member */
+  /** Optional. True if consultation is being booked on behalf of a family member */
   isForFamilyMember?: boolean;
   /**
-   * Optional — multi-turn history for clarification follow-ups.
+   * Optional. Multi-turn history for clarification follow-ups.
    * After a { type: 'clarify' } response, append the model's question as
    * { role: 'model', text: <question> } and the patient's answer as
    * { role: 'user', text: <answer> }, then call again. The route re-runs
@@ -68,7 +68,7 @@ export interface MatchApiRequest {
 /**
  * Call the AI symptom-matching API route.
  * Throws on HTTP errors (4xx, 5xx). On success, always returns 200 with
- * either a MatchResult or ClarifyResult — never throws for AI-level failures.
+ * either a MatchResult or ClarifyResult; never throws for AI-level failures.
  */
 export async function callMatchApi(req: MatchApiRequest): Promise<MatchApiResult> {
   const res = await fetch('/api/match', {

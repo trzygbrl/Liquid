@@ -1,13 +1,13 @@
 -- =============================================================
 -- 0003_nullable_subspecialty.sql
--- Civic Access (Team Liquid) — Task 2.1 follow-up
+-- Civic Access (Team Liquid). Task 2.1 follow-up
 --
 -- Why this migration exists
 -- --------------------------
 -- `doctors.sub_specialty` was originally NOT NULL and part of a composite
--- foreign key  doctors(specialty, sub_specialty) → specialty_taxonomy(specialty, sub_specialty).
+-- foreign key  doctors(specialty, sub_specialty) to specialty_taxonomy(specialty, sub_specialty).
 -- That worked fine when every doctor had a sub-specialty, but general practitioners
--- (e.g. family medicine, general healthcare specialists) do not — they should submit
+-- (e.g. family medicine, general healthcare specialists) do not. they should submit
 -- specialty = 'General Practice' and sub_specialty = NULL.
 --
 -- Postgres MATCH SIMPLE nuance you must understand before editing this
@@ -16,7 +16,7 @@
 -- MATCH SIMPLE says: if ANY column in the composite key is NULL, skip the FK
 -- check entirely for that row.  This is the correct and expected Postgres
 -- behaviour, but it means a doctor row with sub_specialty = NULL would also
--- have NO validation on specialty — a garbage specialty value would slip
+-- have NO validation on specialty. a garbage specialty value would slip
 -- through the composite FK unchallenged.
 --
 -- Fix: a second, independent FK
@@ -25,10 +25,10 @@
 -- doctors WHO DO have a sub-specialty), we add a small lookup table:
 --   public.specialties (specialty text primary key)
 -- backfill it from specialty_taxonomy, add the 'General Practice' row, and
--- then add a separate FK  doctors.specialty → specialties.specialty.
+-- then add a separate FK  doctors.specialty to specialties.specialty.
 -- Now BOTH paths are covered:
---   * sub_specialty NOT NULL  → composite FK validates the (specialty, sub_specialty) pair
---   * sub_specialty NULL      → new single-column FK validates specialty on its own
+--   * sub_specialty NOT NULL to composite FK validates the (specialty, sub_specialty) pair
+--   * sub_specialty NULL to new single-column FK validates specialty on its own
 --
 -- Named design decision (for the team to revisit if needed)
 -- --------------------------
@@ -40,16 +40,16 @@
 --
 -- What is NOT changed
 -- --------------------------
--- * specialty_taxonomy is unchanged — it still requires both specialty and
+-- * specialty_taxonomy is unchanged. it still requires both specialty and
 --   sub_specialty to be NOT NULL. General-practice doctors simply have no
 --   row there; that is intentional per Assumption 3 in the build prompt.
--- * The composite FK doctors(specialty, sub_specialty) → specialty_taxonomy
+-- * The composite FK doctors(specialty, sub_specialty) to specialty_taxonomy
 --   is left untouched. It keeps enforcing valid pairs when sub_specialty is present.
 -- * No seed data is changed here. Any future seed rework should include at least
 --   one general-practice doctor with sub_specialty = NULL to exercise this path
 --   in the demo (TODO: seed rework).
 --
--- Applied by: Zin (manually via Supabase SQL Editor — do NOT run supabase db push)
+-- Applied by: Zin (manually via Supabase SQL Editor. do NOT run supabase db push)
 -- =============================================================
 
 -- =========================================================
@@ -63,7 +63,7 @@ alter table public.doctors
 --
 -- This table is the single source of truth for valid specialty
 -- values. It is separate from specialty_taxonomy, which tracks
--- (specialty, sub_specialty) *pairs* — not standalone specialties.
+-- (specialty, sub_specialty) *pairs*. not standalone specialties.
 -- =========================================================
 create table public.specialties (
   specialty text primary key
@@ -100,7 +100,7 @@ insert into public.specialties (specialty)
   on conflict (specialty) do nothing;
 
 -- =========================================================
--- Step 5: Add FK doctors.specialty → specialties.specialty
+-- Step 5: Add FK doctors.specialty to specialties.specialty
 --
 -- This new constraint covers the null-sub_specialty case:
 -- when sub_specialty IS NULL, the composite FK to
@@ -108,7 +108,7 @@ insert into public.specialties (specialty)
 -- single-column FK still enforces that specialty is a known,
 -- valid value.
 --
--- Both FKs coexist — Postgres allows this and enforces both
+-- Both FKs coexist. Postgres allows this and enforces both
 -- independently.
 -- =========================================================
 alter table public.doctors

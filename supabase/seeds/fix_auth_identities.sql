@@ -1,6 +1,6 @@
 -- =============================================================
 -- fix_auth_identities.sql
--- Civic Access (Team Liquid) — Auth Repair Script
+-- Civic Access (Team Liquid). Auth Repair Script
 --
 -- In this Supabase database version:
 --   * auth.identities.id is of type UUID

@@ -23,7 +23,7 @@ export default function RequireRole({ role, children }: RequireRoleProps) {
 
       const actualRole = getRoleFromUser(session.user);
       if (actualRole && actualRole !== role) {
-        // User is authenticated but on the wrong role's dashboard — redirect them to theirs.
+        // User is authenticated but on the wrong role's dashboard. Redirect them to theirs.
         router.replace(dashboardRouteForRole(actualRole));
         return;
       }
@@ -34,8 +34,8 @@ export default function RequireRole({ role, children }: RequireRoleProps) {
 
   if (!ready) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-600 border-t-indigo-500" />
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
       </div>
     );
   }

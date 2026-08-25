@@ -51,7 +51,7 @@ const doctorsData = [
     email: 'doctor+dela-cruz@civicaccess.demo',
     name: 'Dr. Jose Antonio Dela Cruz',
     credentials:
-      'PRC Lic. No. 0234567 | MD, Far Eastern University–NRMF (2015) | Fellow, Vitreo-Retina Society of the Philippines | 9 yrs experience',
+      'PRC Lic. No. 0234567 | MD, Far Eastern University-NRMF (2015) | Fellow, Vitreo-Retina Society of the Philippines | 9 yrs experience',
     specialty: 'Ophthalmology',
     sub_specialty: 'Retina',
     hmo_accreditations: ['Maxicare', 'PhilCare'],
@@ -75,7 +75,7 @@ const doctorsData = [
     email: 'doctor+santos@civicaccess.demo',
     name: 'Dr. Ana Corazon Santos',
     credentials:
-      'PRC Lic. No. 0345678 | MD, University of the Philippines–Manila (2007) | Diplomate, Philippine Board of Ophthalmology | Phacoemulsification Training, Aravind Eye Hospital (India) | 17 yrs experience',
+      'PRC Lic. No. 0345678 | MD, University of the Philippines-Manila (2007) | Diplomate, Philippine Board of Ophthalmology | Phacoemulsification Training, Aravind Eye Hospital (India) | 17 yrs experience',
     specialty: 'Ophthalmology',
     sub_specialty: 'Cataract',
     hmo_accreditations: ['Medicard', 'PhilCare', 'Intellicare'],
@@ -198,7 +198,7 @@ const doctorsData = [
     email: 'doctor+aquino@civicaccess.demo',
     name: 'Dr. Leonardo Cruz Aquino',
     credentials:
-      'PRC Lic. No. 0890123 | MD, University of the East–Ramon Magsaysay Memorial Medical Center (2017) | Fellow, Philippine Academy of Ophthalmology | 7 yrs experience',
+      'PRC Lic. No. 0890123 | MD, University of the East-Ramon Magsaysay Memorial Medical Center (2017) | Fellow, Philippine Academy of Ophthalmology | 7 yrs experience',
     specialty: 'Ophthalmology',
     sub_specialty: 'Pediatric Ophthalmology',
     hmo_accreditations: ['Medicard', 'PhilCare', 'Intellicare'],
@@ -236,7 +236,7 @@ async function seed() {
     if (userError) {
       console.warn(`User creation note for ${doc.email}:`, userError.message);
     } else {
-      console.log(`✓ Auth user created: ${userData.user.id}`);
+      console.log(`OK: Auth user created: ${userData.user.id}`);
     }
 
     // 2. Upsert public.doctors
@@ -250,7 +250,7 @@ async function seed() {
       verified: doc.verified,
     });
     if (docError) console.error(`Error saving doctor ${doc.name}:`, docError);
-    else console.log(`✓ Doctor record saved: ${doc.name}`);
+    else console.log(`OK: Doctor record saved: ${doc.name}`);
 
     // 3. Upsert clinic
     const { error: clinicError } = await admin.from('clinics').upsert({
@@ -262,7 +262,7 @@ async function seed() {
       consultation_fee: doc.clinic.consultation_fee,
     });
     if (clinicError) console.error(`Error saving clinic:`, clinicError);
-    else console.log(`✓ Clinic saved: ${doc.clinic.name}`);
+    else console.log(`OK: Clinic saved: ${doc.clinic.name}`);
 
     // 4. Insert schedule slots
     for (const slot of doc.slots) {
@@ -275,7 +275,7 @@ async function seed() {
         is_booked: 'available',
       });
     }
-    console.log(`✓ Schedule slots saved (${doc.slots.length} slots)`);
+    console.log(`OK: Schedule slots saved (${doc.slots.length} slots)`);
   }
 
   // Verify login for Dr. Reyes
@@ -286,9 +286,9 @@ async function seed() {
   });
 
   if (loginError) {
-    console.error('❌ Login test failed:', loginError);
+    console.error('FAILED: Login test failed:', loginError);
   } else {
-    console.log('🎉 Login test SUCCEEDED! Logged in as:', loginData.user.email);
+    console.log('Login test SUCCEEDED! Logged in as:', loginData.user.email);
   }
 }
 

@@ -1,12 +1,12 @@
 // src/lib/safetyGate.ts
 //
-// Emergency Safety Gate Logic — PRD Section 8.2 (Task 3.3)
+// Emergency Safety Gate Logic. PRD Section 8.2 (Task 3.3)
 //
 // CALIBRATED DESIGN RULES:
 // 1. Deterministic rule-based evaluation (zero external dependencies, zero latency).
 // 2. Evaluates specific objective symptom combinations in English & Tagalog.
 // 3. Do NOT trigger on tone, punctuation, or intensity words ("dying", "worst pain ever", "emergency", ALL CAPS).
-// 4. Tone of message: calm, non-alarming — no red banners or panic language.
+// 4. Tone of message: calm, non-alarming. No red banners or panic language.
 
 export interface SafetyGateResult {
   isEmergency: boolean;
@@ -38,7 +38,7 @@ function matchesAny(text: string, patterns: RegExp[]): boolean {
   return patterns.some((pattern) => pattern.test(text));
 }
 
-// ─── 1. Chest Pain + Shortness of Breath ─────────────────────────────────────
+// 1. Chest Pain + Shortness of Breath
 // Must contain BOTH chest discomfort AND respiratory distress
 const CHEST_PAIN_PATTERNS = [
   /\b(chest|dibdib)\s+(hurts?|pain|pressure|tightness|heaviness|discomfort|burning|aching|aches?)\b/,
@@ -52,7 +52,7 @@ const BREATHING_DISTRESS_PATTERNS = [
   /\b(hirap\s+huminga|nahihirapang\s+huminga|kapos\s+sa\s+hininga|hindi\s+makahinga|kinakapos\s+ng\s+hininga|hirap\s+sa\s+paghinga)\b/,
 ];
 
-// ─── 2. Chest Pain + Radiating Arm/Jaw Pain ───────────────────────────────────
+// 2. Chest Pain + Radiating Arm/Jaw Pain
 // Must contain BOTH chest discomfort AND radiating pain to arm/jaw/shoulder/back
 const RADIATING_PATTERNS = [
   /\b(radiat(ing|es|ed)?|spread(ing|s)?)\s+(to\s+)?(my\s+|the\s+)?(left\s+)?(arm|jaw|shoulder|neck|back)\b/,
@@ -62,14 +62,14 @@ const RADIATING_PATTERNS = [
   /\b(masakit|sumasakit)\s+din\s+ang\s+(braso|panga|balikat)\b/,
 ];
 
-// ─── 3. Severe Standalone Difficulty Breathing ───────────────────────────────
+// 3. Severe Standalone Difficulty Breathing
 // Severe/acute standalone inability to breathe (not mild cough or stuffy nose)
 const SEVERE_BREATHING_PATTERNS = [
   /\b(cannot\s+breathe|can\'?t\s+breathe|unable\s+to\s+breathe|gasping\s+for\s+air|suffocating|choking)\b/,
   /\b(sobrang\s+hirap\s+huminga|hindi\s+na\s+makahinga|hindi\s+makahinga\s+nang\s+maayos|nalulunod\s+sa\s+hangin)\b/,
 ];
 
-// ─── 4. Sudden Numbness or Weakness on One Side (Stroke / F.A.S.T.) ───────────
+// 4. Sudden Numbness or Weakness on One Side (Stroke / F.A.S.T.)
 const STROKE_PATTERNS = [
   /\b(sudden|suddenly|bigla|biglang)\b.*\b(numbness|numb|weakness|weak|paraly(sis|zed)|droop(ing)?|manhid|nanghina|bagsak)\b.*\b(one\s+side|left\s+side|right\s+side|half\s+of\s+(my\s+)?(body|face)|kalahati\s+ng\s+(katawan|mukha))\b/,
   /\b(numbness|numb|weakness|weak|paraly(sis|zed)|droop(ing)?|manhid|nanghina|bagsak)\b.*\b(sudden|suddenly|bigla|biglang)\b.*\b(one\s+side|left\s+side|right\s+side|half\s+of\s+(my\s+)?(body|face)|kalahati\s+ng\s+(katawan|mukha))\b/,
@@ -77,13 +77,13 @@ const STROKE_PATTERNS = [
   /\b(ngiwi\s+ang\s+mukha|nabubulol\s+magsalita|pumaling\s+ang\s+mukha)\b/,
 ];
 
-// ─── 5. Loss of Consciousness / Fainting ─────────────────────────────────────
+// 5. Loss of Consciousness / Fainting
 const LOSS_OF_CONSCIOUSNESS_PATTERNS = [
   /\b(passed\s+out|pass\s+out|lost\s+consciousness|loss\s+of\s+consciousness|blacked\s+out|blacking\s+out|fainted|fainting|collapsed|collapse)\b/,
   /\b(nawalan\s+ng\s+malay|nawawalan\s+ng\s+malay|nahimatay|nahihimatay|nag-collapse|nagcollapse)\b/,
 ];
 
-// ─── 6. Severe Uncontrolled Bleeding ─────────────────────────────────────────
+// 6. Severe Uncontrolled Bleeding
 const UNCONTROLLED_BLEEDING_PATTERNS = [
   /\b(uncontrolled\s+bleeding|bleeding\s+(will\s+not|won\'?t|does\s+not)\s+stop|continuous(ly)?\s+bleeding|gushing\s+blood|profuse\s+bleeding|hemorrhag(e|ing))\b/,
   /\b(vomiting\s+blood|throwing\s+up\s+blood|coughing\s+up\s+blood)\b/,

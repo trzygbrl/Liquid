@@ -212,17 +212,15 @@ export const SPECIALTY_PLAIN_MAP: Record<string, SpecialtyPlainInfo> = {
 };
 
 /**
- * Returns a friendly, plain-language description for a medical specialty.
+ * Returns a friendly, plain-language description for a medical specialty,
+ * or null when the specialty has no entry in the map.
+ *
+ * Null rather than a generated `"${specialty} Specialist"` fallback on purpose:
+ * many specialty names in the directory are already plain language (e.g.
+ * "OB-GYN & Women's Health"), so a generated fallback just echoes the name
+ * back and the caller renders a line that says nothing. Callers should skip
+ * the plain-language line entirely when this returns null.
  */
-export function getPlainSpecialtyInfo(specialty: string): SpecialtyPlainInfo {
-  const match = SPECIALTY_PLAIN_MAP[specialty];
-  if (match) return match;
-
-  // Fallback if not found
-  return {
-    plainName: `${specialty} Specialist`,
-    tagalogName: `Espesyalista sa ${specialty}`,
-    description: `Specialized medical care and clinical consultation for ${specialty}.`,
-    tagalogDescription: `Espesyalistang pangangalagang medikal para sa ${specialty}.`,
-  };
+export function getPlainSpecialtyInfo(specialty: string): SpecialtyPlainInfo | null {
+  return SPECIALTY_PLAIN_MAP[specialty] ?? null;
 }

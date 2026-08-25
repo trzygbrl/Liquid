@@ -1,12 +1,12 @@
 -- =============================================================
 -- seed_taxonomy_only.sql
--- Civic Access (Team Liquid) — Task 1.4 (taxonomy re-seed)
+-- Civic Access (Team Liquid). Task 1.4 (taxonomy re-seed)
 --
 -- PURPOSE
 -- -------
 -- This is a standalone, re-runnable script that seeds ONLY the
 -- specialty lookup tables. It does NOT touch auth.users, doctors,
--- clinics, or schedule_slots — safe to run at any time without
+-- clinics, or schedule_slots. safe to run at any time without
 -- side-effects on live user data.
 --
 -- Use this when:
@@ -21,12 +21,12 @@
 --
 -- HOW TO RUN
 -- ----------
--- Paste into Supabase Dashboard → SQL Editor → Run.
+-- Paste into Supabase Dashboard to SQL Editor to Run.
 -- ON CONFLICT clauses make every INSERT idempotent.
 -- =============================================================
 
 -- =========================================================
--- 1. specialty_taxonomy — (specialty, sub_specialty) pairs
+-- 1. specialty_taxonomy. (specialty, sub_specialty) pairs
 --    Used by the profile-setup form's constrained dropdowns
 --    and the composite FK on doctors(specialty, sub_specialty).
 -- =========================================================
@@ -39,9 +39,9 @@ VALUES
 ON CONFLICT (specialty, sub_specialty) DO NOTHING;
 
 -- =========================================================
--- 2. specialties — single-column lookup added by migration 0003
+-- 2. specialties. single-column lookup added by migration 0003
 --    Validates doctors.specialty independently of sub_specialty.
---    'General Practice' has no taxonomy rows — it is represented
+--    'General Practice' has no taxonomy rows. it is represented
 --    here only, and doctors who pick it submit sub_specialty = NULL.
 -- =========================================================
 INSERT INTO public.specialties (specialty)

@@ -314,7 +314,7 @@ async function runSeed() {
   const specialtyRows = Array.from(allSpecialties).map((s) => ({ specialty: s }));
   const { error: specError } = await admin.from('specialties').upsert(specialtyRows, { onConflict: 'specialty' });
   if (specError) console.error('Specialties upsert error:', specError);
-  else console.log(`✓ Upserted ${specialtyRows.length} specialties`);
+  else console.log(`Upserted: Upserted ${specialtyRows.length} specialties`);
 
   // 2. Seed specialty_taxonomy (only non-null sub_specialty pairs)
   console.log('2. Seeding specialty_taxonomy...');
@@ -323,7 +323,7 @@ async function runSeed() {
     const { error: taxErr } = await admin.from('specialty_taxonomy').upsert(chunk, { onConflict: 'specialty,sub_specialty' });
     if (taxErr) console.error('Taxonomy upsert error:', taxErr);
   }
-  console.log(`✓ Upserted ${uniqueTaxonomy.length} taxonomy pairs`);
+  console.log(`Upserted: Upserted ${uniqueTaxonomy.length} taxonomy pairs`);
 
   // 3. Create Auth Users for each doctor in concurrent batches
   console.log('3. Creating Auth Users for doctors in Supabase...');
@@ -349,22 +349,22 @@ async function runSeed() {
       console.log(`  Created ${Math.min(i + concurrency, doctors.length)} / ${doctors.length} auth accounts`);
     }
   }
-  console.log('✓ Auth users created.');
+  console.log('Done: Auth users created.');
 
   // 4. Seed Doctors
   console.log('4. Seeding doctors table...');
   await batchInsert('doctors', doctors, 100);
-  console.log('✓ Doctors seeded.');
+  console.log('Done: Doctors seeded.');
 
   // 5. Seed Clinics
   console.log('5. Seeding clinics table...');
   await batchInsert('clinics', clinics, 100);
-  console.log('✓ Clinics seeded.');
+  console.log('Done: Clinics seeded.');
 
   // 6. Seed Schedule Slots
   console.log('6. Seeding schedule slots table...');
   await batchInsert('schedule_slots', scheduleSlots, 500);
-  console.log('✓ Schedule slots seeded.');
+  console.log('Done: Schedule slots seeded.');
 
   console.log('\n--- VERIFICATION ---');
   const { count: finalDocCount } = await admin.from('doctors').select('*', { count: 'exact', head: true });

@@ -55,12 +55,12 @@ function ProfileSetupForm() {
           .limit(1);
 
         if (existingClinics && existingClinics.length > 0) {
-          // Both a doctors row and a clinics row exist — fully onboarded.
+          // Both a doctors row and a clinics row exist, so the doctor is fully onboarded.
           router.replace('/doctor/dashboard');
           return;
         }
 
-        // Doctor row exists but no clinic yet — likely a prior attempt where the
+        // Doctor row exists but no clinic yet. Likely a prior attempt where the
         // clinic insert failed. Pre-fill what's already saved so they don't retype it.
         setName(existingDoctor.name ?? '');
         setSpecialty(existingDoctor.specialty ?? '');
@@ -157,16 +157,16 @@ function ProfileSetupForm() {
     } = await supabase.auth.getSession();
 
     if (!session) {
-      setError('Your session expired — please log in again.');
+      setError('Your session expired. Please log in again.');
       setSubmitting(false);
       return;
     }
 
-    // upsert, not insert — safe to re-run if a previous attempt saved the doctor
+    // upsert, not insert, so it is safe to re-run if a previous attempt saved the doctor
     // row but failed on the clinic insert below (no cross-table transaction available
     // through the Supabase JS client).
     const { error: doctorError } = await supabase.from('doctors').upsert({
-      id: session.user.id, // must equal auth.uid() — required by doctors_insert_own RLS policy
+      id: session.user.id, // must equal auth.uid(), required by doctors_insert_own RLS policy
       name: name.trim(),
       credentials: credentialFileName || null,
       specialty,
@@ -175,7 +175,7 @@ function ProfileSetupForm() {
       // null is correct: the composite FK uses MATCH SIMPLE and skips validation
       // when sub_specialty is null; the new doctors_specialty_fk still validates specialty.
       sub_specialty: subSpecialty || null,
-      // hmo_accreditations left to DB default '{}' — seeded via Task 1.4
+      // hmo_accreditations left to DB default '{}', seeded via Task 1.4
       // verified left to DB default true
     });
 
@@ -199,7 +199,7 @@ function ProfileSetupForm() {
 
     if (clinicError) {
       setError(
-        `Your profile saved, but the clinic details didn't — ${clinicError.message}. Please submit again.`
+        `Your profile saved, but the clinic details didn't: ${clinicError.message}. Please submit again.`
       );
       return;
     }
@@ -209,38 +209,33 @@ function ProfileSetupForm() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F8F7FA]">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-200 border-t-violet-600" />
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600" />
       </div>
     );
   }
 
   return (
-    <main className="flex min-h-screen flex-col bg-[#F8F7FA] px-4 py-10 sm:px-6 lg:px-8">
+    <main className="flex min-h-screen flex-col px-4 py-10 sm:px-6 lg:px-8">
       <div className="mx-auto w-full max-w-xl">
         {/* Header */}
         <div className="border-b border-slate-200/80 pb-6 mb-8">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-sm font-extrabold text-slate-900">
-              Civic<span className="text-violet-600">Access</span>
-            </span>
-            <span className="rounded-full bg-violet-50 px-2.5 py-0.5 text-xs font-bold text-violet-700 border border-violet-100">
-              Doctor Onboarding
-            </span>
-          </div>
-          <h1 className="mt-1 text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Set up your practitioner profile</h1>
-          <p className="mt-1 text-xs text-slate-500">
+          <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-bold text-blue-700 border border-blue-100">
+            Doctor Onboarding
+          </span>
+          <h1 className="mt-2.5 text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Set up your practitioner profile</h1>
+          <p className="mt-1.5 text-sm text-slate-600">
             This is a one-time setup. Once completed, your profile and clinics will be visible in the directory.
           </p>
         </div>
 
         {/* Card */}
-        <div className="rounded-3xl border border-slate-100 bg-white p-7 sm:p-9 shadow-[0_8px_30px_rgb(0,0,0,0.03)]">
+        <div className="card p-7 sm:p-9">
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
 
-            {/* ── Doctor details ──────────────────────────────────────── */}
+            {/* Doctor details */}
             <div className="border-b border-slate-100 pb-4">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-violet-700">Practitioner Details</h2>
+              <h2 className="text-sm font-bold uppercase tracking-wider text-blue-700">Practitioner Details</h2>
             </div>
 
             {/* Full name */}
@@ -255,7 +250,7 @@ function ProfileSetupForm() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20"
+                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
               />
             </div>
 
@@ -270,17 +265,13 @@ function ProfileSetupForm() {
                 type="file"
                 accept=".pdf,.jpg,.jpeg,.png"
                 onChange={handleFileChange}
-                className="block w-full text-xs text-slate-500
-                  file:mr-4 file:rounded-xl file:border-0
-                  file:bg-slate-100 file:px-4 file:py-2.5 file:text-xs
-                  file:font-bold file:text-slate-700
-                  hover:file:bg-slate-200 file:cursor-pointer file:transition"
+                className="block w-full text-xs text-slate-500 file:mr-4 file:rounded-xl file:border-0 file:bg-slate-100 file:px-4 file:py-2.5 file:text-xs file:font-bold file:text-slate-700 hover:file:bg-slate-200 file:cursor-pointer file:transition"
               />
               {credentialFileName && (
-                <p className="text-xs text-violet-700 font-medium">Selected: <span>{credentialFileName}</span></p>
+                <p className="text-xs text-blue-700 font-medium">Selected: <span>{credentialFileName}</span></p>
               )}
-              <p className="text-xs text-slate-400">
-                Demo mode — only the filename is stored. No actual file is uploaded.
+              <p className="text-xs text-slate-500">
+                Demo mode: only the filename is stored. No actual file is uploaded.
               </p>
             </div>
 
@@ -294,7 +285,7 @@ function ProfileSetupForm() {
                 value={specialty}
                 onChange={(e) => handleSpecialtyChange(e.target.value)}
                 required
-                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20 disabled:opacity-50"
+                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50"
               >
                 <option value="">Select specialty</option>
                 {specialties.map((s) => (
@@ -303,7 +294,7 @@ function ProfileSetupForm() {
               </select>
               {specialties.length === 0 && !error && (
                 <p className="text-xs text-amber-700 bg-amber-50 p-2.5 rounded-xl border border-amber-200">
-                  No specialties found — make sure taxonomy is loaded.
+                  No specialties found. Make sure taxonomy is loaded.
                 </p>
               )}
             </div>
@@ -325,7 +316,7 @@ function ProfileSetupForm() {
                   onChange={(e) => setSubSpecialty(e.target.value)}
                   required={subSpecialties.length > 0}
                   disabled={!specialty}
-                  className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <option value="">
                     {specialty ? 'Select sub-specialty' : 'Pick a specialty first'}
@@ -338,15 +329,15 @@ function ProfileSetupForm() {
             )}
             {isGeneralPractice && (
               <p className="text-xs text-slate-500 -mt-1">
-                General Practice has no sub-specialty — this field will be left blank.
+                General Practice has no sub-specialty, so this field will be left blank.
               </p>
             )}
 
-            {/* ── Clinic details ──────────────────────────────────────── */}
+            {/* Clinic details */}
 
             <div className="mt-3 border-t border-slate-100 pt-5">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-violet-700">Practice Clinics</h2>
-              <p className="mt-1 text-xs text-slate-400 font-medium">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-blue-700">Practice Clinics</h2>
+              <p className="mt-1 text-sm text-slate-600">
                 Add every location you practice at. You can also add, edit, or remove clinics later from your dashboard.
               </p>
             </div>
@@ -383,7 +374,7 @@ function ProfileSetupForm() {
                     value={clinic.name}
                     onChange={(e) => updateClinicField(index, 'name', e.target.value)}
                     required
-                    className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
+                    className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                   />
                 </div>
 
@@ -399,7 +390,7 @@ function ProfileSetupForm() {
                     placeholder="e.g. 3rd Floor, Suite 210"
                     value={clinic.roomDetails}
                     onChange={(e) => updateClinicField(index, 'roomDetails', e.target.value)}
-                    className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
+                    className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                   />
                 </div>
 
@@ -415,7 +406,7 @@ function ProfileSetupForm() {
                     value={clinic.location}
                     onChange={(e) => updateClinicField(index, 'location', e.target.value)}
                     required
-                    className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
+                    className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                   />
                 </div>
 
@@ -435,7 +426,7 @@ function ProfileSetupForm() {
                       value={clinic.consultationFee}
                       onChange={(e) => updateClinicField(index, 'consultationFee', e.target.value)}
                       required
-                      className="w-full rounded-2xl border border-slate-200 bg-white py-3.5 pl-8 pr-4 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
+                      className="w-full rounded-2xl border border-slate-200 bg-white py-3.5 pl-8 pr-4 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                     />
                   </div>
                 </div>
@@ -445,7 +436,7 @@ function ProfileSetupForm() {
             <button
               type="button"
               onClick={addClinicRow}
-              className="self-start text-xs font-bold text-violet-700 hover:text-violet-900 transition"
+              className="self-start text-xs font-bold text-blue-700 hover:text-blue-900 transition"
             >
               + Add another clinic
             </button>
@@ -462,9 +453,9 @@ function ProfileSetupForm() {
               id="doctor-profile-submit"
               type="submit"
               disabled={submitting}
-              className="mt-2 min-h-[48px] rounded-2xl bg-[#2A2338] px-6 py-4 text-base font-semibold text-white shadow-sm transition hover:bg-[#1E192C] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+              className="mt-2 min-h-[48px] rounded-2xl bg-blue-600 px-6 py-4 text-base font-semibold text-white shadow-sm transition hover:bg-blue-700 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500/50"
             >
-              {submitting ? 'Saving profile…' : 'Save profile and continue →'}
+              {submitting ? 'Saving profile…' : 'Save profile and continue'}
             </button>
           </form>
         </div>

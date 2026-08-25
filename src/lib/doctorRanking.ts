@@ -1,6 +1,6 @@
 // src/lib/doctorRanking.ts
 //
-// Doctor Ranking & HMO Matching Intelligence Engine — PRD Sections 8.3 & 8.4 (Task 4.1)
+// Doctor Ranking & HMO Matching Intelligence Engine. PRD Sections 8.3 & 8.4 (Task 4.1)
 //
 // RANKING TIERS (PRD 8.4):
 //   1. Sub-specialty match strength (exact match ranks above adjacent/general specialty)

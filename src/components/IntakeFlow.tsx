@@ -2,7 +2,7 @@
 
 // src/components/IntakeFlow.tsx
 //
-// Patient Intake Flow — 3-Step Guided Intake
+// Patient Intake Flow. 3-Step Guided Intake
 //
 // Task 5.2: "Booking for a family member" toggle in Step 1.
 // Supports booking for self vs. a family member (e.g. child or elderly parent).
@@ -10,9 +10,9 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
+import { IconCheck, IconInfo } from '@/components/Icons';
 
-// ─── Types ───────────────────────────────────────────────────────────────────
-
+// Types
 type Sex = 'male' | 'female' | 'other';
 type ConsultationTarget = 'myself' | 'family_member';
 
@@ -38,8 +38,7 @@ interface IntakeFlowProps {
   initialStep?: 1 | 2 | 3;
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
+// Constants
 const HMO_OPTIONS: { label: string; value: string | null }[] = [
   { label: 'Maxicare', value: 'Maxicare' },
   { label: 'Intellicare', value: 'Intellicare' },
@@ -54,8 +53,7 @@ const SEX_OPTIONS: { label: string; value: Sex }[] = [
   { label: 'Other', value: 'other' },
 ];
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
+// Helpers
 // Step dot indicator
 function StepDots({ step }: { step: 1 | 2 | 3 }) {
   return (
@@ -65,9 +63,9 @@ function StepDots({ step }: { step: 1 | 2 | 3 }) {
           key={n}
           className={`h-2.5 rounded-full transition-all duration-200 ${
             n === step
-              ? 'bg-violet-600 w-6'
+              ? 'bg-blue-600 w-6'
               : n < step
-              ? 'bg-violet-300 w-2.5'
+              ? 'bg-blue-300 w-2.5'
               : 'bg-slate-200 w-2.5'
           }`}
         />
@@ -101,7 +99,7 @@ function ButtonGroup<T extends string | null>({
             onClick={() => onChange(opt.value)}
             className={`min-w-[6.5rem] flex-1 rounded-2xl border px-5 py-3.5 text-sm font-semibold transition active:scale-[0.97] focus:outline-none ${
               isSelected
-                ? 'border-violet-600 bg-violet-50 text-violet-800 ring-2 ring-violet-500/20 shadow-sm'
+                ? 'border-blue-600 bg-blue-50 text-blue-800 ring-2 ring-blue-500/20 shadow-sm'
                 : 'border-slate-200 bg-slate-50/70 text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900'
             }`}
           >
@@ -113,12 +111,11 @@ function ButtonGroup<T extends string | null>({
   );
 }
 
-// ─── Component ───────────────────────────────────────────────────────────────
-
+// Component
 export default function IntakeFlow({ onComplete, initialData = null, initialStep = 1 }: IntakeFlowProps) {
   const [step, setStep] = useState<1 | 2 | 3>(initialStep);
 
-  // Target toggle (Myself vs Family Member) — Task 5.2
+  // Target toggle (Myself vs Family Member). Task 5.2
   const [consultationTarget, setConsultationTarget] = useState<ConsultationTarget>(
     initialData?.isForFamilyMember ? 'family_member' : 'myself'
   );
@@ -171,7 +168,7 @@ export default function IntakeFlow({ onComplete, initialData = null, initialStep
   // Prefill flag -- skipped entirely when initialData is already supplied
   const [prefillLoading, setPrefillLoading] = useState(!initialData);
 
-  // ── Prefill user profile from existing patients row on mount
+  // Prefill user profile from existing patients row on mount
   useEffect(() => {
     // Already have known-good values (edit-in-place re-entry) -- re-fetching
     // from the DB here would overwrite them and, critically, drop symptomText
@@ -218,7 +215,7 @@ export default function IntakeFlow({ onComplete, initialData = null, initialStep
     prefill();
   }, []);
 
-  // ── Switch between Myself and Family Member
+  // Switch between Myself and Family Member
   function handleTargetChange(target: ConsultationTarget) {
     if (target === consultationTarget) return;
 
@@ -242,7 +239,7 @@ export default function IntakeFlow({ onComplete, initialData = null, initialStep
     setStepError(null);
   }
 
-  // ── Validation per step
+  // Validation per step
   function validateStep(s: 1 | 2 | 3): boolean {
     setStepError(null);
 
@@ -351,23 +348,22 @@ export default function IntakeFlow({ onComplete, initialData = null, initialStep
     }
   }
 
-  // ─── Render states ───────────────────────────────────────────────────────
-
+  // Render states
   if (prefillLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-violet-600" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
       </div>
     );
   }
 
   if (done) {
     return (
-      <div className="rounded-3xl border border-violet-100 bg-white p-8 text-center shadow-sm">
-        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-50 text-violet-600 text-2xl shadow-sm">
-          ✓
+      <div className="rounded-2xl border border-blue-100 bg-white p-8 text-center shadow-sm">
+        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 shadow-sm">
+          <IconCheck className="h-8 w-8" />
         </div>
-        <h2 className="text-xl font-bold text-slate-900">Got it — we're on it.</h2>
+        <h2 className="text-xl font-bold text-slate-900">Got it. We're on it.</h2>
         <p className="mt-2 text-sm leading-relaxed text-slate-500">
           Your information has been saved. We're matching you with the right specialist now.
         </p>
@@ -379,24 +375,24 @@ export default function IntakeFlow({ onComplete, initialData = null, initialStep
 
   return (
     <div className="flex flex-col gap-6">
-      {/* ── Step indicator */}
+      {/* Step indicator */}
       <div className="flex items-center justify-between">
         <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Step {step} of 3</span>
         <StepDots step={step} />
       </div>
 
-      {/* ── Step 1: Basics & Family Member Toggle (Task 5.2) ──────────────── */}
+      {/* Step 1: Basics & Family Member Toggle (Task 5.2) */}
       {step === 1 && (
         <div key="step-1" className="animate-fade-slide-up flex flex-col gap-6">
           <div>
-            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">Let's start with a few basics</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Let's start with a few basics</h2>
             <p className="mt-1 text-xs text-slate-500 font-medium">
               This helps our clinical AI match the right pediatric, adult, or geriatric specialist.
             </p>
           </div>
 
-          {/* ── "Who is this for?" Toggle (Task 5.2) ── */}
-          <div className="rounded-3xl border border-slate-200/80 bg-slate-50/80 p-4 sm:p-5 shadow-xs">
+          {/* "Who is this for?" Toggle (Task 5.2) */}
+          <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-4 sm:p-5 shadow-xs">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-3">
               Who is this consultation for?
             </span>
@@ -407,11 +403,11 @@ export default function IntakeFlow({ onComplete, initialData = null, initialStep
                 onClick={() => handleTargetChange('myself')}
                 className={`fluid-hover flex items-center justify-center gap-2 rounded-2xl border px-4 py-3.5 text-sm font-bold focus:outline-none ${
                   !isFamily
-                    ? 'border-transparent bg-[#2A2338] text-white shadow-md'
+                    ? 'border-transparent bg-blue-600 text-white shadow-md'
                     : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
                 }`}
               >
-                <span>👤 Myself</span>
+                <span>Myself</span>
               </button>
 
               <button
@@ -420,17 +416,17 @@ export default function IntakeFlow({ onComplete, initialData = null, initialStep
                 onClick={() => handleTargetChange('family_member')}
                 className={`fluid-hover flex items-center justify-center gap-2 rounded-2xl border px-4 py-3.5 text-sm font-bold focus:outline-none ${
                   isFamily
-                    ? 'border-transparent bg-[#2A2338] text-white shadow-md'
+                    ? 'border-transparent bg-blue-600 text-white shadow-md'
                     : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
                 }`}
               >
-                <span>👨‍👩‍👧 A family member</span>
+                <span>A family member</span>
               </button>
             </div>
 
             {isFamily && (
-              <div className="mt-3.5 rounded-2xl border border-violet-200/70 bg-violet-50/90 p-3.5 text-xs leading-relaxed text-violet-900 flex items-start gap-2.5 animate-fade-slide-up">
-                <span className="text-sm">ℹ</span>
+              <div className="mt-3.5 rounded-2xl border border-blue-200/70 bg-blue-50/90 p-3.5 text-xs leading-relaxed text-blue-900 flex items-start gap-2.5 animate-fade-slide-up">
+                <IconInfo className="h-4 w-4 shrink-0 mt-0.5" />
                 <span className="font-medium">
                   Enter the details of your family member (e.g. child or parent). Our AI will tailor specialty mapping specifically to their age and demographics.
                 </span>
@@ -449,7 +445,7 @@ export default function IntakeFlow({ onComplete, initialData = null, initialStep
               placeholder={isFamily ? "e.g. Ramon Santos (Father) or Chloe Santos (Daughter)" : 'e.g. Maria Santos'}
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="rounded-2xl border border-slate-200 bg-slate-50/60 px-5 py-4 text-base text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20"
+              className="rounded-2xl border border-slate-200 bg-slate-50/60 px-5 py-4 text-base text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
             />
           </div>
 
@@ -460,7 +456,7 @@ export default function IntakeFlow({ onComplete, initialData = null, initialStep
                 {isFamily ? "Family member's age" : 'Your age'}
               </label>
               {isFamily && (
-                <span className="text-xs text-violet-700 font-bold">
+                <span className="text-xs text-blue-700 font-bold">
                   Infants, children & seniors welcomed
                 </span>
               )}
@@ -473,11 +469,11 @@ export default function IntakeFlow({ onComplete, initialData = null, initialStep
               placeholder={isFamily ? 'e.g. 5 (for child) or 72 (for parent)' : 'e.g. 45'}
               value={age}
               onChange={(e) => setAge(e.target.value)}
-              className="rounded-2xl border border-slate-200 bg-slate-50/60 px-5 py-4 text-base text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              className="rounded-2xl border border-slate-200 bg-slate-50/60 px-5 py-4 text-base text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             />
           </div>
 
-          {/* Sex — button group */}
+          {/* Sex button group */}
           <div className="flex flex-col gap-2">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
               {isFamily ? "Family member's sex" : 'Your sex'}
@@ -502,17 +498,17 @@ export default function IntakeFlow({ onComplete, initialData = null, initialStep
               placeholder="e.g. Angeles City, Pampanga"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              className="rounded-2xl border border-slate-200 bg-slate-50/60 px-5 py-4 text-base text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20"
+              className="rounded-2xl border border-slate-200 bg-slate-50/60 px-5 py-4 text-base text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
             />
           </div>
         </div>
       )}
 
-      {/* ── Step 2: HMO ────────────────────────────────────────────────── */}
+      {/* Step 2: HMO */}
       {step === 2 && (
         <div key="step-2" className="animate-fade-slide-up flex flex-col gap-6">
           <div>
-            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
               {isFamily ? 'Does your family member have HMO coverage?' : 'Do you have HMO coverage?'}
             </h2>
             <p className="mt-1 text-xs text-slate-500 font-medium">
@@ -535,17 +531,17 @@ export default function IntakeFlow({ onComplete, initialData = null, initialStep
 
           {hmoProvider === null && (
             <p className="text-xs text-slate-600 bg-slate-50/90 p-3.5 rounded-2xl border border-slate-200 font-medium animate-fade-slide-up">
-              No problem — we'll show you doctors with direct cash consultation rates.
+              No problem. We'll show you doctors with direct cash consultation rates.
             </p>
           )}
         </div>
       )}
 
-      {/* ── Step 3: Symptoms ────────────────────────────────────────────── */}
+      {/* Step 3: Symptoms */}
       {step === 3 && (
         <div key="step-3" className="animate-fade-slide-up flex flex-col gap-6">
           <div>
-            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
               {isFamily ? `What is ${name || 'your family member'} feeling?` : 'What are you feeling?'}
             </h2>
             <p className="mt-1 text-xs text-slate-500 font-medium">
@@ -567,7 +563,7 @@ export default function IntakeFlow({ onComplete, initialData = null, initialStep
                   ? `Halimbawa: "Masakit ang dibdib ng tatay ko at hirap huminga." o "May lagnat at ubo ang anak ko."\n\nYou can write in English or Tagalog.`
                   : `Sabihin mo lang kung ano ang nararamdaman mo. Halimbawa: "Malabo at namumula ang mata ko."\n\nYou can write in English or Tagalog.`
               }
-              className="rounded-2xl border border-slate-200 bg-slate-50/60 px-5 py-4 text-base text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20 resize-none leading-relaxed"
+              className="rounded-2xl border border-slate-200 bg-slate-50/60 px-5 py-4 text-base text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20 resize-none leading-relaxed"
             />
           </div>
 
@@ -579,14 +575,14 @@ export default function IntakeFlow({ onComplete, initialData = null, initialStep
         </div>
       )}
 
-      {/* ── Per-step inline validation error */}
+      {/* Per-step inline validation error */}
       {stepError && (
         <p className="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-3.5 text-xs font-medium text-rose-700">
           {stepError}
         </p>
       )}
 
-      {/* ── Navigation buttons ─────────────────────────────────────────── */}
+      {/* Navigation buttons */}
       <div className={`flex items-center gap-3 pt-2 ${step > 1 ? 'justify-between' : 'justify-end'}`}>
         {step > 1 && (
           <button
@@ -596,7 +592,7 @@ export default function IntakeFlow({ onComplete, initialData = null, initialStep
             disabled={submitting}
             className="fluid-hover rounded-2xl border border-slate-200 bg-white px-5 py-3 text-xs font-bold text-slate-600 hover:text-slate-900 transition disabled:opacity-50"
           >
-            ← Back
+            Back
           </button>
         )}
 
@@ -605,9 +601,9 @@ export default function IntakeFlow({ onComplete, initialData = null, initialStep
             id={`intake-next-step${step}`}
             type="button"
             onClick={handleNext}
-            className="fluid-hover rounded-2xl bg-[#2A2338] px-8 py-4 min-h-[48px] text-base font-bold text-white shadow-md hover:bg-[#1E192C] focus:outline-none focus:ring-2 focus:ring-violet-500/40"
+            className="fluid-hover rounded-2xl bg-blue-600 px-8 py-4 min-h-[48px] text-base font-bold text-white shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
           >
-            Continue →
+            Continue
           </button>
         ) : (
           <button
@@ -615,9 +611,9 @@ export default function IntakeFlow({ onComplete, initialData = null, initialStep
             type="button"
             onClick={handleSubmit}
             disabled={submitting || symptomText.trim().length < 3}
-            className="fluid-hover rounded-2xl bg-[#2A2338] px-8 py-4 min-h-[48px] text-base font-bold text-white shadow-md hover:bg-[#1E192C] disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-violet-500/40"
+            className="fluid-hover rounded-2xl bg-blue-600 px-8 py-4 min-h-[48px] text-base font-bold text-white shadow-md hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
           >
-            {submitting ? 'Matching Specialist…' : 'Find the Right Doctor →'}
+            {submitting ? 'Matching Specialist…' : 'Find the Right Doctor'}
           </button>
         )}
       </div>

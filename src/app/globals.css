@@ -1,22 +1,42 @@
 @import "tailwindcss";
 
 :root {
-  --background: #F8F7FA;
-  --foreground: #1E1B2E;
-  --midnight: #2A2338;
-  --midnight-hover: #1F192C;
-  --violet-primary: #7C3AED;
-  --violet-surface: #F5F3FF;
-  --card-border: #F1EFF5;
+  /* Calm neutral canvas with white cards floating on top. */
+  --background: #F4F6FA;
+  --foreground: #0F172A;
+
+  /* Blue primary drives CTAs, active nav, progress fills and accents. */
+  --brand: #2563EB;
+  --brand-hover: #1D4ED8;
+  --brand-active: #1E40AF;
+  --brand-surface: #EFF4FF;
+  --brand-border: #DBE6FE;
+
+  --surface: #FFFFFF;
+  --surface-muted: #F7F9FC;
+  --card-border: #E7EDF5;
+
+  --text-muted: #64748B;
+  --text-subtle: #94A3B8;
+
+  --radius-card: 20px;
+  --radius-control: 12px;
+
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.05);
+  --shadow-card-hover: 0 2px 4px rgba(16, 24, 40, 0.05), 0 14px 32px rgba(16, 24, 40, 0.09);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-midnight: var(--midnight);
-  --color-midnight-hover: var(--midnight-hover);
-  --color-violet-primary: var(--violet-primary);
-  --color-violet-surface: var(--violet-surface);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-active: var(--brand-active);
+  --color-brand-surface: var(--brand-surface);
+  --color-brand-border: var(--brand-border);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-card-border: var(--card-border);
   --font-sans: var(--font-geist-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: var(--font-geist-mono), monospace;
 }
@@ -45,64 +65,10 @@ body {
   background: #94A3B8;
 }
 
-/* ─── Ambient Motion & Halos Keyframes ────────────────────────────────────── */
-@keyframes ambient-drift-1 {
-  0%, 100% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  33% {
-    transform: translate3d(40px, -35px, 0) scale(1.08);
-  }
-  66% {
-    transform: translate3d(-30px, 45px, 0) scale(0.95);
-  }
-}
-
-@keyframes ambient-drift-2 {
-  0%, 100% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  33% {
-    transform: translate3d(-45px, 35px, 0) scale(0.96);
-  }
-  66% {
-    transform: translate3d(35px, -40px, 0) scale(1.06);
-  }
-}
-
-@keyframes ambient-drift-3 {
-  0%, 100% {
-    transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
-  }
-  50% {
-    transform: translate3d(30px, -25px, 0) scale(1.1) rotate(15deg);
-  }
-}
-
-@keyframes pulse-gentle {
-  0%, 100% {
-    opacity: 0.8;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.03);
-  }
-}
-
-@keyframes shimmer-sweep {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-}
-
 @keyframes fade-slide-up {
   from {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -110,46 +76,51 @@ body {
   }
 }
 
-/* ─── Utility Classes ──────────────────────────────────────────────────────── */
-.animate-ambient-drift-1 {
-  animation: ambient-drift-1 18s ease-in-out infinite;
-  will-change: transform;
-}
-
-.animate-ambient-drift-2 {
-  animation: ambient-drift-2 22s ease-in-out infinite;
-  will-change: transform;
-}
-
-.animate-ambient-drift-3 {
-  animation: ambient-drift-3 26s ease-in-out infinite;
-  will-change: transform;
-}
-
-.animate-pulse-gentle {
-  animation: pulse-gentle 4s ease-in-out infinite;
-}
-
 .animate-fade-slide-up {
-  animation: fade-slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fade-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Smooth glass surface */
-.glass-card {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
+/* Card: the single elevated white surface used across every screen. */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
 }
 
-/* Button & Card interactive hover dynamics */
-.fluid-hover {
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+/* Only interactive cards lift; static panels stay put. */
+.card-interactive {
+  transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
-.fluid-hover:hover {
+.card-interactive:hover {
+  box-shadow: var(--shadow-card-hover);
+  border-color: var(--brand-border);
   transform: translateY(-2px);
+}
+
+/* Small uppercase label above a value or section. */
+.field-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.fluid-hover {
+  transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease,
+    box-shadow 0.18s ease, transform 0.18s ease;
 }
 .fluid-hover:active {
   transform: scale(0.985);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-slide-up {
+    animation: none;
+  }
+  .card-interactive:hover {
+    transform: none;
+  }
 }
 

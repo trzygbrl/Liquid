@@ -40,7 +40,7 @@ export default function AuthForm({ mode, role }: AuthFormProps) {
     }
 
     // Redirect based on the role actually stored on the account, not the page the
-    // user happened to submit from — if someone signs in on the wrong role's page,
+    // user happened to submit from. If someone signs in on the wrong role's page,
     // they still land on their real dashboard instead of getting stuck.
     const actualRole = getRoleFromUser(data.user) ?? role;
     router.replace(dashboardRouteForRole(actualRole));
@@ -59,7 +59,7 @@ export default function AuthForm({ mode, role }: AuthFormProps) {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20"
+          className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
         />
       </div>
 
@@ -75,7 +75,7 @@ export default function AuthForm({ mode, role }: AuthFormProps) {
           onChange={(e) => setPassword(e.target.value)}
           required
           minLength={6}
-          className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-500/20"
+          className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
         />
       </div>
 
@@ -88,7 +88,7 @@ export default function AuthForm({ mode, role }: AuthFormProps) {
       <button
         type="submit"
         disabled={loading}
-        className="mt-2 min-h-[48px] rounded-2xl bg-[#2A2338] px-6 py-3.5 text-sm font-semibold text-white shadow-md transition hover:bg-[#1E192C] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+        className="mt-2 min-h-[48px] rounded-2xl bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white shadow-md transition hover:bg-blue-700 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500/50"
       >
         {loading ? 'Please wait…' : mode === 'signup' ? 'Create account' : 'Log in'}
       </button>
