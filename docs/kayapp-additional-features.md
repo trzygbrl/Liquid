@@ -183,4 +183,4 @@ src/components/IntakeFlow.tsx (used from src/app/patient/intake/page.tsx).
 |---|---------|--------|-------|
 | 1.1 | Speech-to-text symptom input | `[ ]` | Web Speech API, English-first |
 | 1.2 | Gentle nonsense detection in matching prompt | `[x]` | Built & verified with unit tests |
-| 1.3 | "Why this specialist" explanation | `[ ]` | Depends on 1.2 |
+| 1.3 | "Why this specialist" explanation | `[x]` | Symptom-specific rationale + side-by-side card |

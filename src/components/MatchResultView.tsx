@@ -10,7 +10,7 @@ import { useState } from 'react';
 import type { MatchApiResult, MatchResult, ClarifyResult, EmergencyResult } from '@/lib/matchApi';
 import type { IntakeCompleteData } from '@/components/IntakeFlow';
 import { getPlainSpecialtyInfo } from '@/lib/specialtyHelpers';
-import { IconStethoscope, IconWarning, IconChat, IconCheck } from '@/components/Icons';
+import { IconStethoscope, IconWarning, IconChat, IconCheck, IconInfo } from '@/components/Icons';
 
 interface MatchResultViewProps {
   result: MatchApiResult;
@@ -65,52 +65,42 @@ export default function MatchResultView({
           </div>
         </div>
 
-        {/* Main Recommendation Card with ambient breathing glow */}
-        <div className="relative overflow-hidden rounded-2xl border border-blue-200/80 bg-white p-7 sm:p-9 shadow-lg shadow-blue-500/5">
-          {/* Ambient inner soft glowing aura */}
-
-          <div className="relative z-10">
-            <div className="flex items-start gap-4">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-500/25 mt-0.5">
-                <IconStethoscope className="h-7 w-7" />
+        {/* Side-by-side Layout: Left (Specialist Card), Right ("Why this specialist?" Card) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+          {/* LEFT: Main Specialist Card */}
+          <div className="lg:col-span-7 animate-slide-in-left flex flex-col justify-between rounded-2xl border border-blue-200/80 bg-white p-6 sm:p-7 shadow-sm">
+            <div>
+              <div className="flex items-start gap-4">
+                <div className="flex h-13 w-13 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-500/25 mt-0.5">
+                  <IconStethoscope className="h-6.5 w-6.5" />
+                </div>
+                <div>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-xs font-bold uppercase tracking-wider text-blue-700 border border-blue-200/80 shadow-xs">
+                    Recommended Specialist
+                  </span>
+                  <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mt-2 tracking-tight">
+                    {match.sub_specialty
+                      ? `${match.specialty}: ${match.sub_specialty}`
+                      : match.specialty}
+                  </h2>
+                  {/* Plain-language subtitle & Tagalog translation */}
+                  {plainInfo && (
+                    <div className="mt-1.5 flex flex-wrap items-center gap-2 text-sm">
+                      <span className="font-bold text-blue-700">
+                        {plainInfo.plainName}
+                      </span>
+                      <span className="text-slate-400">•</span>
+                      <span className="italic text-slate-600 font-medium">
+                        {plainInfo.tagalogName}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-blue-700 border border-blue-200/80 shadow-xs">
-                  Recommended Specialist
-                </span>
-                <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mt-2 tracking-tight">
-                  {match.sub_specialty
-                    ? `${match.specialty}: ${match.sub_specialty}`
-                    : match.specialty}
-                </h2>
-                {/* Plain-language subtitle & Tagalog translation, shown only
-                    when the specialty name needs translating. */}
-                {plainInfo && (
-                  <div className="mt-1.5 flex flex-wrap items-center gap-2 text-sm">
-                    <span className="font-bold text-blue-700">
-                      {plainInfo.plainName}
-                    </span>
-                    <span className="text-slate-400">•</span>
-                    <span className="italic text-slate-600 font-medium">
-                      {plainInfo.tagalogName}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Reasoning box (Nurse-tone explanation) */}
-            <div className="mt-6 rounded-2xl border-l-4 border-blue-600 bg-blue-50/80 p-5.5 shadow-xs">
-              <p className="text-xs font-bold uppercase tracking-wider text-blue-900">
-                Why this specialist is right for you
-              </p>
-              <p className="mt-2 text-base leading-relaxed text-slate-800 font-medium">
-                {match.reason}
-              </p>
             </div>
 
             {/* Patient context recap */}
-            <div className="mt-6 flex flex-wrap items-center gap-2.5 border-t border-slate-100 pt-5 text-xs text-slate-600">
+            <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-5 text-xs text-slate-600">
               <span className="inline-flex items-center gap-1.5 rounded-xl bg-slate-50 px-3 py-1.5 text-slate-700 border border-slate-200/60 font-medium">
                 <span>Patient:</span>
                 <strong className="text-slate-900 font-bold">{patientData.name}</strong>
@@ -134,6 +124,29 @@ export default function MatchResultView({
                   {patientData.location}
                 </span>
               )}
+            </div>
+          </div>
+
+          {/* RIGHT: Dedicated "Why this specialist?" Section */}
+          <div className="lg:col-span-5 animate-slide-in-right flex flex-col justify-between rounded-2xl border-l-4 border-l-blue-600 border border-blue-200/80 bg-blue-50/70 p-6 sm:p-7 shadow-sm">
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100/80 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider text-blue-900">
+                  <IconInfo className="h-3.5 w-3.5 text-blue-700" />
+                  Referral Rationale
+                </span>
+              </div>
+              <h3 className="text-base font-bold text-slate-900">
+                Why this specialist was recommended
+              </h3>
+              <p className="mt-3 text-sm leading-relaxed text-slate-800 font-medium">
+                {match.reason}
+              </p>
+            </div>
+
+            <div className="mt-5 border-t border-blue-200/60 pt-3.5 text-[11px] text-slate-500 font-medium flex items-center gap-1.5">
+              <span>💡</span>
+              <span>Matched directly to the specific symptoms and keywords you described.</span>
             </div>
           </div>
         </div>

@@ -29,6 +29,23 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-25: Symptom-specific specialist matching rationale & fluid side-by-side result view
+**Task:** 1.3 (`docs/kayapp-additional-features.md` Phase 2 — "Why this specialist" explanation)
+**Owner:** Coding agent
+**What changed:** Every specialist recommendation now delivers a tailored, 1–3 sentence non-diagnostic explanation that explains why that specialist is uniquely suited for the symptoms rather than merely enumerating them, displayed in a dedicated card that smoothly slides out beside the main recommendation container on the right side.
+- **Deep Clinical Suitability Rationale (`src/app/api/match/route.ts`):** Upgraded Gemini system prompt instructions with strict suitability rationale rules. The model is instructed not just to restate symptoms or give empty generic statements ("this doctor will evaluate you"), but to explain in simple, accessible everyday vocabulary *why this specialist's specific medical domain and diagnostic focus are needed* for the reported discomfort (connecting the symptom -> to what the specialist specifically investigates and treats -> and how it helps the patient). Full language mirroring in English and Tagalog is maintained.
+- **Fluid Side-by-Side Result View (`src/components/MatchResultView.tsx`, `src/app/patient/intake/page.tsx`, `src/app/globals.css`):** Redesigned the match payoff layout into a responsive 2-column grid (`lg:grid-cols-12`). Added smooth keyframe animations (`animate-slide-in-left` and `animate-slide-in-right` with fluid cubic-bezier easing) so the "Why this specialist was recommended" card fluidly slides out on the right side alongside the main specialist card. The intake page expands to `max-w-4xl` for match results to provide a balanced desktop presentation.
+- **Isolation to Genuine Matches:** The "Why this specialist?" explanation strictly renders for successful match results (`type === 'match'`), and is omitted during clarification turns (`type === 'clarify'`) and emergency advisories (`type === 'emergency'`).
+**Files touched:**
+- `src/app/api/match/route.ts` [MODIFIED] — updated Gemini prompt instructions for deep, lay-friendly specialist suitability rationale.
+- `src/components/MatchResultView.tsx` [MODIFIED] — side-by-side 2-column layout with fluid slide-in animation classes.
+- `src/app/globals.css` [MODIFIED] — added `slide-in-right` and `slide-in-left` fluid keyframes.
+- `src/app/patient/intake/page.tsx` [MODIFIED] — dynamic container max-width (`max-w-4xl` for match outcomes).
+- `docs/kayapp-additional-features.md` [MODIFIED] — marked Feature 1.3 as shipped `[x]`.
+**Notes/trade-offs:**
+- **Strictly non-diagnostic:** Rationale explains why the referral/specialty is suited for the problem, without diagnosing diseases or prescribing treatments.
+- **Fluid desktop slide-out:** The right-hand explanation slides in smoothly with a gentle ease-out curve on desktop, while gracefully stacking on mobile screens.
+
 ### 2026-08-25: Symptom plausibility gate & gentle nonsense/off-topic clarification
 **Task:** 1.2 (`docs/kayapp-additional-features.md` Phase 1 — Matching prompt hardening)
 **Owner:** Coding agent
