@@ -14,7 +14,10 @@
       "Bash(curl -s -o /dev/null -w \"verify-doctors page: HTTP %{http_code}\\\\n\" http://localhost:3000/admin/verify-doctors)",
       "Bash(curl -s -o /dev/null -w \"manage-taxonomy page: HTTP %{http_code}\\\\n\" http://localhost:3000/admin/manage-taxonomy)",
       "Bash(curl -s -w \"\\\\nHTTP %{http_code}\\\\n\" -H \"x-admin-passcode: civic-access-review-7823\" http://localhost:3000/api/admin/taxonomy)",
-      "Bash(curl -s -o /dev/null -w \"landing page: HTTP %{http_code}\\\\n\" http://localhost:3000/)"
+      "Bash(curl -s -o /dev/null -w \"landing page: HTTP %{http_code}\\\\n\" http://localhost:3000/)",
+      "Bash(curl -s -o /dev/null -w \"dev server: HTTP %{http_code}\\\\n\" http://localhost:3000/)",
+      "WebSearch",
+      "WebFetch(domain:unsplash.com)"
     ]
   }
 }
