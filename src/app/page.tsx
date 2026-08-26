@@ -49,17 +49,17 @@ export default function Home() {
           <Logo size={46} />
 
           <nav className="flex items-center gap-2 sm:gap-6">
-            <Link href="/patient/doctors" className="group relative hidden text-base font-semibold text-slate-700 hover:text-blue-700 sm:block">
+            <Link href="/patient/doctors" className="group relative hidden text-base font-semibold text-slate-700 hover:text-brand-700 sm:block">
               Find a doctor
               <span className="absolute inset-x-0 -bottom-0.5 h-[3px] origin-left scale-x-0 bg-current transition-transform duration-300 ease-out group-hover:scale-x-100" />
             </Link>
-            <Link href="/doctor/auth" className="group relative hidden text-base font-semibold text-slate-700 hover:text-blue-700 sm:block">
+            <Link href="/doctor/auth" className="group relative hidden text-base font-semibold text-slate-700 hover:text-brand-700 sm:block">
               Register as a doctor
               <span className="absolute inset-x-0 -bottom-0.5 h-[3px] origin-left scale-x-0 bg-current transition-transform duration-300 ease-out group-hover:scale-x-100" />
             </Link>
             <Link
               href="/patient/auth"
-              className="fluid-hover rounded-full bg-blue-600 px-8 py-2.5 text-base font-bold text-white hover:bg-blue-700"
+              className="fluid-hover rounded-full bg-brand-600 px-8 py-2.5 text-base font-bold text-white hover:bg-brand-700"
             >
               Get started
             </Link>

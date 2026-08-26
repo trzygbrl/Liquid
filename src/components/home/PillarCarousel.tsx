@@ -50,7 +50,7 @@ export default function PillarCarousel({ cards }: { cards: PillarCard[] }) {
           onClick={() => scrollBy(-1)}
           disabled={atStart}
           aria-label="Show previous"
-          className="fluid-hover flex h-12 w-16 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:text-blue-700 disabled:opacity-40"
+          className="fluid-hover flex h-12 w-16 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 hover:border-brand-300 hover:text-brand-700 disabled:opacity-40"
         >
           <IconChevronLeft className="h-4 w-4" />
         </button>
@@ -59,7 +59,7 @@ export default function PillarCarousel({ cards }: { cards: PillarCard[] }) {
           onClick={() => scrollBy(1)}
           disabled={atEnd}
           aria-label="Show more"
-          className="fluid-hover flex h-12 w-16 items-center justify-center rounded-full bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40"
+          className="fluid-hover flex h-12 w-16 items-center justify-center rounded-full bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-40"
         >
           <IconChevronRight className="h-4 w-4" />
         </button>
