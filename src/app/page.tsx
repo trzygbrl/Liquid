@@ -3,40 +3,40 @@ import PillarCarousel from '@/components/home/PillarCarousel';
 import Logo from '@/components/Logo';
 import { IconUsers, IconShield, IconStar, IconStethoscope } from '@/components/Icons';
 
-// Editorial photography for the marketing page. Hosted remotely for the demo;
-// see next.config.ts. Swap for self-hosted assets before a real deployment.
-const IMG = 'https://images.unsplash.com/photo-';
-const HERO = `${IMG}1666214280557-f1b5022eb634?w=1920&q=80&auto=format&fit=crop`;
-const CARE = `${IMG}1559839734-2b71ea197ec2?w=900&q=80&auto=format&fit=crop`;
+// Editorial photography for the marketing page. Self-hosted from /public/home
+// and cropped to the sizes rendered below; see public/home/CREDITS.md for the
+// source and licence of each frame.
+const HERO = '/home/hero.jpg';
+const CARE = '/home/specialists.jpg';
 
 const PILLARS = [
   {
     icon: <IconStethoscope className="h-6 w-6" />,
     title: 'Triage that names the sub-specialty',
     body: 'Describe symptoms in English or Tagalog. We map you to one of 33 medical fields and the exact sub-specialty, not a generic search result.',
-    image: `${IMG}1576091160399-112ba8d25d1d?w=480&q=80&auto=format&fit=crop`,
-    alt: 'A doctor in a white coat using a phone',
+    image: '/home/triage.jpg',
+    alt: 'A man in a face mask describing how he feels over the phone',
   },
   {
     icon: <IconShield className="h-6 w-6" />,
     title: 'HMO checked before you book',
     body: 'Maxicare, Intellicare, Medicard and PhilCare coverage is verified up front. When nothing matches we say so and show cash rates instead.',
-    image: `${IMG}1666886573531-48d2e3c2b684?w=480&q=80&auto=format&fit=crop`,
-    alt: 'A doctor showing a patient something on a tablet',
+    image: '/home/coverage.jpg',
+    alt: 'A doctor treating a patient at a clinic bedside',
   },
   {
     icon: <IconUsers className="h-6 w-6" />,
     title: 'Book for the people you care for',
     body: 'Arrange consultations for a child or an elderly parent. Specialty routing adjusts to their age, not yours.',
-    image: `${IMG}1765896387377-e293914d1e69?w=480&q=80&auto=format&fit=crop`,
-    alt: 'Two women laughing together indoors',
+    image: '/home/family.jpg',
+    alt: 'An older sister holding her younger sister close',
   },
   {
     icon: <IconStar className="h-6 w-6" />,
     title: 'Reviews from completed visits only',
     body: 'Every rating comes from a patient whose consultation actually happened, so the directory reflects real experience.',
-    image: `${IMG}1538108149393-fbbd81895907?w=480&q=80&auto=format&fit=crop`,
-    alt: 'Beds in a hospital ward',
+    image: '/home/reviews.jpg',
+    alt: 'An elderly woman smiling towards the camera',
   },
 ];
 
@@ -72,7 +72,7 @@ export default function Home() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={HERO}
-          alt="A doctor reviewing a scan on screen with a patient"
+          alt="A family being helped at a clinic reception counter"
           className="h-[700px] w-full object-cover sm:h-[720px] lg:h-[720px]"
         />
         <div className="absolute inset-0 bg-slate-950/55" />
@@ -121,7 +121,7 @@ export default function Home() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={CARE}
-                alt="A doctor in a white coat standing outdoors"
+                alt="A specialist reviewing x-rays on a light board"
                 className="h-72 w-full object-cover sm:h-96"
               />
             </div>
