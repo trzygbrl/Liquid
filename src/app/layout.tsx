@@ -15,7 +15,6 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "KayApp: Philippine Clinical Triage & Specialist Booking",
   description: "AI-powered clinical triage matching patients to verified specialists and clinics across the Philippines.",
-  icons: { icon: "/logo.png" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
