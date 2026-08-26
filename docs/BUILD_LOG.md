@@ -29,6 +29,26 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-26: Inline symptom guardrail warning, 2-strike out-of-scope screen & dedicated follow-up container
+**Task:** AI Guardrail Hardening, Token Protection & Clinical Follow-up Flow
+**Owner:** Coding agent
+**What changed:** Upgraded the patient intake symptom guardrail and clinical follow-up flow with clear separation between non-symptom rejection and symptom clarification:
+1. **Unrelated / Non-symptom Inputs (e.g. "take me home", "i am rich", gibberish):** Caught directly on the Step 3 symptoms container using positive symptom and anatomy verification (`CONTAINS_SYMPTOM_PATTERN`, `ANATOMY_PATTERN`). On Strike 1, an inline warning banner renders on Step 3 prompting the user to retry with genuine symptoms without navigating away or calling the API. On Strike 2 (repeated non-symptom input), transitions to the dedicated "This app is not what you are looking for" screen to prevent token waste and API misuse.
+2. **Genuine Symptom Follow-up Questions:** When the user enters genuine symptoms but the AI needs more clinical detail to identify the right specialty (`type: 'clarify'`), rather than rendering an error banner above the intake form, the flow cleanly transitions to a dedicated Follow-up Question Container in `MatchResultView`. This container displays the nurse/AI triage question, provides an answer textarea, and submits the clarification to finalize specialist matching.
+**Files touched:**
+- `src/components/IntakeFlow.tsx` [MODIFIED] — added 2-strike state tracking, client-side plausibility gate, Strike 1 inline warning banner, and Strike 2 out-of-scope termination screen.
+- `src/components/MatchResultView.tsx` [MODIFIED] — added dedicated Clinical Follow-up Question container for symptom-related clarifications.
+- `src/app/api/match/route.ts` [MODIFIED] — updated Stage 2.6 and system prompt to return `OffTopicResult` for non-plausible inputs while preserving `clarify` for genuine clinical follow-ups.
+- `src/lib/matchApi.ts` [MODIFIED] — added `OffTopicResult` type to `MatchApiResult` union.
+- `src/app/patient/intake/page.tsx` [MODIFIED] — routed `clarify` responses to the dedicated follow-up container in `MatchResultView` with `onClarifySubmit`.
+- `src/lib/symptomValidation.ts` [MODIFIED] — added positive symptom and anatomy verification engine (`CONTAINS_SYMPTOM_PATTERN`, `ANATOMY_PATTERN`).
+- `src/lib/symptomValidation.test.ts` [MODIFIED] — added tests for "take me home", "i am rich", "i have a lot of money", and 2-strike scenarios.
+- `docs/BUILD_LOG.md` [MODIFIED] — documented implementation details.
+**Notes/trade-offs:**
+- **Zero token waste on invalid submissions:** Pre-submission plausibility checks completely prevent unnecessary calls to `POST /api/match` and Gemini LLM for junk text or off-topic prompts.
+- **Dedicated follow-up container for clinical conversations:** Ensures clinical follow-up questions from AI feel like a natural conversation in their own clean screen rather than an intrusive warning banner above the original intake form.
+- **Preservation of genuine vague symptoms:** Expressions like "I don't feel good" or "masama pakiramdam ko" remain strictly categorized as plausible symptoms (`vague_genuine`) and are never blocked by this guardrail.
+
 ### 2026-08-25: Speech-to-text symptom input via Web Speech API
 **Task:** 1.1 (`docs/kayapp-additional-features.md` Phase 3 — Speech-to-text for symptom input)
 **Owner:** Coding agent

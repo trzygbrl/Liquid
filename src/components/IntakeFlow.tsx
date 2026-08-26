@@ -10,7 +10,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import { IconCheck, IconInfo, IconMic } from '@/components/Icons';
+import { IconCheck, IconInfo, IconMic, IconWarning, IconShield } from '@/components/Icons';
+import { evaluateSymptomPlausibility, type SymptomValidationResult } from '@/lib/symptomValidation';
 
 // Types
 type Sex = 'male' | 'female' | 'other';
@@ -36,6 +37,7 @@ interface IntakeFlowProps {
   // (e.g. symptoms) with their prior answers intact, instead of a full reset.
   initialData?: IntakeCompleteData | null;
   initialStep?: 1 | 2 | 3;
+  onRestart?: () => void;
 }
 
 // Constants
@@ -112,7 +114,7 @@ function ButtonGroup<T extends string | null>({
 }
 
 // Component
-export default function IntakeFlow({ onComplete, initialData = null, initialStep = 1 }: IntakeFlowProps) {
+export default function IntakeFlow({ onComplete, initialData = null, initialStep = 1, onRestart }: IntakeFlowProps) {
   const [step, setStep] = useState<1 | 2 | 3>(initialStep);
 
   // Target toggle (Myself vs Family Member). Task 5.2
@@ -160,10 +162,27 @@ export default function IntakeFlow({ onComplete, initialData = null, initialStep
   // Per-step inline validation errors
   const [stepError, setStepError] = useState<string | null>(null);
 
+  // AI Guardrail states (Strike 1 warning & Strike 2 disqualification)
+  const [invalidAttempts, setInvalidAttempts] = useState<number>(0);
+  const [plausibilityWarning, setPlausibilityWarning] = useState<SymptomValidationResult | null>(null);
+  const [isDisqualified, setIsDisqualified] = useState<boolean>(false);
+
   // Submit state
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+
+  // Reset all state back to clean step 1
+  function handleFullReset() {
+    setStep(1);
+    setInvalidAttempts(0);
+    setPlausibilityWarning(null);
+    setIsDisqualified(false);
+    setSymptomText('');
+    setStepError(null);
+    setSubmitError(null);
+    onRestart?.();
+  }
 
   // Prefill flag -- skipped entirely when initialData is already supplied
   const [prefillLoading, setPrefillLoading] = useState(!initialData);
@@ -399,6 +418,27 @@ export default function IntakeFlow({ onComplete, initialData = null, initialStep
   async function handleSubmit() {
     if (!validateStep(3)) return;
 
+    // AI Guardrail Plausibility Check (Zero-Token Leakage)
+    const plausibility = evaluateSymptomPlausibility(symptomText);
+    if (!plausibility.isPlausible) {
+      const nextAttempts = invalidAttempts + 1;
+      setInvalidAttempts(nextAttempts);
+
+      if (nextAttempts >= 2) {
+        // Strike 2: Disqualification termination screen
+        setIsDisqualified(true);
+        setPlausibilityWarning(null);
+        return;
+      }
+
+      // Strike 1: Warning banner on the symptom prompt container
+      setPlausibilityWarning(plausibility);
+      return;
+    }
+
+    // Input is plausible: clear warning and proceed
+    setPlausibilityWarning(null);
+
     setSubmitting(true);
     setSubmitError(null);
 
@@ -471,6 +511,63 @@ export default function IntakeFlow({ onComplete, initialData = null, initialStep
   }
 
   const isFamily = consultationTarget === 'family_member';
+
+  // Strike 2: Dedicated Out-of-Scope Termination Screen
+  if (isDisqualified) {
+    return (
+      <div id="intake-out-of-scope-screen" className="animate-fade-slide-up flex flex-col gap-6 py-2">
+        <div className="rounded-2xl border border-slate-200/90 bg-slate-50/80 p-7 sm:p-8 text-center shadow-xs">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 border border-rose-100 shadow-sm">
+            <IconWarning className="h-7 w-7" />
+          </div>
+
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-200/80 px-3 py-1 text-xs font-bold uppercase tracking-wider text-slate-700">
+            Out of Scope
+          </span>
+
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mt-3 tracking-tight">
+            This app is not what you are looking for
+          </h2>
+          <p className="italic text-xs text-slate-500 mt-0.5">
+            Hindi ito ang serbisyong hinahanap mo
+          </p>
+
+          <p className="mt-4 text-xs sm:text-sm text-slate-600 leading-relaxed max-w-md mx-auto">
+            <strong>KayApp</strong> is an AI clinical triage and specialist referral service built exclusively for patients experiencing physical symptoms. To preserve healthcare resources, prevent token misuse, and maintain clinical safety, unrelated or non-medical queries cannot be processed.
+          </p>
+
+          <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50/90 p-4 text-xs text-rose-800 text-left max-w-md mx-auto shadow-2xs">
+            <p className="font-bold flex items-center gap-1.5 mb-1 text-rose-900">
+              <IconShield className="h-4 w-4 shrink-0 text-rose-700" />
+              Medical Safety Advisory
+            </p>
+            <p className="leading-relaxed text-rose-700">
+              If you or someone else is experiencing an acute life-threatening emergency (such as severe chest pain, stroke symptoms, or severe breathing difficulty), please proceed immediately to the nearest hospital emergency room.
+            </p>
+          </div>
+        </div>
+
+        {/* Recovery Actions */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+          <button
+            id="out-of-scope-restart-btn"
+            type="button"
+            onClick={handleFullReset}
+            className="fluid-hover w-full sm:w-auto rounded-2xl bg-brand-600 px-8 py-4 min-h-[48px] text-sm font-bold text-white shadow-md hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500/40"
+          >
+            Start Over
+          </button>
+          <a
+            id="out-of-scope-dashboard-link"
+            href="/patient/dashboard"
+            className="fluid-hover w-full sm:w-auto rounded-2xl border border-slate-200 bg-white px-7 py-4 text-sm font-bold text-slate-700 hover:text-slate-900 hover:bg-slate-50 text-center transition"
+          >
+            Return to Dashboard
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -647,6 +744,39 @@ export default function IntakeFlow({ onComplete, initialData = null, initialStep
               Tell us in your own words (English or Tagalog).
             </p>
           </div>
+
+          {/* Strike 1: Inline Warning Banner on Symptoms Prompt Container */}
+          {plausibilityWarning && (
+            <div
+              id="symptom-guardrail-warning"
+              role="alert"
+              className="rounded-2xl border border-amber-300/90 bg-amber-50/90 p-4 sm:p-5 shadow-xs animate-fade-slide-up flex items-start gap-3.5"
+            >
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-800 mt-0.5">
+                <IconWarning className="h-5 w-5" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200">
+                    {plausibilityWarning.detectedLanguage === 'tl' ? 'Pansin: Hindi Sintomas' : 'Warning: Unrecognized Symptoms'}
+                  </span>
+                  <span className="text-[11px] font-bold text-amber-700">
+                    (Attempt 1 of 2)
+                  </span>
+                </div>
+                <h3 className="text-sm font-bold text-amber-950 mt-1">
+                  {plausibilityWarning.detectedLanguage === 'tl'
+                    ? 'Ang inilagay na mga salita ay hindi proper na sintomas ng sakit.'
+                    : 'The words entered were not proper symptoms at all.'}
+                </h3>
+                <p className="text-xs text-amber-900/90 mt-1 leading-relaxed">
+                  {plausibilityWarning.detectedLanguage === 'tl'
+                    ? 'Mangyaring ilarawan kung ano ang nararamdaman mo sa iyong katawan o kung saan ang sumasakit, at subukan muli.'
+                    : 'Please retry and type the physical symptoms or bodily discomfort being experienced.'}
+                </p>
+              </div>
+            </div>
+          )}
 
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between gap-2">

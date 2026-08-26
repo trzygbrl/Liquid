@@ -15,7 +15,7 @@ import { IconStethoscope, IconWarning, IconChat, IconCheck, IconInfo } from '@/c
 interface MatchResultViewProps {
   result: MatchApiResult;
   patientData: IntakeCompleteData;
-  onClarifySubmit: (answer: string) => Promise<void>;
+  onClarifySubmit?: (answer: string) => Promise<void>;
   // Returns to the symptoms step with prior answers intact (edit-in-place).
   onEditSymptoms: () => void;
   // Full reset back to a blank Step 1.
@@ -239,95 +239,62 @@ export default function MatchResultView({
     );
   }
 
-  // STATE 3: Clarifying Question / Gentle Guidance
+  // STATE 3: Follow-up Question Container (when AI determines symptoms require clinical clarification)
   if (result.type === 'clarify') {
     const clarify = result as ClarifyResult;
-    const isGentlePrompt = clarify.isGentlePrompt || (clarify.examples && clarify.examples.length > 0);
 
     async function handleClarify(e: React.FormEvent) {
       e.preventDefault();
-      if (!clarifyAnswer.trim() || isLoadingClarification) return;
+      if (!clarifyAnswer.trim() || isLoadingClarification || !onClarifySubmit) return;
       await onClarifySubmit(clarifyAnswer.trim());
       setClarifyAnswer('');
-    }
-
-    function handleExampleClick(exampleText: string) {
-      // Strip leading "e.g. " or "Halimbawa: " if present, and strip wrapping quotes
-      const cleaned = exampleText
-        .replace(/^(e\.g\.\s*['"]?|halimbawa:\s*['"]?)/i, '')
-        .replace(/['"]$/i, '')
-        .trim();
-      setClarifyAnswer(cleaned);
     }
 
     return (
       <form onSubmit={handleClarify} className="animate-fade-slide-up flex flex-col gap-6">
         <div className="rounded-2xl border border-brand-200/80 bg-white p-7 sm:p-8 shadow-sm">
+          {/* Header */}
           <div className="flex items-center gap-3.5">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-600 shadow-sm">
               <IconChat className="h-6 w-6" />
             </div>
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-brand-700 bg-brand-50 px-2.5 py-0.5 rounded-full border border-brand-100">
-                {isGentlePrompt ? 'Symptom Clarification' : 'Follow-up Question'}
+                Clinical Follow-up Question
               </span>
               <h2 className="text-lg font-bold text-slate-900 mt-0.5">
-                {isGentlePrompt
-                  ? "Help us understand what you're experiencing"
-                  : 'We need a bit more detail to match accurately'}
+                We need a bit more detail to match accurately
               </h2>
             </div>
           </div>
 
+          {/* AI Clinical Follow-up Question Card */}
           <div className="mt-5 rounded-2xl border border-brand-200/70 bg-brand-50/80 p-5">
             <p className="text-xs font-bold uppercase tracking-wider text-brand-900 mb-1">
-              Nurse Guidance
+              Triage Nurse / AI Follow-up
             </p>
             <p className="text-base font-semibold text-slate-800 leading-relaxed">
               &ldquo;{clarify.question}&rdquo;
             </p>
           </div>
 
-          {/* Example guidance chips for user convenience */}
-          {clarify.examples && clarify.examples.length > 0 && (
-            <div className="mt-5 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-4 sm:p-5">
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-600 mb-2.5 flex items-center gap-1.5">
-                <span>💡</span>
-                <span>Examples of good symptom descriptions (click to use):</span>
-              </p>
-              <div className="flex flex-col sm:flex-row gap-2.5">
-                {clarify.examples.map((ex, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => handleExampleClick(ex)}
-                    className="fluid-hover text-left flex-1 rounded-xl border border-slate-200 bg-white p-3 text-xs font-medium text-slate-700 hover:border-brand-300 hover:bg-brand-50/60 hover:text-brand-900 transition shadow-2xs"
-                  >
-                    <span className="font-semibold text-brand-600 block text-[11px] mb-0.5">
-                      Example {idx + 1}
-                    </span>
-                    &ldquo;{ex}&rdquo;
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
+          {/* Patient Answer Input */}
           <div className="mt-5 flex flex-col gap-2">
             <label htmlFor="clarify-answer" className="text-xs font-bold uppercase tracking-wider text-slate-700">
-              Describe what is being felt (English or Tagalog)
+              Your Answer (English or Tagalog)
             </label>
             <textarea
               id="clarify-answer"
               rows={4}
               value={clarifyAnswer}
               onChange={(e) => setClarifyAnswer(e.target.value)}
-              placeholder="e.g. Masakit po ang likod ko at medyo may lagnat mula pa kahapon..."
+              placeholder="e.g. Masakit po ang likod ko kapag yumuyuko, at nagsimula ito kahapon..."
               className="rounded-2xl border border-slate-200 bg-slate-50/60 px-5 py-4 text-base text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20 resize-none leading-relaxed"
             />
           </div>
         </div>
 
+        {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
           <div className="flex items-center gap-3 w-full sm:w-auto">
             <button
@@ -336,7 +303,7 @@ export default function MatchResultView({
               disabled={isLoadingClarification}
               className="fluid-hover w-full sm:w-auto rounded-2xl border border-slate-200 bg-white px-5 py-3 text-xs font-bold text-slate-600 hover:text-slate-900 transition disabled:opacity-50"
             >
-              Edit original text
+              Back to symptoms
             </button>
             <button
               type="button"

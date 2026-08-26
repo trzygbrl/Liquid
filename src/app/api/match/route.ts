@@ -21,7 +21,7 @@
 
 import { GoogleGenAI } from '@google/genai';
 import { createClient } from '@supabase/supabase-js';
-import type { MatchResult, ClarifyResult, EmergencyResult, MatchApiResult } from '@/lib/matchApi';
+import type { MatchResult, ClarifyResult, EmergencyResult, OffTopicResult, MatchApiResult } from '@/lib/matchApi';
 import { checkEmergencySymptoms } from '@/lib/safetyGate';
 import { evaluateSymptomPlausibility } from '@/lib/symptomValidation';
 
@@ -74,6 +74,17 @@ function parseAIResponse(raw: string): MatchApiResult | null {
         question: parsed.question,
         ...(examples && examples.length > 0 ? { examples } : {}),
         ...(typeof parsed.isGentlePrompt === 'boolean' ? { isGentlePrompt: parsed.isGentlePrompt } : {}),
+      };
+      return result;
+    }
+
+    if (parsed.type === 'off_topic') {
+      const result: OffTopicResult = {
+        type: 'off_topic',
+        message:
+          typeof parsed.message === 'string'
+            ? parsed.message
+            : 'The words entered do not appear to describe physical symptoms or health concerns.',
       };
       return result;
     }
@@ -161,15 +172,15 @@ export async function POST(request: Request): Promise<Response> {
   if (conversationHistory.length === 0) {
     const plausibility = evaluateSymptomPlausibility(symptomText);
     if (!plausibility.isPlausible) {
-      const gentleClarifyResponse: ClarifyResult = {
-        type: 'clarify',
-        question:
+      const offTopicResponse: OffTopicResult = {
+        type: 'off_topic',
+        message: 'Input does not appear to describe physical symptoms or health concerns.',
+        gentlePrompt:
           plausibility.gentlePrompt ??
           "We want to make sure we connect you with the right doctor. Could you describe what you're feeling physically, or where you're experiencing discomfort?",
         examples: plausibility.examples,
-        isGentlePrompt: true,
       };
-      return Response.json(gentleClarifyResponse);
+      return Response.json(offTopicResponse);
     }
   }
 
@@ -225,7 +236,7 @@ RULES:
 - INPUT PLAUSIBILITY & OFF-TOPIC EVALUATION:
   * If the input is completely off-topic (e.g. travel booking, weather inquiries, math, coding, restaurant orders, jokes, general trivia) or nonsensical, do NOT force a specialty match.
   * Instead, return:
-    {"type":"clarify","question":"warm, gentle question in the patient's language asking them to describe what physical symptoms they are experiencing","examples":["short example 1","short example 2"],"isGentlePrompt":true}
+    {"type":"off_topic","message":"The words entered do not appear to describe physical symptoms or health concerns."}
   * The tone MUST be warm, empathetic, and non-judgmental. NEVER scold or lecture.
 - VAGUE BUT GENUINE HEALTH SYMPTOMS:
   * If the input describes genuine but vague discomfort (e.g. "I don't feel good", "masama ang pakiramdam ko", "feeling sick", "body hurts"), do NOT treat it as nonsense.

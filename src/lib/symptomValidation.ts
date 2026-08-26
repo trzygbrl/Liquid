@@ -216,13 +216,64 @@ const OFF_TOPIC_PATTERNS = [
   // Weather
   /\b(what('?s|\s+is)\s+the\s+weather|weather\s+today|is\s+it\s+raining|forecast\s+for|temperature\s+today)\b/i,
   // Food / Delivery
-  /\b(order|deliver|buy)\s+(a\s+)?(pizza|burger|food|groceries|dinner|lunch|coffee|milktea)\b/i,
+  /\b(order|deliver|buy)\s+(a\s+|me\s+)?([a-z0-9-]+\s+)?(pizza|burger|food|groceries|dinner|lunch|coffee|milktea)\b/i,
   // Coding / Tech / Creative tasks
   /\b(write|create|code|generate)\s+(a\s+|some\s+)?(python|javascript|typescript|code|script|program|app|website|html|sql|function|poem|essay|story|song)\b/i,
   /\b(what\s+is|solve|calculate)\s+\d+\s*[\+\-\*\/]\s*\d+\b/i,
   // Chatbot / Trivia
   /\b(who\s+is\s+the\s+president|tell\s+me\s+a\s+joke|who\s+won\s+the|what\s+is\s+the\s+capital\s+of|sing\s+me\s+a\s+song)\b/i,
 ];
+
+// Comprehensive pattern matching symptom roots, clinical descriptors, body parts, and health complaints
+const CONTAINS_SYMPTOM_PATTERN = new RegExp(
+  '\\b(' +
+    // Pain and sensory complaints
+    'pain|pains|painful|ache|aches|aching|achy|hurt|hurts|hurting|sore|soreness|throbb\\w*|sharp|stabb\\w*|' +
+    'sting\\w*|burn|burns|burning|burned|stiff|stiffness|cramp|cramps|cramping|spasm|spasms|tight|tightness|' +
+    'numb|numbness|tingl\\w*|swell|swells|swelling|swollen|tender|tenderness|inflam\\w*|pressur\\w*|heavy|heaviness|' +
+    'bleed|bleeds|bleeding|blood|hemorrh\\w*|bruis\\w*|wound|wounds|cut|cuts|sprain\\w*|fractur\\w*|injur\\w*|dislocat\\w*|' +
+    // Systemic & General
+    'fever|fevers|feverish|chill|chills|shiver\\w*|sweat|sweats|sweating|fatigue|exhaust\\w*|tired|tiredness|' +
+    'weak|weakness|dizz\\w*|lighthead\\w*|faint|faints|fainting|fainted|vertigo|nausea|nauseous|nauseated|' +
+    'vomit\\w*|puke|puking|diarrhea|stool|bowel|constipat\\w*|insomnia|sleepless\\w*|malaise|appetite|dehydrat\\w*|pale|pallor|' +
+    // Respiratory / ENT
+    'cough\\w*|cold|colds|flu|influenza|phlegm|mucus|congest\\w*|sneeze|sneezes|sneezing|wheez\\w*|breath\\w*|' +
+    'dyspnea|asthma|hoarse|hoarseness|throat|sinus|sinuses|sinusitis|tonsil|tonsillitis|bronch\\w*|pneumon\\w*|' +
+    'earache|tinnitus|palpitat\\w*|heartbeat|' +
+    // Derm / Eyes / Head / Neuro
+    'rash|rashes|itch|itchy|itching|itchiness|hives|blister\\w*|pimple\\w*|acne|boil|boils|lesion\\w*|pus|discharg\\w*|' +
+    'eczema|allergy|allergies|allergic|headache\\w*|migraine\\w*|seizur\\w*|convuls\\w*|tremor\\w*|shak\\w*|' +
+    'vision|blur|blurry|redness|infection|infected|' +
+    // Common medical conditions
+    'diabetes|diabetic|hypertens\\w*|bp|gerd|acid reflux|uti|stroke|cancer|tumor|cyst|arthritis|gout|dengue|covid|measles|tb|tuberculosis|anemia|' +
+    // Tagalog / Filipino symptoms and health complaints
+    'masakit|sumasakit|pananakit|sakit|kirot|kumikirot|hapdi|mahapdi|ngalay|nangangalay|pulikat|pinupulikat|' +
+    'naninikip|sikip|paninikip|ngilo|nangangilo|mabigat|lagnat|nilalagnat|sinat|hilo|nahihilo|pagkahilo|' +
+    'suka|nagsusuka|pagsusuka|nasusuka|tae|nagtatae|pagtatae|nanghihina|nanlalata|ginaw|giniginaw|pawis|puyat|' +
+    'ubo|inuubo|sipon|sinisipon|plema|hininga|makahinga|hinihingal|hingal|hika|hinihika|paos|namamalat|' +
+    'bahing|bumabahing|pantal|makati|pangangati|singaw|bulutong|pigsa|nana|sugat|nasugatan|pasa|paso|napaso|' +
+    'gatol|bungang araw|malabo|namumula|katarata|panginginig|kombulsyon|hilab|sikmura|kabag|kinakabag|dighay|' +
+    'almoranas|pilay|bali|rayuma|ihi|balisawsaw|regla|puson|namamaga|pamamaga|manas' +
+  ')\\b',
+  'i'
+);
+
+// Body parts in English & Tagalog
+const ANATOMY_PATTERN = new RegExp(
+  '\\b(' +
+    // English
+    'head|scalp|forehead|temple|eye|eyes|eyelid|ear|ears|nose|nostril|mouth|lip|lips|tongue|tooth|teeth|gum|gums|jaw|cheek|' +
+    'throat|neck|nape|shoulder|shoulders|arm|arms|armpit|elbow|wrist|hand|hands|palm|finger|fingers|thumb|chest|breast|rib|ribs|' +
+    'back|spine|waist|flank|abdomen|stomach|tummy|belly|navel|pelvis|pelvic|groin|hip|hips|buttock|buttocks|butt|anus|' +
+    'thigh|thighs|knee|knees|calf|calves|shin|ankle|ankles|foot|feet|heel|toe|toes|skin|nail|nails|bone|bones|joint|joints|' +
+    'muscle|muscles|tendon|heart|lung|lungs|kidney|liver|bladder|' +
+    // Tagalog
+    'ulo|noo|sentido|mata|talukap|tenga|ilong|bibig|labi|dila|ngipin|gilagid|panga|pisngi|lalamunan|leeg|batok|balikat|' +
+    'braso|kilikili|siko|pulso|kamay|palad|daliri|dibdib|suso|tadyang|likod|gulugod|baywang|tiyan|pusod|sikmura|balakang|' +
+    'singit|puwet|hita|tuhod|binti|sakong|paa|balat|kuko|buto|kasu-kasuan|kalamnan|puso|baga|atay' +
+  ')\\b',
+  'i'
+);
 
 // Common medical abbreviations that don't need vowels
 const VALID_MEDICAL_ABBREVIATIONS = new Set([
@@ -445,7 +496,25 @@ export function evaluateSymptomPlausibility(symptomText: string): SymptomValidat
     };
   }
 
-  // 8. Default: Plausible symptom description
+  // 8. Positive Symptom & Anatomy Verification
+  // The input must contain at least one recognizable physical symptom, medical term,
+  // anatomical location, or bodily complaint. Inputs lacking any clinical indication
+  // (e.g. "take me home", "i am rich", "i have a lot of money") are rejected as off-topic.
+  const hasSymptom = CONTAINS_SYMPTOM_PATTERN.test(normalized);
+  const hasAnatomy = ANATOMY_PATTERN.test(normalized);
+
+  if (!hasSymptom && !hasAnatomy) {
+    return {
+      isPlausible: false,
+      status: 'off_topic',
+      reason: 'Input does not contain any recognized symptoms, body parts, or health complaints',
+      gentlePrompt: promptConfig.prompt,
+      examples: promptConfig.examples,
+      detectedLanguage: language,
+    };
+  }
+
+  // 9. Confirmed plausible symptom description
   return {
     isPlausible: true,
     status: 'plausible',

@@ -42,7 +42,14 @@ export type EmergencyResult = {
   matchedCriteria?: string;
 };
 
-export type MatchApiResult = MatchResult | ClarifyResult | EmergencyResult;
+export type OffTopicResult = {
+  type: 'off_topic';
+  message: string;
+  gentlePrompt?: string;
+  examples?: string[];
+};
+
+export type MatchApiResult = MatchResult | ClarifyResult | EmergencyResult | OffTopicResult;
 
 export interface MatchApiRequest {
   /** Required. The free-text symptom description from IntakeFlow step 3 */
