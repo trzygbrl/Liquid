@@ -8,6 +8,8 @@
 //   3. Average rating (higher rating ranks first)
 //   4. Soonest available slot (earliest available date/time ranks first)
 
+import { todayISO } from './dateUtils';
+
 export interface Clinic {
   id: string;
   name: string;
@@ -65,6 +67,59 @@ export interface RankingResult {
 }
 
 /**
+ * The earliest still-open slot in a doctor's schedule, formatted for display.
+ *
+ * Pass a clinicId to restrict the search to a single practice location. The
+ * directory filters use that when a location or fee filter narrows a doctor
+ * down to a subset of their clinics, so the slot shown on a card always
+ * belongs to the clinic shown beside it.
+ */
+export function pickSoonestSlot(
+  slots: ScheduleSlot[] | null | undefined,
+  clinicId: string | null = null,
+  todayStr: string = todayISO()
+): SoonestSlotInfo | null {
+  const availableSlots = (slots ?? [])
+    .filter(
+      (s) =>
+        s.is_booked === 'available' &&
+        s.date >= todayStr &&
+        (!clinicId || s.clinic_id === clinicId)
+    )
+    .sort((a, b) => {
+      if (a.date !== b.date) return a.date.localeCompare(b.date);
+      return a.start_time.localeCompare(b.start_time);
+    });
+
+  if (availableSlots.length === 0) return null;
+
+  const first = availableSlots[0];
+  // Format time e.g. "09:00:00" -> "9:00 AM"
+  const [hStr, mStr] = first.start_time.split(':');
+  const hNum = parseInt(hStr, 10);
+  const ampm = hNum >= 12 ? 'PM' : 'AM';
+  const h12 = hNum % 12 || 12;
+  const formattedTime = `${h12}:${mStr} ${ampm}`;
+
+  // Format date e.g. "2026-08-20" -> "Aug 20, 2026"
+  const dateParts = first.date.split('-');
+  const monthNames = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+  const mIdx = parseInt(dateParts[1], 10) - 1;
+  const formattedDate = `${monthNames[mIdx] || dateParts[1]} ${parseInt(dateParts[2], 10)}, ${dateParts[0]}`;
+
+  return {
+    id: first.id,
+    date: first.date,
+    time: first.start_time,
+    formatted: `${formattedDate} at ${formattedTime}`,
+    clinicId: first.clinic_id,
+  };
+}
+
+/**
  * Ranks doctor records according to PRD 8.4 multi-factor criteria
  * and identifies HMO mismatch state per PRD 8.3.
  */
@@ -74,7 +129,7 @@ export function rankDoctors(
   targetSubSpecialty: string | null,
   patientHmo: string | null
 ): RankingResult {
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = todayISO();
 
   const processed: RankedDoctor[] = doctors.map((doc) => {
     // 1. Sub-specialty match strength
@@ -98,40 +153,7 @@ export function rankDoctors(
         : null;
 
     // 4. Soonest available slot (date >= today, is_booked === 'available')
-    const availableSlots = (doc.schedule_slots ?? [])
-      .filter((s) => s.is_booked === 'available' && s.date >= todayStr)
-      .sort((a, b) => {
-        if (a.date !== b.date) return a.date.localeCompare(b.date);
-        return a.start_time.localeCompare(b.start_time);
-      });
-
-    let soonestSlot: SoonestSlotInfo | null = null;
-    if (availableSlots.length > 0) {
-      const first = availableSlots[0];
-      // Format time e.g. "09:00:00" -> "9:00 AM"
-      const [hStr, mStr] = first.start_time.split(':');
-      const hNum = parseInt(hStr, 10);
-      const ampm = hNum >= 12 ? 'PM' : 'AM';
-      const h12 = hNum % 12 || 12;
-      const formattedTime = `${h12}:${mStr} ${ampm}`;
-
-      // Format date e.g. "2026-08-20" -> "Aug 20, 2026"
-      const dateParts = first.date.split('-');
-      const monthNames = [
-        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-      ];
-      const mIdx = parseInt(dateParts[1], 10) - 1;
-      const formattedDate = `${monthNames[mIdx] || dateParts[1]} ${parseInt(dateParts[2], 10)}, ${dateParts[0]}`;
-
-      soonestSlot = {
-        id: first.id,
-        date: first.date,
-        time: first.start_time,
-        formatted: `${formattedDate} at ${formattedTime}`,
-        clinicId: first.clinic_id,
-      };
-    }
+    const soonestSlot = pickSoonestSlot(doc.schedule_slots, null, todayStr);
 
     // The primary clinic shown on the card is the one hosting the soonest
     // slot (so the displayed clinic and displayed slot always agree); falls
