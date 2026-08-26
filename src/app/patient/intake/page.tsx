@@ -104,18 +104,6 @@ function IntakePageContent() {
         {/* Header */}
         <div className="border-b border-slate-200/80 pb-6 mb-8 flex items-center justify-between">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <a
-                href="/patient/dashboard"
-                className="text-xs font-bold text-slate-500 hover:text-slate-900 transition flex items-center gap-1"
-              >
-                Dashboard
-              </a>
-              <span className="text-slate-300">•</span>
-              <span className="text-xs font-bold uppercase tracking-wider text-brand-600 bg-brand-50 px-2 py-0.5 rounded-full border border-brand-100">
-                AI Clinical Triage
-              </span>
-            </div>
             <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
               {state === 'result' && matchResult?.type === 'match'
                 ? 'Specialist Recommendation'
@@ -123,7 +111,7 @@ function IntakePageContent() {
                 ? 'Emergency Triage Advisory'
                 : 'Check Symptoms'}
             </h1>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-slate-500 sm:text-base">
               {state === 'result' && matchResult?.type === 'match'
                 ? 'Based on clinical criteria and symptoms, here is your recommended specialist.'
                 : state === 'result' && matchResult?.type === 'emergency'
@@ -135,7 +123,7 @@ function IntakePageContent() {
 
         {/* Global API Error Alert */}
         {apiError && (
-          <div className="mb-6 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-xs font-medium text-rose-700 flex items-center justify-between">
+          <div className="mb-6 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-xs font-medium text-rose-700 sm:text-base flex items-center justify-between">
             <span>{apiError}</span>
             <button
               onClick={() => setApiError(null)}
@@ -162,10 +150,10 @@ function IntakePageContent() {
               <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-50 text-brand-600 shadow-sm">
                 <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600" />
               </div>
-              <h2 className="text-xl font-bold text-slate-900">
+              <h2 className="text-lg font-bold text-slate-900 sm:text-xl">
                 Finding the right specialist…
               </h2>
-              <p className="mt-2 text-xs text-slate-500 leading-relaxed max-w-sm mx-auto">
+              <p className="mt-2 text-xs text-slate-500 leading-relaxed max-w-sm mx-auto sm:text-base">
                 Evaluating symptoms against 33 medical specialties and checking provider availability.
               </p>
             </div>

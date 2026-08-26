@@ -159,6 +159,24 @@ export function IconInfo({ className }: IconProps) {
   );
 }
 
+export function IconHome({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M4 10.5L12 4l8 6.5" />
+      <path d="M6 9.5V19a1 1 0 001 1h10a1 1 0 001-1V9.5" />
+    </svg>
+  );
+}
+
 export function IconCheck({ className }: IconProps) {
   return (
     <svg viewBox="0 0 20 20" fill="currentColor" className={className} aria-hidden="true">

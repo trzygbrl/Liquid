@@ -359,24 +359,6 @@ function DoctorDetailPageContent() {
   return (
     <main className="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-4xl">
-        {/* Navigation Breadcrumb */}
-        <div className="mb-6 flex items-center justify-between border-b border-slate-200/80 pb-4">
-          <a
-            href={`/patient/doctors?specialty=${encodeURIComponent(
-              doctor.specialty
-            )}${
-              doctor.sub_specialty
-                ? `&sub_specialty=${encodeURIComponent(doctor.sub_specialty)}`
-                : ''
-            }${patientHmo ? `&hmo=${encodeURIComponent(patientHmo)}` : ''}`}
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-900 transition"
-          >
-            Back to doctor list
-          </a>
-          <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700 border border-brand-100">
-            Doctor Profile & Booking
-          </span>
-        </div>
 
         {/* Doctor Hero Profile Card */}
         <div className="relative overflow-hidden card p-6 sm:p-8">

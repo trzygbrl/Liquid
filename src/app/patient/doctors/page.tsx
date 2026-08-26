@@ -13,7 +13,7 @@ import {
   type DoctorFilters,
 } from '@/lib/doctorFilters';
 import { getPlainSpecialtyInfo } from '@/lib/specialtyHelpers';
-import { IconStar, IconInfo } from '@/components/Icons';
+import { IconStar, IconInfo, IconChevronRight } from '@/components/Icons';
 import DoctorAvatar from '@/components/DoctorAvatar';
 import DoctorFilterPanel from '@/components/DoctorFilterPanel';
 
@@ -181,21 +181,8 @@ function DoctorListContent() {
   return (
     <main className="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl">
-        {/* Navigation Breadcrumb */}
-        <div className="mb-6 flex items-center justify-between border-b border-slate-200/80 pb-4">
-          <a
-            href="/patient/dashboard"
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-900 transition"
-          >
-            Back to Dashboard
-          </a>
-          <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700 border border-brand-100">
-            Verified Doctor Directory
-          </span>
-        </div>
-
         {/* Header Title */}
-        <div className="mb-6">
+        <div className="border-b border-slate-200/80 pb-6 mb-6">
           <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
             {browseAll ? 'Find a Doctor' : `${specialtyParam} Specialists`}
           </h1>
@@ -374,186 +361,206 @@ function DoctorListContent() {
 
                   <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
                     {/* Left Column: Doctor Info & Credentials */}
-                    <div className="flex flex-1 gap-4">
-                      <DoctorAvatar name={doctor.name} id={doctor.id} size={64} className="mt-1" />
-                      <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-                          {doctor.name}
-                        </h2>
-                        {doctor.verification_status === 'verified' && (
-                          <span
-                            title="Verified Medical License"
-                            className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-bold text-brand-700 border border-brand-100"
-                          >
-                            <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                              <path
-                                fillRule="evenodd"
-                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                            Verified
-                          </span>
-                        )}
+                    <div className="flex-1 min-w-0">
+                      {/* Avatar sized to clear two stacked lines: name on top, status below. */}
+                      <div className="flex items-start gap-4">
+                        <DoctorAvatar name={doctor.name} id={doctor.id} size={64} className="shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <h2 className="mt-3 truncate text-lg font-bold text-slate-900 tracking-tight md:text-lg">
+                            {doctor.name}
+                          </h2>
+                          <div className="flex flex-wrap items-center gap-2">
+                            {doctor.verification_status === 'verified' && (
+                              <span
+                                title="Verified Medical License"
+                                className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2.5 py-0.5 text-[0.65rem] font-bold text-brand-700 border border-brand-100 md:text-xs"
+                              >
+                                <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                                Verified
+                              </span>
+                            )}
+                            {doctor.averageRating !== null ? (
+                              <span className="inline-flex items-center gap-1 font-bold text-amber-700 text-[0.65rem] bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200 md:text-xs">
+                                <IconStar className="h-3.5 w-3.5" /> {doctor.averageRating.toFixed(1)}
+                                <span className="text-slate-600 font-normal">
+                                  ({doctor.reviewCount} {doctor.reviewCount === 1 ? 'review' : 'reviews'})
+                                </span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-slate-600 text-[0.65rem] md:text-xs">
+                                <IconStar className="h-3.5 w-3.5" filled={false} /> New Doctor
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
 
-                      {/* Specialty & Sub-specialty Pill */}
-                      <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
-                        <span className="font-bold text-brand-700 text-base">
-                          {doctor.specialty}
-                        </span>
-                        {doctor.sub_specialty && (
-                          <>
-                            <span className="text-slate-400">•</span>
-                            <span className="rounded-md bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-800 text-sm">
+                      <div className="mt-5 space-y-2.5">
+                        {/* Specialty & Sub-specialty */}
+                        <div className="flex flex-wrap items-center gap-2 text-xs lg:text-sm">
+                          <span className="font-semibold text-brand-700">
+                            {doctor.specialty}
+                          </span>
+                          {doctor.sub_specialty && (
+                            <span className="rounded-md bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-800 text-[0.65rem] lg:text-sm">
                               {doctor.sub_specialty}
                             </span>
-                          </>
-                        )}
-                        {doctor.averageRating !== null ? (
-                          <>
-                            <span className="text-slate-400">•</span>
-                            <span className="inline-flex items-center gap-1 font-bold text-amber-700 text-sm bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
-                              <IconStar className="h-3.5 w-3.5" /> {doctor.averageRating.toFixed(1)}
-                              <span className="text-slate-600 font-normal">
-                                ({doctor.reviewCount} {doctor.reviewCount === 1 ? 'review' : 'reviews'})
-                              </span>
-                            </span>
-                          </>
-                        ) : (
-                          <>
-                            <span className="text-slate-400">•</span>
-                            <span className="inline-flex items-center gap-1 text-slate-600 text-sm">
-                              <IconStar className="h-3.5 w-3.5" filled={false} /> New Doctor
-                            </span>
-                          </>
-                        )}
-                      </div>
+                          )}
+                        </div>
 
-                      {/* Plain-language subtitle, only when the specialty name
-                          itself is clinical enough to need translating. */}
-                      {(() => {
-                        const plain = getPlainSpecialtyInfo(doctor.specialty);
-                        if (!plain) return null;
-                        return (
-                          <p className="mt-2 text-sm text-slate-700">
-                            <span className="text-brand-700 font-semibold">{plain.plainName}</span>
-                            <span className="text-slate-400 mx-1.5">•</span>
-                            <span className="italic text-slate-600">{plain.tagalogName}</span>
+                        {/* Plain-language subtitle, only when the specialty name
+                            itself is clinical enough to need translating. */}
+                        {(() => {
+                          const plain = getPlainSpecialtyInfo(doctor.specialty);
+                          if (!plain) return null;
+                          return (
+                            <p className="text-sm text-slate-700">
+                              <span className="text-brand-700 font-semibold">{plain.plainName}</span>
+                              <span className="text-slate-400 mx-1.5">•</span>
+                              <span className="italic text-slate-600">{plain.tagalogName}</span>
+                            </p>
+                          );
+                        })()}
+
+                        {/* Credentials text */}
+                        {doctor.credentials && (
+                          <p className="text-xs leading-relaxed text-slate-700 line-clamp-2 md:text-sm">
+                            {doctor.credentials}
                           </p>
-                        );
-                      })()}
+                        )}
 
-                      {/* Credentials text */}
-                      {doctor.credentials && (
-                        <p className="mt-2.5 text-sm leading-relaxed text-slate-700 line-clamp-2">
-                          {doctor.credentials}
-                        </p>
-                      )}
-
-                      {/* Clinic Location & Fee */}
-                      {clinic && (
-                        <div className="mt-4 rounded-2xl border border-slate-100 bg-slate-50/80 p-4 text-xs">
-                          <div className="flex items-center justify-between gap-2">
-                            <div>
-                              <p className="font-bold text-slate-900 text-sm">{clinic.name}</p>
-                              {clinic.room_details && (
-                                <p className="text-slate-600 text-xs mt-0.5">{clinic.room_details}</p>
-                              )}
-                              <p className="text-slate-500 text-xs mt-1">{clinic.location}</p>
+                        {/* Clinic / hospital list -- tap anywhere in the box to
+                            expand or hide the doctor's other locations. */}
+                        {clinic && (
+                          <div
+                            role={doctor.otherClinics.length > 0 ? 'button' : undefined}
+                            tabIndex={doctor.otherClinics.length > 0 ? 0 : undefined}
+                            aria-expanded={doctor.otherClinics.length > 0 ? expandedClinics.has(doctor.id) : undefined}
+                            onClick={() => {
+                              if (doctor.otherClinics.length === 0) return;
+                              setExpandedClinics((prev) => {
+                                const next = new Set(prev);
+                                if (next.has(doctor.id)) next.delete(doctor.id);
+                                else next.add(doctor.id);
+                                return next;
+                              });
+                            }}
+                            onKeyDown={(e) => {
+                              if (doctor.otherClinics.length === 0) return;
+                              if (e.key !== 'Enter' && e.key !== ' ') return;
+                              e.preventDefault();
+                              setExpandedClinics((prev) => {
+                                const next = new Set(prev);
+                                if (next.has(doctor.id)) next.delete(doctor.id);
+                                else next.add(doctor.id);
+                                return next;
+                              });
+                            }}
+                            className={`rounded-2xl border border-slate-100 bg-slate-50/80 p-4 text-[0.65rem] md:text-sm ${
+                              doctor.otherClinics.length > 0 ? 'fluid-hover cursor-pointer hover:border-brand-200 hover:bg-brand-50/30 focus:outline-none focus:ring-2 focus:ring-brand-500/30' : ''
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <div>
+                                <p className="font-bold text-slate-900">{clinic.name}</p>
+                                {clinic.room_details && (
+                                  <p className="text-slate-600 mt-0.5">{clinic.room_details}</p>
+                                )}
+                                <p className="text-slate-500 mt-1">{clinic.location}</p>
+                              </div>
+                              <div className="flex shrink-0 items-center gap-2">
+                                <div className="text-right">
+                                  <span className="text-slate-500 block font-medium">Consultation Fee</span>
+                                  <span className="font-bold text-slate-900">{formattedFee}</span>
+                                </div>
+                                {doctor.otherClinics.length > 0 && (
+                                  <IconChevronRight
+                                    className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${
+                                      expandedClinics.has(doctor.id) ? 'rotate-90' : ''
+                                    }`}
+                                  />
+                                )}
+                              </div>
                             </div>
-                            <div className="text-right shrink-0">
-                              <span className="text-xs text-slate-500 block font-medium">Consultation Fee</span>
-                              <span className="text-sm font-bold text-slate-900">{formattedFee}</span>
-                            </div>
-                          </div>
 
-                          {doctor.otherClinics.length > 0 && (
-                            <div className="mt-3 border-t border-slate-200/60 pt-3">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setExpandedClinics((prev) => {
-                                    const next = new Set(prev);
-                                    if (next.has(doctor.id)) next.delete(doctor.id);
-                                    else next.add(doctor.id);
-                                    return next;
-                                  })
-                                }
-                                className="text-xs font-bold text-brand-700 hover:text-brand-900 transition"
-                              >
+                            {doctor.otherClinics.length > 0 && (
+                              <p className="mt-2.5 border-t border-slate-200/60 pt-2.5 font-bold text-brand-700">
                                 {expandedClinics.has(doctor.id)
                                   ? 'Hide other locations'
                                   : `Show ${doctor.otherClinics.length} more ${doctor.otherClinics.length === 1 ? 'location' : 'locations'}`}
-                              </button>
+                              </p>
+                            )}
 
-                              {expandedClinics.has(doctor.id) && (
-                                <div className="mt-2.5 flex flex-col gap-2">
-                                  {doctor.otherClinics.map((other) => (
-                                    <div
-                                      key={other.id}
-                                      className="flex items-center justify-between gap-2 rounded-xl bg-white border border-slate-200/70 px-3 py-2"
-                                    >
-                                      <div className="min-w-0">
-                                        <p className="font-semibold text-slate-800 truncate">{other.name}</p>
-                                        <p className="text-slate-500 mt-0.5">{other.location}</p>
-                                      </div>
-                                      <span className="shrink-0 font-bold text-slate-900">
-                                        ₱{Number(other.consultation_fee).toLocaleString('en-US', {
-                                          minimumFractionDigits: 2,
-                                          maximumFractionDigits: 2,
-                                        })}
-                                      </span>
+                            {expandedClinics.has(doctor.id) && (
+                              <div className="mt-2.5 flex flex-col gap-2">
+                                {doctor.otherClinics.map((other) => (
+                                  <div
+                                    key={other.id}
+                                    className="flex items-center justify-between gap-2 rounded-xl bg-white border border-slate-200/70 px-3 py-2"
+                                  >
+                                    <div className="min-w-0">
+                                      <p className="font-semibold text-slate-800 truncate">{other.name}</p>
+                                      <p className="text-slate-500 mt-0.5">{other.location}</p>
                                     </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
+                                    <span className="shrink-0 font-bold text-slate-900">
+                                      ₱{Number(other.consultation_fee).toLocaleString('en-US', {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2,
+                                      })}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* HMO Coverage / Accreditations */}
+                        <div className="flex flex-wrap items-center gap-2 text-[0.65rem] md:text-sm">
+                          {doctor.isHmoCovered && patientHmo && (
+                            <span className="inline-flex items-center gap-1 rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-1 font-bold text-emerald-800 shadow-sm">
+                              <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                                <path
+                                  fillRule="evenodd"
+                                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                              Covered by {patientHmo}
+                            </span>
+                          )}
+
+                          <span className="font-semibold text-slate-500 mr-1">
+                            Accreditations:
+                          </span>
+                          {doctor.hmo_accreditations && doctor.hmo_accreditations.length > 0 ? (
+                            doctor.hmo_accreditations.map((hmoName) => {
+                              const isMatch =
+                                patientHmo &&
+                                hmoName.toLowerCase() === patientHmo.toLowerCase();
+                              return (
+                                <span
+                                  key={hmoName}
+                                  className={`rounded-xl px-2.5 py-1 font-semibold ${
+                                    isMatch
+                                      ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                                      : 'bg-slate-100 text-slate-700 border border-slate-200/80'
+                                  }`}
+                                >
+                                  {hmoName}
+                                </span>
+                              );
+                            })
+                          ) : (
+                            <span className="text-slate-500">None (Cash-only)</span>
                           )}
                         </div>
-                      )}
-
-                      {/* HMO Coverage Badges */}
-                      <div className="mt-4 flex flex-wrap items-center gap-2">
-                        {doctor.isHmoCovered && patientHmo && (
-                          <span className="inline-flex items-center gap-1 rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-bold text-emerald-800 shadow-sm">
-                            <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                              <path
-                                fillRule="evenodd"
-                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                            Covered by {patientHmo}
-                          </span>
-                        )}
-
-                        <span className="text-xs font-semibold text-slate-500 mr-1">
-                          Accreditations:
-                        </span>
-                        {doctor.hmo_accreditations && doctor.hmo_accreditations.length > 0 ? (
-                          doctor.hmo_accreditations.map((hmoName) => {
-                            const isMatch =
-                              patientHmo &&
-                              hmoName.toLowerCase() === patientHmo.toLowerCase();
-                            return (
-                              <span
-                                key={hmoName}
-                                className={`rounded-xl px-2.5 py-1 text-xs font-semibold ${
-                                  isMatch
-                                    ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                                    : 'bg-slate-100 text-slate-700 border border-slate-200/80'
-                                }`}
-                              >
-                                {hmoName}
-                              </span>
-                            );
-                          })
-                        ) : (
-                          <span className="text-xs text-slate-500">None (Cash-only)</span>
-                        )}
-                      </div>
                       </div>
                     </div>
 
