@@ -663,7 +663,7 @@ export default function IntakeFlow({ onComplete, initialData = null, initialStep
                   className={`fluid-hover inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition ${
                     isListening
                       ? 'bg-rose-50 text-rose-700 border border-rose-200 ring-2 ring-rose-500/20 shadow-xs animate-pulse'
-                      : 'bg-slate-100 text-slate-700 hover:bg-blue-50 hover:text-blue-700 border border-slate-200'
+                      : 'bg-slate-100 text-slate-700 hover:bg-brand-50 hover:text-brand-700 border border-slate-200'
                   }`}
                 >
                   {isListening ? (
