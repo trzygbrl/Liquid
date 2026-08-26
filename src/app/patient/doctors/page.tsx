@@ -27,6 +27,7 @@ function DoctorListContent() {
   const browseAll = !specialtyParam;
   const initialSubSpecialty = searchParams.get('sub_specialty') || null;
   const initialHmo = searchParams.get('hmo') || null;
+  const symptomsParam = searchParams.get('symptoms') || '';
 
   const [doctors, setDoctors] = useState<DoctorRecord[]>([]);
   const [availableSubSpecialties, setAvailableSubSpecialties] = useState<string[]>([]);
@@ -577,7 +578,13 @@ function DoctorListContent() {
                       <div className="mt-6">
                         <a
                           id={`book-doctor-${doctor.id}`}
-                          href={`/patient/doctors/${doctor.id}?hmo=${encodeURIComponent(patientHmo || '')}`}
+                          href={`/patient/doctors/${doctor.id}?specialty=${encodeURIComponent(
+                            specialtyParam || doctor.specialty || ''
+                          )}&sub_specialty=${encodeURIComponent(
+                            selectedSubSpecialty || doctor.sub_specialty || ''
+                          )}&hmo=${encodeURIComponent(patientHmo || '')}&symptoms=${encodeURIComponent(
+                            symptomsParam || ''
+                          )}`}
                           className="w-full text-center block rounded-2xl bg-brand-600 px-6 py-3.5 text-sm font-semibold text-white shadow-md transition hover:bg-brand-700 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-brand-500/50"
                         >
                           View Profile & Book

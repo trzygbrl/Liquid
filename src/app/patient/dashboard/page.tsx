@@ -35,6 +35,11 @@ interface AppointmentItem {
   created_at: string;
   symptom_summary: string | null;
   status_reason: string | null;
+  ai_recommended_specialty?: string | null;
+  ai_recommended_sub_specialty?: string | null;
+  doctor_recommended_specialty?: string | null;
+  doctor_recommended_sub_specialty?: string | null;
+  reassigned_by_doctor?: boolean;
   doctor: {
     id: string;
     name: string;
@@ -114,7 +119,9 @@ function PatientDashboardContent() {
     // `status_reason` only exists once migration 0007 has been applied.
     // Naming a missing column fails the whole select, so on a pre-0007
     // database retry without it rather than lose the appointment list.
-    const runApptQuery = (withReason: boolean) =>
+    // Query appointments. Includes Doctor-in-the-Loop re-referral fields
+    // with graceful fallback if schema migration 0009 has not been executed yet.
+    const runApptQuery = (withReason: boolean, withReassign: boolean) =>
       supabase
         .from('appointments')
         .select(`
@@ -123,6 +130,7 @@ function PatientDashboardContent() {
           created_at,
           symptom_summary,
           ${withReason ? 'status_reason,' : ''}
+          ${withReassign ? 'ai_recommended_specialty, ai_recommended_sub_specialty, doctor_recommended_specialty, doctor_recommended_sub_specialty, reassigned_by_doctor,' : ''}
           doctors (
             id,
             name,
@@ -146,11 +154,18 @@ function PatientDashboardContent() {
         .eq('patient_id', user.id)
         .order('created_at', { ascending: false });
 
-    let { data, error } = await runApptQuery(hasStatusReason());
+    let { data, error } = await runApptQuery(hasStatusReason(), true);
+
+    if (
+      error &&
+      (error.code === '42703' || error.message?.includes('doctor_recommended_specialty'))
+    ) {
+      ({ data, error } = await runApptQuery(hasStatusReason(), false));
+    }
 
     if (isMissingStatusReason(error)) {
       noteMissingStatusReason('patient dashboard');
-      ({ data, error } = await runApptQuery(false));
+      ({ data, error } = await runApptQuery(false, false));
     }
 
     // Surface load failures instead of silently rendering an empty list. A
@@ -174,6 +189,11 @@ function PatientDashboardContent() {
           created_at: item.created_at,
           symptom_summary: item.symptom_summary,
           status_reason: item.status_reason ?? null,
+          ai_recommended_specialty: item.ai_recommended_specialty ?? null,
+          ai_recommended_sub_specialty: item.ai_recommended_sub_specialty ?? null,
+          doctor_recommended_specialty: item.doctor_recommended_specialty ?? null,
+          doctor_recommended_sub_specialty: item.doctor_recommended_sub_specialty ?? null,
+          reassigned_by_doctor: item.reassigned_by_doctor ?? false,
           doctor: doc,
           slot: slot
             ? {
@@ -385,13 +405,64 @@ function PatientDashboardContent() {
                               </p>
                             )}
 
-                            {(appt.status === 'declined' || appt.status === 'cancelled') && appt.status_reason && (
-                              <p className="text-xs text-slate-600">
-                                <span className="font-bold uppercase tracking-wide text-slate-500 mr-1 text-[11px]">
-                                  Reason:
-                                </span>
-                                {appt.status_reason}
-                              </p>
+                            {appt.status === 'declined' && (appt.doctor_recommended_specialty || appt.reassigned_by_doctor) ? (
+                              <div className="mt-2.5 rounded-2xl border border-amber-300/80 bg-amber-50/70 p-3.5 sm:p-4">
+                                <div className="flex items-center gap-1.5 mb-1.5">
+                                  <span className="text-sm">🩺</span>
+                                  <span className="rounded-full bg-amber-100 border border-amber-300 px-2 py-0.5 text-[10px] font-extrabold text-amber-900 uppercase tracking-wider">
+                                    Doctor-in-the-Loop Specialty Reassignment
+                                  </span>
+                                </div>
+                                <p className="text-xs text-amber-950 font-medium leading-relaxed">
+                                  <strong>Dr. {appt.doctor?.name || 'Your doctor'}</strong> reviewed your case and recommended consulting a different medical specialist for your symptoms:
+                                </p>
+                                {appt.doctor_recommended_specialty && (
+                                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                                    <span className="text-xs text-slate-600 font-bold">Recommended Specialist:</span>
+                                    <span className="rounded-xl bg-white border border-amber-300 px-3 py-1 text-xs font-bold text-amber-900 shadow-2xs">
+                                      {appt.doctor_recommended_specialty}
+                                      {appt.doctor_recommended_sub_specialty ? ` · ${appt.doctor_recommended_sub_specialty}` : ''}
+                                    </span>
+                                  </div>
+                                )}
+                                {appt.status_reason && (
+                                  <p className="mt-2 text-xs text-slate-700 bg-white/90 rounded-xl p-2.5 border border-amber-200/80 leading-relaxed">
+                                    <span className="font-bold text-slate-900 mr-1">Doctor&apos;s Clinical Rationale:</span>
+                                    {appt.status_reason}
+                                  </p>
+                                )}
+                                {appt.doctor_recommended_specialty && (
+                                  <div className="mt-3">
+                                    <a
+                                      id={`find-recommended-doctors-${appt.id}`}
+                                      href={`/patient/doctors?specialty=${encodeURIComponent(
+                                        appt.doctor_recommended_specialty
+                                      )}&sub_specialty=${encodeURIComponent(
+                                        appt.doctor_recommended_sub_specialty || ''
+                                      )}&symptoms=${encodeURIComponent(appt.symptom_summary || '')}`}
+                                      className="inline-flex items-center gap-1.5 rounded-xl bg-brand-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-brand-700 transition active:scale-[0.98]"
+                                    >
+                                      <span>Find {appt.doctor_recommended_specialty} Doctors</span>
+                                      <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path
+                                          fillRule="evenodd"
+                                          d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
+                                          clipRule="evenodd"
+                                        />
+                                      </svg>
+                                    </a>
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              (appt.status === 'declined' || appt.status === 'cancelled') && appt.status_reason && (
+                                <p className="text-xs text-slate-600">
+                                  <span className="font-bold uppercase tracking-wide text-slate-500 mr-1 text-[11px]">
+                                    Reason:
+                                  </span>
+                                  {appt.status_reason}
+                                </p>
+                              )
                             )}
                             </div>
                           </div>

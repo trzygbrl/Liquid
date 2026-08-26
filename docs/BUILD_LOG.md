@@ -29,6 +29,26 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-26: Doctor-in-the-Loop (HITL) Specialty Verification & Patient Re-referral System
+**Task:** Human-in-the-Loop (HITL) Clinical Safeguard & Specialist Re-referral
+**Owner:** Coding agent
+**What changed:** Implemented a Doctor-in-the-Loop (HITL) clinical verification system to ensure patient referrals are validated by licensed physicians before confirmation, providing a vital human safeguard over AI triage recommendations:
+1. **AI Recommendation & Intake Context Persistence:** When a patient completes intake and books a doctor, `ai_recommended_specialty` and `ai_recommended_sub_specialty` are persisted directly into `public.appointments` alongside the patient's symptoms.
+2. **Comprehensive Doctor Review Card (`AppointmentsDashboard.tsx`):** In the doctor's pending consultation request queue, doctors now review the patient's full demographic profile (Age, Sex, Location, HMO Provider), reported symptoms in full, and a badge highlighting the AI's triage recommendation.
+3. **General Decline Flow with Optional Re-referral:** Replaced specific re-referral action buttons with a clean universal "Decline" button. Inside the decline panel, a clear explanation is always strictly mandatory regardless of reason. If the decline is due to a specialty mismatch, the doctor checks "Re-refer patient to another specialist (Doctor-in-the-Loop)", which then requires selecting the recommended medical specialty from the taxonomy.
+4. **Patient Notification & 1-Click Re-routing (`/patient/dashboard`):** Patients with reassigned appointments are greeted with a prominent Doctor Review card displaying the reviewing physician's name, clinical explanation note, and recommended specialty, accompanied by a 1-click CTA button (`Find [Recommended Specialty] Doctors`) that pre-filters matching specialists while preserving symptoms.
+**Files touched:**
+- `supabase/migrations/0009_doctor_in_the_loop_specialty_reassignment.sql` [NEW] — added `ai_recommended_specialty`, `ai_recommended_sub_specialty`, `doctor_recommended_specialty`, `doctor_recommended_sub_specialty`, and `reassigned_by_doctor` columns with index.
+- `src/components/MatchResultView.tsx` [MODIFIED] — forwarded patient symptoms in `findDoctorsUrl`.
+- `src/app/patient/doctors/page.tsx` [MODIFIED] — forwarded `specialty`, `sub_specialty`, and `symptoms` into doctor booking profile links.
+- `src/app/patient/doctors/[id]/page.tsx` [MODIFIED] — pre-filled `symptomSummary` and persisted `ai_recommended_specialty` and `ai_recommended_sub_specialty` with defensive fallback.
+- `src/components/AppointmentsDashboard.tsx` [MODIFIED] — loaded patient profile and AI triage recommendation, implemented Doctor-in-the-Loop re-referral panel with 33 specialties taxonomy select and clinical rationale validation.
+- `src/app/patient/dashboard/page.tsx` [MODIFIED] — rendered Doctor-in-the-Loop specialty reassignment card with physician explanation and 1-click re-booking CTA.
+- `docs/BUILD_LOG.md` [MODIFIED] — documented implementation details.
+**Notes/trade-offs:**
+- **Double safety net for database backwards-compatibility:** All reads and writes to `appointments` include automatic schema fallback handling (`Postgres 42703 / undefined_column`) so that the application functions seamlessly even before migration 0009 is applied on a remote database.
+- **Mandatory physician guidance prevents patient drop-off:** Rather than simply rejecting patients, doctors actively guide misdirected patients to the right medical specialist with clinical rationale.
+
 ### 2026-08-26: Inline symptom guardrail warning, 2-strike out-of-scope screen & dedicated follow-up container
 **Task:** AI Guardrail Hardening, Token Protection & Clinical Follow-up Flow
 **Owner:** Coding agent

@@ -7,6 +7,9 @@ import {
   isMissingStatusReason,
   noteMissingStatusReason,
 } from '@/lib/statusReasonCompat';
+import { SPECIALTY_PLAIN_MAP } from '@/lib/specialtyHelpers';
+
+const ALL_SPECIALTIES = Object.keys(SPECIALTY_PLAIN_MAP).sort();
 
 // Types
 type AppointmentStatus = 'pending' | 'confirmed' | 'declined' | 'completed' | 'cancelled';
@@ -15,6 +18,8 @@ interface Patient {
   name: string;
   age: number | null;
   sex: string | null;
+  location?: string | null;
+  hmo_provider?: string | null;
 }
 
 interface Clinic {
@@ -33,6 +38,12 @@ interface Appointment {
   status: AppointmentStatus;
   symptom_summary: string | null;
   created_at: string;
+  status_reason?: string | null;
+  ai_recommended_specialty?: string | null;
+  ai_recommended_sub_specialty?: string | null;
+  doctor_recommended_specialty?: string | null;
+  doctor_recommended_sub_specialty?: string | null;
+  reassigned_by_doctor?: boolean;
   patients: Patient | null;
   schedule_slots: ScheduleSlot | null;
 }
@@ -78,39 +89,55 @@ export default function AppointmentsDashboard() {
   // Track which appointment ids currently have an in-flight accept/decline request
   const [actioning, setActioning] = useState<Set<string>>(new Set());
 
-  // Which appointment's inline "reason for declining" panel is open, and
-  // its in-progress text (declining requires a reason -- see migration
-  // 0007_appointment_status_reason.sql).
+  // Which appointment's inline decline/re-referral panel is open
   const [decliningId, setDecliningId] = useState<string | null>(null);
   const [declineReason, setDeclineReason] = useState('');
+  const [isReReferral, setIsReReferral] = useState(false);
+  const [recommendedSpecialty, setRecommendedSpecialty] = useState('');
+  const [recommendedSubSpecialty, setRecommendedSubSpecialty] = useState('');
   const [declineError, setDeclineError] = useState<string | null>(null);
 
   // Fetch helper, called on init and on realtime events
   const fetchAppointments = useCallback(async (uid: string) => {
     const today = todayISO();
 
-    const [pendingRes, confirmedRes] = await Promise.all([
-      supabase
-        .from('appointments')
-        .select(`
-          id, status, symptom_summary, created_at,
-          patients ( name, age, sex ),
+    const runFetch = (withReassign: boolean) => {
+      const selectQuery = withReassign
+        ? `
+          id, status, symptom_summary, created_at, status_reason,
+          ai_recommended_specialty, ai_recommended_sub_specialty,
+          doctor_recommended_specialty, doctor_recommended_sub_specialty,
+          reassigned_by_doctor,
+          patients ( name, age, sex, location, hmo_provider ),
           schedule_slots ( date, start_time, end_time, clinics ( name ) )
-        `)
-        .eq('doctor_id', uid)
-        .eq('status', 'pending')
-        .order('created_at', { ascending: true }),
+        `
+        : `
+          id, status, symptom_summary, created_at,
+          patients ( name, age, sex, location, hmo_provider ),
+          schedule_slots ( date, start_time, end_time, clinics ( name ) )
+        `;
 
-      supabase
-        .from('appointments')
-        .select(`
-          id, status, symptom_summary, created_at,
-          patients ( name, age, sex ),
-          schedule_slots ( date, start_time, end_time, clinics ( name ) )
-        `)
-        .eq('doctor_id', uid)
-        .eq('status', 'confirmed'),
-    ]);
+      return Promise.all([
+        supabase
+          .from('appointments')
+          .select(selectQuery)
+          .eq('doctor_id', uid)
+          .eq('status', 'pending')
+          .order('created_at', { ascending: true }),
+
+        supabase
+          .from('appointments')
+          .select(selectQuery)
+          .eq('doctor_id', uid)
+          .eq('status', 'confirmed'),
+      ]);
+    };
+
+    let [pendingRes, confirmedRes] = await runFetch(true);
+
+    if (pendingRes.error?.code === '42703' || confirmedRes.error?.code === '42703') {
+      [pendingRes, confirmedRes] = await runFetch(false);
+    }
 
     if (pendingRes.error) {
       setLoadError(`Could not load pending appointments: ${pendingRes.error.message}`);
@@ -125,10 +152,6 @@ export default function AppointmentsDashboard() {
 
     setPendingAppts((pendingRes.data ?? []) as unknown as Appointment[]);
 
-    // Assumption 5: client-side filter for upcoming (date >= today) + sort ascending
-    // by slot date then start_time. Supabase embedded-resource filters on the nested
-    // schedule_slots object filter the nested object per row, not which parent rows
-    // come back, so we can't reliably exclude past-dated appointments at query level.
     const upcoming = ((confirmedRes.data ?? []) as unknown as Appointment[])
       .filter((a) => {
         const slotDate = a.schedule_slots?.date;
@@ -150,8 +173,6 @@ export default function AppointmentsDashboard() {
   // Mount: get session, fetch data, subscribe to realtime
   useEffect(() => {
     let channel: ReturnType<typeof supabase.channel> | null = null;
-    // Prevents duplicate subscriptions in React StrictMode
-    // (same cancellation pattern as ScheduleManager)
     let cancelled = false;
 
     async function init() {
@@ -166,9 +187,6 @@ export default function AppointmentsDashboard() {
 
       if (cancelled) return;
 
-      // Realtime subscription (Assumption 8, a deliberate pull-forward of Task 4.4)
-      // Filtered by doctor_id so we only receive events relevant to this doctor.
-      // Channel name is scoped to the uid so it can't collide on StrictMode remounts.
       channel = supabase
         .channel(`appointments_${uid}`)
         .on(
@@ -180,10 +198,6 @@ export default function AppointmentsDashboard() {
             filter: `doctor_id=eq.${uid}`,
           },
           (_payload) => {
-            // Re-fetch on any appointment change. The raw postgres_changes payload
-            // does not include nested join data (patients, schedule_slots, clinics),
-            // so a full re-fetch is simpler and avoids stale joined state.
-            // Appointment volume per doctor is small for a hackathon demo.
             fetchAppointments(uid);
           }
         )
@@ -198,16 +212,16 @@ export default function AppointmentsDashboard() {
     };
   }, [fetchAppointments]);
 
-  // Accept / Decline handler. `reason` is required for 'decline' (enforced
-  // by migration 0007_appointment_status_reason.sql's check constraint).
+  // Accept / Decline handler with Doctor-in-the-Loop Re-referral support
   async function handleAction(
     appointmentId: string,
     action: 'accept' | 'decline',
-    reason?: string
+    reason?: string,
+    recSpecialty?: string,
+    recSubSpecialty?: string
   ) {
     const newStatus: AppointmentStatus = action === 'accept' ? 'confirmed' : 'declined';
 
-    // Disable both buttons on this row while request is in flight
     setActioning((prev) => new Set(prev).add(appointmentId));
 
     const {
@@ -222,37 +236,51 @@ export default function AppointmentsDashboard() {
       return;
     }
 
-    // Optimistic update. Remove from the pending list immediately so the
-    // doctor sees instant feedback rather than waiting for the re-fetch.
     setPendingAppts((prev) => prev.filter((a) => a.id !== appointmentId));
 
-    // Assumption 3: only write appointments.status. Do NOT touch schedule_slots.is_booked.
-    // The trg_sync_slot_status trigger handles the slot flip automatically.
-    //
-    // Assumption 4: scope the update with .eq('status', 'pending') so that a
-    // double-click or a second tab acting on the same appointment doesn't silently
-    // double-apply. If count === 0, someone already actioned it, and the re-fetch reconciles.
-    const runAction = (withReason: boolean) =>
-      supabase
+    const runAction = (withReason: boolean, withReassign: boolean) => {
+      const payload: Record<string, unknown> = {
+        status: newStatus,
+      };
+      if (action === 'decline' && withReason && reason) {
+        payload.status_reason = reason;
+      }
+      if (action === 'decline' && withReassign) {
+        if (recSpecialty) {
+          payload.doctor_recommended_specialty = recSpecialty;
+          payload.doctor_recommended_sub_specialty = recSubSpecialty || null;
+          payload.reassigned_by_doctor = true;
+        } else {
+          payload.doctor_recommended_specialty = null;
+          payload.doctor_recommended_sub_specialty = null;
+          payload.reassigned_by_doctor = false;
+        }
+      }
+
+      return supabase
         .from('appointments')
-        .update({
-          status: newStatus,
-          ...(action === 'decline' && withReason ? { status_reason: reason } : {}),
-        })
+        .update(payload)
         .eq('id', appointmentId)
         .eq('status', 'pending')
         .select('id');
+    };
 
-    let { data: updatedRows, error } = await runAction(hasStatusReason());
+    let { data: updatedRows, error } = await runAction(hasStatusReason(), true);
 
-    // Pre-0007 database: still let the doctor decline. The reason they typed
-    // has nowhere to be stored, which the console warning explains.
-    if (isMissingStatusReason(error)) {
-      noteMissingStatusReason('AppointmentsDashboard');
-      ({ data: updatedRows, error } = await runAction(false));
+    if (
+      error &&
+      (error.code === '42703' || error.message?.includes('doctor_recommended_specialty'))
+    ) {
+      const fallbackRes = await runAction(hasStatusReason(), false);
+      updatedRows = fallbackRes.data;
+      error = fallbackRes.error;
     }
 
-    // count === 0 means someone else already actioned this appointment (Assumption 4)
+    if (isMissingStatusReason(error)) {
+      noteMissingStatusReason('AppointmentsDashboard');
+      ({ data: updatedRows, error } = await runAction(false, false));
+    }
+
     const count = updatedRows?.length ?? 0;
 
     setActioning((prev) => {
@@ -262,22 +290,17 @@ export default function AppointmentsDashboard() {
     });
 
     if (error) {
-      // Surface error in the console; re-fetch will restore true state
       console.error('AppointmentsDashboard: action error', error.message);
     }
 
-    if (!error && count === 0) {
-      // Assumption 4: zero rows updated means already actioned by another tab/device.
-      // Treat gracefully; the re-fetch below will reconcile the UI.
-    }
-
-    // Re-fetch to reconcile: reflects the trigger-driven slot status change and
-    // the correct post-action appointment state from the DB.
     await fetchAppointments(session.user.id);
 
     if (action === 'decline' && !error) {
       setDecliningId(null);
       setDeclineReason('');
+      setIsReReferral(false);
+      setRecommendedSpecialty('');
+      setRecommendedSubSpecialty('');
       setDeclineError(null);
     }
   }
@@ -285,15 +308,30 @@ export default function AppointmentsDashboard() {
   function handleDeclineClick(appointmentId: string) {
     setDecliningId(appointmentId);
     setDeclineReason('');
+    setIsReReferral(false);
+    setRecommendedSpecialty('');
+    setRecommendedSubSpecialty('');
     setDeclineError(null);
   }
 
   function handleDeclineConfirm(appointmentId: string) {
-    if (declineReason.trim().length < 3) {
-      setDeclineError('Please provide a brief reason (at least a few words) for the patient.');
+    if (declineReason.trim().length < 5) {
+      setDeclineError(
+        'Please provide an explanation (at least 5 characters) explaining why this appointment is being declined.'
+      );
       return;
     }
-    handleAction(appointmentId, 'decline', declineReason.trim());
+    if (isReReferral && !recommendedSpecialty) {
+      setDeclineError('Please select the recommended specialist for the patient.');
+      return;
+    }
+    handleAction(
+      appointmentId,
+      'decline',
+      declineReason.trim(),
+      isReReferral ? recommendedSpecialty : undefined,
+      isReReferral && recommendedSubSpecialty.trim() ? recommendedSubSpecialty.trim() : undefined
+    );
   }
 
   if (loading) {
@@ -348,19 +386,29 @@ export default function AppointmentsDashboard() {
                   className="rounded-2xl border border-amber-200/80 bg-amber-50/40 p-5 transition hover:bg-amber-50/60"
                 >
                   {/* Top row: patient info + requested slot */}
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex flex-col gap-3.5 sm:flex-row sm:items-start sm:justify-between">
 
-                    {/* Left: patient chip, symptom, requested slot */}
-                    <div className="flex min-w-0 flex-col gap-1.5">
+                    {/* Left: patient chip, AI recommendation, symptom, requested slot */}
+                    <div className="flex min-w-0 flex-1 flex-col gap-2">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="text-sm font-bold text-slate-900">
-                          {patient?.name ?? 'N/A'}
+                          {patient?.name ?? 'Patient'}
                         </p>
                         {(patient?.age || patient?.sex) && (
-                          <span className="rounded-full bg-white border border-slate-200/80 px-2.5 py-0.5 text-xs text-slate-600 font-medium shadow-sm">
+                          <span className="rounded-full bg-white border border-slate-200/80 px-2.5 py-0.5 text-xs text-slate-600 font-medium shadow-2xs">
                             {[patient.age ? `${patient.age} y/o` : null, fmtSex(patient.sex)]
                               .filter(Boolean)
                               .join(' · ')}
+                          </span>
+                        )}
+                        {patient?.location && (
+                          <span className="rounded-full bg-white border border-slate-200/80 px-2.5 py-0.5 text-xs text-slate-600 font-medium shadow-2xs">
+                            📍 {patient.location}
+                          </span>
+                        )}
+                        {patient?.hmo_provider && (
+                          <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-xs font-bold text-emerald-800">
+                            🛡️ {patient.hmo_provider}
                           </span>
                         )}
                         <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-800 border border-amber-200">
@@ -368,13 +416,27 @@ export default function AppointmentsDashboard() {
                         </span>
                       </div>
 
-                      {appt.symptom_summary && (
-                        <p className="text-xs text-slate-700 leading-snug font-medium">
-                          <span className="font-bold uppercase tracking-wide text-slate-500 mr-1 text-[11px]">
-                            Symptoms:
+                      {/* AI Triage Recommendation Badge */}
+                      {appt.ai_recommended_specialty && (
+                        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-blue-700">
+                            AI Recommendation:
                           </span>
-                          {appt.symptom_summary}
-                        </p>
+                          <span className="rounded-full bg-blue-100/70 border border-blue-200 px-2.5 py-0.5 text-xs font-bold text-blue-800">
+                            {appt.ai_recommended_specialty}
+                            {appt.ai_recommended_sub_specialty ? ` · ${appt.ai_recommended_sub_specialty}` : ''}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Patient-reported symptoms */}
+                      {appt.symptom_summary && (
+                        <div className="rounded-xl bg-white/80 border border-amber-200/70 p-2.5 text-xs text-slate-800">
+                          <span className="font-bold uppercase tracking-wide text-slate-500 mr-1.5 text-[11px]">
+                            Reported Symptoms:
+                          </span>
+                          <span className="font-medium leading-relaxed">{appt.symptom_summary}</span>
+                        </div>
                       )}
 
                       {/* Requested slot details */}
@@ -414,40 +476,130 @@ export default function AppointmentsDashboard() {
                     </div>
                   </div>
 
-                  {/* Inline reason panel: declining requires a reason (visible to the patient) */}
+                  {/* Decline Panel (Explanation always required, re-referral optional) */}
                   {decliningId === appt.id && (
-                    <div className="mt-4 rounded-2xl border border-rose-200 bg-white p-4">
-                      <label htmlFor={`decline-reason-${appt.id}`} className="block text-xs font-bold text-slate-700 mb-1.5">
-                        Reason for declining (shown to the patient)
-                      </label>
-                      <textarea
-                        id={`decline-reason-${appt.id}`}
-                        rows={2}
-                        value={declineReason}
-                        onChange={(e) => setDeclineReason(e.target.value)}
-                        placeholder="e.g. Fully booked at this clinic for the requested date. Please pick another slot."
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-rose-400 focus:bg-white focus:ring-2 focus:ring-rose-500/20 resize-none"
-                      />
+                    <div className="mt-4 rounded-2xl border border-rose-200 bg-white p-4 sm:p-5 shadow-sm animate-fade-slide-up">
+                      <div className="flex items-start justify-between gap-3 mb-3.5">
+                        <div>
+                          <h4 className="text-sm font-bold text-slate-900">
+                            Decline Consultation Request
+                          </h4>
+                          <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+                            Please provide an explanation for declining. This reason is required and will be shared with the patient.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Required Explanation for Declining */}
+                      <div className="mb-3.5">
+                        <label
+                          htmlFor={`decline-reason-${appt.id}`}
+                          className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider"
+                        >
+                          Explanation / Reason for Declining <span className="text-rose-600">*</span>
+                        </label>
+                        <textarea
+                          id={`decline-reason-${appt.id}`}
+                          rows={3}
+                          value={declineReason}
+                          onChange={(e) => setDeclineReason(e.target.value)}
+                          placeholder="e.g. Schedule conflict, fully booked for this clinic date, or patient's symptoms require care outside this specialty..."
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2.5 text-xs text-slate-900 placeholder-slate-400 outline-none transition focus:border-rose-400 focus:bg-white focus:ring-2 focus:ring-rose-500/20 resize-none leading-relaxed"
+                        />
+                      </div>
+
+                      {/* Re-referral Checkbox Option */}
+                      <div className="mb-3.5 rounded-xl border border-slate-200 bg-slate-50/70 p-3">
+                        <label className="flex items-start gap-2.5 cursor-pointer">
+                          <input
+                            id={`re-refer-checkbox-${appt.id}`}
+                            type="checkbox"
+                            checked={isReReferral}
+                            onChange={(e) => setIsReReferral(e.target.checked)}
+                            className="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                          />
+                          <div>
+                            <span className="text-xs font-bold text-slate-800 block">
+                              Re-refer patient to another specialist (Doctor-in-the-Loop)
+                            </span>
+                            <span className="text-[11px] text-slate-500 block mt-0.5">
+                              Check this if you are declining because the patient needs a different medical specialty. You will be required to choose the appropriate specialist.
+                            </span>
+                          </div>
+                        </label>
+
+                        {/* Conditional Re-referral Specialty Selection */}
+                        {isReReferral && (
+                          <div className="mt-3.5 pt-3.5 border-t border-slate-200/80 space-y-3 animate-fade-slide-up">
+                            <div>
+                              <label
+                                htmlFor={`decline-specialty-${appt.id}`}
+                                className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider"
+                              >
+                                Recommended Medical Specialist <span className="text-rose-600">*</span>
+                              </label>
+                              <select
+                                id={`decline-specialty-${appt.id}`}
+                                value={recommendedSpecialty}
+                                onChange={(e) => setRecommendedSpecialty(e.target.value)}
+                                className="w-full rounded-xl border border-amber-300 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-900 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
+                              >
+                                <option value="">-- Select the proper specialist for this patient --</option>
+                                {ALL_SPECIALTIES.map((spec) => (
+                                  <option key={spec} value={spec}>
+                                    {spec} — {SPECIALTY_PLAIN_MAP[spec]?.plainName || ''}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            <div>
+                              <label
+                                htmlFor={`decline-subspecialty-${appt.id}`}
+                                className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider"
+                              >
+                                Sub-specialty / Clinical Focus (Optional)
+                              </label>
+                              <input
+                                id={`decline-subspecialty-${appt.id}`}
+                                type="text"
+                                value={recommendedSubSpecialty}
+                                onChange={(e) => setRecommendedSubSpecialty(e.target.value)}
+                                placeholder="e.g. Spine Surgery, Sports Medicine, Pediatric Pulmonology"
+                                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
                       {declineError && (
-                        <p className="mt-1.5 text-xs font-medium text-rose-700">{declineError}</p>
+                        <div className="mb-3 rounded-xl border border-rose-200 bg-rose-50 p-2.5 text-xs font-semibold text-rose-700">
+                          {declineError}
+                        </div>
                       )}
-                      <div className="mt-3 flex items-center gap-2.5">
+
+                      <div className="flex items-center gap-2.5 pt-1">
                         <button
                           id={`decline-confirm-${appt.id}`}
                           type="button"
                           onClick={() => handleDeclineConfirm(appt.id)}
                           disabled={isActioning}
-                          className="rounded-2xl bg-rose-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-rose-700 disabled:opacity-50"
+                          className="rounded-xl bg-rose-600 px-5 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-rose-700 active:scale-[0.98] disabled:opacity-50"
                         >
-                          {isActioning ? '…' : 'Confirm Decline'}
+                          {isActioning
+                            ? 'Declining…'
+                            : isReReferral
+                            ? 'Confirm Re-referral & Decline'
+                            : 'Confirm Decline'}
                         </button>
                         <button
                           type="button"
                           onClick={() => setDecliningId(null)}
                           disabled={isActioning}
-                          className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50"
+                          className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50"
                         >
-                          Nevermind
+                          Cancel
                         </button>
                       </div>
                     </div>
