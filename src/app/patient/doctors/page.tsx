@@ -4,16 +4,18 @@ import { Suspense, useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import RequireRole from '@/components/RequireRole';
 import { supabase } from '@/lib/supabaseClient';
+import { rankDoctors, type DoctorRecord } from '@/lib/doctorRanking';
 import {
-  rankDoctors,
-  type DoctorRecord,
-  type RankedDoctor,
-  type Clinic,
-  type ScheduleSlot,
-} from '@/lib/doctorRanking';
+  applyDoctorFilters,
+  deriveFilterOptions,
+  sortDoctors,
+  DEFAULT_FILTERS,
+  type DoctorFilters,
+} from '@/lib/doctorFilters';
 import { getPlainSpecialtyInfo } from '@/lib/specialtyHelpers';
 import { IconStar, IconInfo } from '@/components/Icons';
 import DoctorAvatar from '@/components/DoctorAvatar';
+import DoctorFilterPanel from '@/components/DoctorFilterPanel';
 
 function DoctorListContent() {
   const searchParams = useSearchParams();
@@ -33,10 +35,10 @@ function DoctorListContent() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Browse-all-mode-only filters (specialty-mode uses the sub-specialty
-  // pills below instead, fed by specialtyParam).
-  const [search, setSearch] = useState('');
-  const [specialtyFilter, setSpecialtyFilter] = useState('all');
+  // Directory filters: search, specialty, sub-specialty, location, fee
+  // ceiling, HMO accreditation, rating floor, availability window and sort.
+  // Applied after ranking (see below) and rendered by DoctorFilterPanel.
+  const [filters, setFilters] = useState<DoctorFilters>(DEFAULT_FILTERS);
 
   // Doctor ids whose "other locations" list is expanded on the card
   const [expandedClinics, setExpandedClinics] = useState<Set<string>>(new Set());
@@ -142,43 +144,39 @@ function DoctorListContent() {
     loadData();
   }, [specialtyParam]);
 
-  // Distinct specialties present in the fetched set, for the browse-all
-  // mode's specialty dropdown.
-  const availableSpecialties = useMemo(() => {
-    if (!browseAll) return [];
-    return Array.from(new Set(doctors.map((d) => d.specialty))).sort();
-  }, [browseAll, doctors]);
+  // Every option offered by the filter panel is derived from the doctors
+  // actually fetched, so no filter can offer a value that matches nothing.
+  const filterOptions = useMemo(
+    () => deriveFilterOptions(doctors, filters.specialty),
+    [doctors, filters.specialty]
+  );
 
-  // Browse-all mode applies free-text + specialty-dropdown filtering
-  // client-side; specialty mode is already filtered server-side.
-  const visibleDoctors = useMemo(() => {
-    if (!browseAll) return doctors;
-    const query = search.trim().toLowerCase();
-    return doctors.filter((d) => {
-      if (specialtyFilter !== 'all' && d.specialty !== specialtyFilter) return false;
-      if (!query) return true;
-      const haystack = [
-        d.name,
-        d.specialty,
-        d.sub_specialty ?? '',
-        ...d.clinics.map((c) => c.name),
-        ...d.clinics.map((c) => c.location),
-      ]
-        .join(' ')
-        .toLowerCase();
-      return haystack.includes(query);
-    });
-  }, [browseAll, doctors, search, specialtyFilter]);
+  // Rank first (PRD 8.4) & run the HMO intelligence check (PRD 8.3), then
+  // filter. The filters key off the ranker's derived fields (rating, soonest
+  // slot, primary clinic), and "Best match" sorting is exactly the ranked
+  // order with the non-matching doctors removed. hasHmoMismatch stays a
+  // property of the whole specialty search rather than of the filtered view.
+  const { ranked: rankedAll, hasHmoMismatch } = useMemo(
+    () => rankDoctors(doctors, specialtyParam ?? '', selectedSubSpecialty, patientHmo),
+    [doctors, specialtyParam, selectedSubSpecialty, patientHmo]
+  );
 
-  // Execute deterministic ranking algorithm (PRD 8.4) & HMO intelligence check (PRD 8.3)
-  const { ranked, hasHmoMismatch, totalCount, exactMatchCount, coveredCount } = useMemo(() => {
-    return rankDoctors(
-      visibleDoctors,
-      specialtyParam ?? '',
-      selectedSubSpecialty,
-      patientHmo
-    );
-  }, [visibleDoctors, specialtyParam, selectedSubSpecialty, patientHmo]);
+  const ranked = useMemo(
+    () => sortDoctors(applyDoctorFilters(rankedAll, filters), filters.sort),
+    [rankedAll, filters]
+  );
+
+  const coveredCount = useMemo(
+    () => ranked.filter((d) => d.isHmoCovered).length,
+    [ranked]
+  );
+
+  // Clears the panel filters; the sub-specialty pills are ranking input from
+  // the intake flow, so they reset too.
+  const resetFilters = () => {
+    setFilters(DEFAULT_FILTERS);
+    setSelectedSubSpecialty(null);
+  };
 
   return (
     <main className="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
@@ -249,70 +247,62 @@ function DoctorListContent() {
           </div>
         )}
 
-        {/* Filter & Control Bar */}
-        <div className="mb-6 flex flex-col gap-4 card p-5 sm:flex-row sm:items-center sm:justify-between">
-          {browseAll ? (
-            /* Browse-all mode: free-text search + specialty dropdown */
-            <div className="flex flex-1 flex-col gap-3 sm:flex-row">
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search by doctor name, specialty, or clinic..."
-                className="flex-1 rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20"
-              />
-              <select
-                value={specialtyFilter}
-                onChange={(e) => setSpecialtyFilter(e.target.value)}
-                className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20 sm:w-64"
-              >
-                <option value="all">All specialties</option>
-                {availableSpecialties.map((specialty) => (
-                  <option key={specialty} value={specialty}>
-                    {specialty}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ) : (
-            /* Sub-specialty filter pills */
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="mr-1 text-xs font-bold uppercase tracking-wider text-slate-500">
-                Filter:
-              </span>
+        {/* Sub-specialty ranking pills (specialty mode only). These steer the
+            ranker's tier-1 match strength rather than filtering outright, so
+            they stay separate from the filter panel below. */}
+        {!browseAll && availableSubSpecialties.length > 0 && (
+          <div className="mb-4 flex flex-wrap items-center gap-2 card p-5">
+            <span className="mr-1 text-xs font-bold uppercase tracking-wider text-slate-500">
+              Prioritize:
+            </span>
+            <button
+              type="button"
+              onClick={() => setSelectedSubSpecialty(null)}
+              className={`rounded-2xl px-4 py-2 text-xs font-bold transition ${
+                selectedSubSpecialty === null
+                  ? 'bg-brand-600 text-white shadow-sm'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              All Sub-specialties
+            </button>
+            {availableSubSpecialties.map((sub) => (
               <button
+                key={sub}
                 type="button"
-                onClick={() => setSelectedSubSpecialty(null)}
+                onClick={() => setSelectedSubSpecialty(sub)}
                 className={`rounded-2xl px-4 py-2 text-xs font-bold transition ${
-                  selectedSubSpecialty === null
+                  selectedSubSpecialty?.toLowerCase() === sub.toLowerCase()
                     ? 'bg-brand-600 text-white shadow-sm'
                     : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                 }`}
               >
-                All Sub-specialties
+                {sub}
               </button>
-              {availableSubSpecialties.map((sub) => (
-                <button
-                  key={sub}
-                  type="button"
-                  onClick={() => setSelectedSubSpecialty(sub)}
-                  className={`rounded-2xl px-4 py-2 text-xs font-bold transition ${
-                    selectedSubSpecialty?.toLowerCase() === sub.toLowerCase()
-                      ? 'bg-brand-600 text-white shadow-sm'
-                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                  }`}
-                >
-                  {sub}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+            ))}
+            <p className="mt-1 w-full text-xs text-slate-500">
+              Ranks matching sub-specialists first. To hide the rest, use the
+              sub-specialty filter below.
+            </p>
+          </div>
+        )}
+
+        {/* Search / filter / sort bar */}
+        <DoctorFilterPanel
+          filters={filters}
+          onChange={setFilters}
+          onReset={resetFilters}
+          options={filterOptions}
+          // In specialty mode the specialty is fixed by the query param.
+          showSpecialty={browseAll}
+          resultCount={ranked.length}
+        />
 
         {/* Results summary header */}
         <div className="mb-4 flex items-center justify-between text-xs text-slate-500">
           <span>
-            Showing <strong className="text-slate-900 font-bold">{ranked.length}</strong> verified doctors
+            Showing <strong className="text-slate-900 font-bold">{ranked.length}</strong>
+            {ranked.length !== rankedAll.length && ` of ${rankedAll.length}`} verified doctors
             {selectedSubSpecialty && ` for ${selectedSubSpecialty}`}
           </span>
           {patientHmo && (
@@ -344,11 +334,7 @@ function DoctorListContent() {
             <p className="text-base text-slate-800 font-medium">No doctors found matching this criteria.</p>
             <button
               type="button"
-              onClick={() => {
-                setSelectedSubSpecialty(null);
-                setSearch('');
-                setSpecialtyFilter('all');
-              }}
+              onClick={resetFilters}
               className="mt-4 rounded-2xl bg-brand-600 px-5 py-2.5 text-xs font-semibold text-white transition hover:bg-brand-700"
             >
               Reset Filters

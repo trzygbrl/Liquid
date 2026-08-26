@@ -267,3 +267,42 @@ export function IconMicOff({ className }: IconProps) {
   );
 }
 
+export function IconSearch({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <circle cx="11" cy="11" r="6.5" />
+      <line x1="16" y1="16" x2="21" y2="21" />
+    </svg>
+  );
+}
+
+export function IconSliders({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <line x1="4" y1="7" x2="20" y2="7" />
+      <line x1="4" y1="12" x2="20" y2="12" />
+      <line x1="4" y1="17" x2="20" y2="17" />
+      <circle cx="9" cy="7" r="2" />
+      <circle cx="15" cy="12" r="2" />
+      <circle cx="10" cy="17" r="2" />
+    </svg>
+  );
+}
