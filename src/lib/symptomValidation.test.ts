@@ -159,4 +159,49 @@ describe('evaluateSymptomPlausibility', () => {
       assert.match(result.gentlePrompt!, /doktor|nararamdaman|sumasakit/i);
     });
   });
+
+  describe('7. 2-Strike Guardrail & Pre-Submission Screening', () => {
+    const unrelatedPhrases = [
+      'take me home',
+      'i am rich',
+      'i have a lot of money',
+      'hello how are you',
+      'who is the best doctor',
+    ];
+
+    for (const phrase of unrelatedPhrases) {
+      it(`rejects phrase with no symptoms: "${phrase}"`, () => {
+        const result = evaluateSymptomPlausibility(phrase);
+        assert.equal(
+          result.isPlausible,
+          false,
+          `Expected "${phrase}" to be rejected as having no determined symptoms`
+        );
+        assert.equal(result.status, 'off_topic');
+      });
+    }
+
+    it('catches first strike off-topic input and provides localized retry guidance', () => {
+      const firstAttempt = evaluateSymptomPlausibility('order a pepperoni pizza for dinner');
+      assert.equal(firstAttempt.isPlausible, false);
+      assert.equal(firstAttempt.status, 'off_topic');
+      assert.ok(firstAttempt.examples && firstAttempt.examples.length >= 1);
+    });
+
+    it('catches second strike gibberish input', () => {
+      const secondAttempt = evaluateSymptomPlausibility('asdfghjklqwerty');
+      assert.equal(secondAttempt.isPlausible, false);
+      assert.equal(secondAttempt.status, 'gibberish');
+    });
+
+    it('accepts genuine symptoms when patient corrects on retry', () => {
+      // First attempt was invalid
+      const attempt1 = evaluateSymptomPlausibility('tell me a joke');
+      assert.equal(attempt1.isPlausible, false);
+
+      // Patient retries with proper symptoms
+      const attempt2 = evaluateSymptomPlausibility('Masakit ang likod ko kapag yumuyuko');
+      assert.equal(attempt2.isPlausible, true);
+    });
+  });
 });

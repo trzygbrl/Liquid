@@ -33,6 +33,11 @@ function IntakePageContent() {
         location: data.location,
         isForFamilyMember: data.isForFamilyMember,
       });
+      if (res.type === 'off_topic') {
+        setApiError(res.message || 'The input does not appear to describe a health symptom.');
+        setState('intake');
+        return;
+      }
       setMatchResult(res);
       setState('result');
     } catch (err) {
@@ -148,6 +153,7 @@ function IntakePageContent() {
               onComplete={handleIntakeComplete}
               initialData={patientData}
               initialStep={patientData ? 3 : 1}
+              onRestart={handleRestart}
             />
           )}
 
