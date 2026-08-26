@@ -13,7 +13,7 @@
 import Link from 'next/link';
 
 /** Width / height of the mark, from the cropped asset's own dimensions. */
-const MARK_ASPECT = 212 / 277;
+const MARK_ASPECT = 222 / 291;
 
 interface LogoProps {
   /** Height of the mark in pixels. The wordmark scales alongside it. */
