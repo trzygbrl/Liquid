@@ -29,6 +29,33 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-26: Mobile responsiveness pass across the patient portal
+**Task:** none (iterative UI polish per direct instruction, not a numbered roadmap task)
+**Owner:** Coding agent
+**What changed:** Reworked the patient-facing screens for phones and tablets, replacing the old collapsed-link header with a fixed bottom icon nav, and rebuilding doctor-card lists (dashboard, directory, doctor profile) into a consistent avatar/name/status/specialty/date-time/location layout tuned across breakpoints through direct back-and-forth feedback rather than a fixed spec.
+- **Bottom icon navigation (`src/components/BottomNavBar.tsx`, `src/components/Navbar.tsx`, `src/app/page.tsx`, `src/app/patient/layout.tsx`, `src/app/doctor/layout.tsx`):** New fixed bottom tab bar (icon + label) replaces the old horizontally-scrolling link strip on phones/tablets, switching to the desktop header nav at the `lg` breakpoint (1024px, not the usual `md`) so it stays visible through tablet widths. Layouts gained `pb-14 lg:pb-0` so page content clears the fixed bar. Added `IconHome` to `src/components/Icons.tsx` for the Dashboard tab.
+- **Home page (`src/app/page.tsx`):** Bottom nav wired in for signed-out visitors; header padding/logo/CTA sizing tightened for phones; "Browse the directory" / "Create an account" buttons now share the row instead of wrapping.
+- **Doctor-card list format (`src/app/patient/dashboard/page.tsx`, `src/app/patient/doctors/page.tsx`, `src/app/patient/doctors/[id]/page.tsx`):** Standardized doctor cards to avatar (2x text size) + name/status stacked, with specialty, date/time, and clinic/hospital name as their own lines below (no longer indented under the avatar). Directory's clinic/hospital box is now tap-anywhere to expand/collapse other locations (chevron indicator) instead of requiring a separate button tap. Doctor profile's "Verified Medical License" badge shortened to "Verified". Dashboard's "At a glance" card was reordered ahead of the consultations list on mobile; a font-size hierarchy was set across the consultations title / doctor-card content / "At a glance" and "Quick actions" titles / their body content, each with its own mobile-to-desktop scale. Both list pages ultimately needed real 3-step responsive type scales (phone / `md` / `lg`) rather than the dashboard's flatter sizing, after the flat version tested too big on phones and too small on desktop.
+- **Intake flow (`src/app/patient/intake/page.tsx`, `src/components/IntakeFlow.tsx`):** Dropped the "Dashboard - AI Clinical Triage" breadcrumb. Text inputs/textarea got tighter mobile padding and font size, restored at `sm:`. The HMO option grid now puts "None or Cash" on its own full-width row below a 2-per-row (widening to 4 at `sm:`) grid of the named HMOs.
+- **Directory search/filter bar (`src/components/DoctorFilterPanel.tsx`):** The "Filters" button and "Sort" control now stretch to fill their row edge-to-edge on mobile (matching the search bar's full width above them) instead of sitting compact and left-aligned.
+- **Booking confirmation page (`src/app/patient/appointments/[id]/confirmation/page.tsx`):** Compacted padding/typography so the success card fits one mobile screen. Made the page unscrollable on mobile by locking `document.body` overflow for the page's lifetime (its own `<main>` height alone wasn't sufficient, since the route sits under the shared patient layout's sticky Navbar and fixed BottomNavBar, whose combined height is what was actually pushing the document past the viewport).
+**Files touched:**
+- `src/components/BottomNavBar.tsx` [NEW]: fixed bottom icon tab bar.
+- `src/components/Icons.tsx` [MODIFIED]: added `IconHome`.
+- `src/components/Navbar.tsx` [MODIFIED]: wired in `BottomNavBar`, moved the desktop-nav breakpoint from `md` to `lg`.
+- `src/app/page.tsx` [MODIFIED]: bottom nav for signed-out visitors, compact mobile header, one-line CTA row.
+- `src/app/patient/layout.tsx`, `src/app/doctor/layout.tsx` [MODIFIED]: `pb-14 lg:pb-0` to clear the fixed bottom bar.
+- `src/app/patient/dashboard/page.tsx` [MODIFIED]: rebuilt appointment card format, "At a glance"/"Quick actions" ordering, tab row layout, font-size hierarchy.
+- `src/app/patient/doctors/page.tsx` [MODIFIED]: rebuilt doctor card format, tap-anywhere hospital-list expand/collapse, removed breadcrumb, responsive type scale.
+- `src/app/patient/doctors/[id]/page.tsx` [MODIFIED]: rebuilt hero card format, "Verified" label, responsive type scale.
+- `src/app/patient/intake/page.tsx` [MODIFIED]: removed breadcrumb, responsive body text sizing.
+- `src/components/IntakeFlow.tsx` [MODIFIED]: compact input sizing, pill-shaped nav buttons, HMO grid with full-width "None or Cash" row.
+- `src/components/DoctorFilterPanel.tsx` [MODIFIED]: mobile Filters/Sort row stretches full-width.
+- `src/app/patient/appointments/[id]/confirmation/page.tsx` [MODIFIED]: compact mobile spacing/typography, body-scroll lock.
+**Notes/trade-offs:**
+- **No fixed design spec** — breakpoint choices and exact sizes were tuned live against direct feedback across the session (e.g. the bottom nav's `md`→`lg` switch, and the directory/profile type scale needing three responsive steps instead of the dashboard's flatter one), so the values here reflect what tested well rather than a predetermined system.
+- **Confirmation page's scroll lock is a `document.body.style.overflow` toggle in a mount/unmount effect**, not a CSS-only fix, because the route is nested under the shared patient layout and its own `<main>` doesn't control the layout's Navbar/BottomNavBar height.
+
 ### 2026-08-26: Inline symptom guardrail warning, 2-strike out-of-scope screen & dedicated follow-up container
 **Task:** AI Guardrail Hardening, Token Protection & Clinical Follow-up Flow
 **Owner:** Coding agent

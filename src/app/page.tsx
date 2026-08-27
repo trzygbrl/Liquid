@@ -1,7 +1,15 @@
+'use client';
+
 import Link from 'next/link';
 import PillarCarousel from '@/components/home/PillarCarousel';
 import Logo from '@/components/Logo';
+import BottomNavBar from '@/components/BottomNavBar';
 import { IconUsers, IconShield, IconStar, IconStethoscope } from '@/components/Icons';
+
+const HOME_BOTTOM_ITEMS = [
+  { label: 'Find a doctor', href: '/patient/doctors', icon: IconUsers },
+  { label: 'Register as a doctor', href: '/doctor/auth', icon: IconStethoscope },
+];
 
 // Editorial photography for the marketing page. Self-hosted from /public/home
 // and cropped to the sizes rendered below; see public/home/CREDITS.md for the
@@ -42,24 +50,24 @@ const PILLARS = [
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col bg-white">
+    <main className="flex min-h-screen flex-col bg-white pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-0">
       {/* Header */}
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
-        <div className="relative mx-auto flex max-w-6xl flex-wrap items-center justify-between px-6 py-5">
-          <Logo size={46} />
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-2.5 sm:px-6 sm:py-3.5">
+          <Logo size={30} />
 
           <nav className="flex items-center gap-2 sm:gap-6">
-            <Link href="/patient/doctors" className="group relative hidden text-base font-semibold text-slate-700 hover:text-brand-700 sm:block">
+            <Link href="/patient/doctors" className="group relative hidden text-base font-semibold text-slate-700 hover:text-brand-700 lg:block">
               Find a doctor
               <span className="absolute inset-x-0 -bottom-0.5 h-[3px] origin-left scale-x-0 bg-current transition-transform duration-300 ease-out group-hover:scale-x-100" />
             </Link>
-            <Link href="/doctor/auth" className="group relative hidden text-base font-semibold text-slate-700 hover:text-brand-700 sm:block">
+            <Link href="/doctor/auth" className="group relative hidden text-base font-semibold text-slate-700 hover:text-brand-700 lg:block">
               Register as a doctor
               <span className="absolute inset-x-0 -bottom-0.5 h-[3px] origin-left scale-x-0 bg-current transition-transform duration-300 ease-out group-hover:scale-x-100" />
             </Link>
             <Link
               href="/patient/auth"
-              className="fluid-hover rounded-full bg-brand-600 px-8 py-2.5 text-base font-bold text-white hover:bg-brand-700"
+              className="fluid-hover rounded-full bg-brand-600 px-4 py-2 text-sm font-bold text-white hover:bg-brand-700 sm:px-6 sm:py-2.5 sm:text-base"
             >
               Get started
             </Link>
@@ -67,20 +75,22 @@ export default function Home() {
         </div>
       </header>
 
+      <BottomNavBar items={HOME_BOTTOM_ITEMS} />
+
       {/* Hero */}
       <section className="relative isolate">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={HERO}
           alt="A family being helped at a clinic reception counter"
-          className="h-[700px] w-full object-cover sm:h-[720px] lg:h-[720px]"
+          className="h-[500px] w-full object-cover sm:h-[640px] lg:h-[720px]"
         />
         <div className="absolute inset-0 bg-slate-950/55" />
         <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
-          <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-100 sm:text-lg">
+          <p className="mt-5 max-w-xl text-[0.875rem] leading-relaxed text-slate-100 sm:text-lg">
             Helping you find the right one, the first time. 
           </p>
-          <h1 className="max-w-3xl text-4xl font-bold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
+          <h1 className="max-w-3xl text-3xl font-bold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
             King KayApp, Kumayap Ka!
           </h1>
           <Link
@@ -98,9 +108,8 @@ export default function Home() {
         <section className="pt-14 bg-slate-50 py-16">
           <div className="mx-auto max-w-6xl px-6">
             <div className="max-w-2xl text-left">
-              <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-                A search engine sends you links.
-                <span className="mt-1 block text-brand-600">We send you to the right clinic.</span>
+              <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+                A search engine sends you links. <span className="text-brand-600"> We send you to the right clinic.</span>
               </h2>
               <p className="mt-5 text-base leading-relaxed text-slate-600">
                 Most directories stop at the specialty. We keep going to the sub-specialty, verify
@@ -122,12 +131,12 @@ export default function Home() {
               <img
                 src={CARE}
                 alt="A specialist reviewing x-rays on a light board"
-                className="h-72 w-full object-cover sm:h-96"
+                className="h-60 w-full object-cover sm:h-96"
               />
             </div>
             <div>
               <span className="field-label">Verified providers</span>
-              <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-900">
+              <h2 className="mt-3 text-2xl font-bold tracking-tight text-slate-900">
                 Over 200 specialists across 33 fields
               </h2>
               <p className="mt-4 text-base leading-relaxed text-slate-600">
@@ -135,16 +144,16 @@ export default function Home() {
                 at, their consultation fee, and the HMOs they are accredited with. Open slots come
                 straight from the doctor's own calendar, so what you see is bookable.
               </p>
-              <div className="mt-8 flex flex-wrap gap-3">
+              <div className="mt-8 flex gap-2 sm:gap-3">
                 <Link
                   href="/patient/doctors"
-                  className="fluid-hover rounded-full bg-brand-600 px-6 py-3 text-sm font-bold text-white hover:bg-brand-700"
+                  className="fluid-hover flex-1 rounded-full bg-brand-600 px-2 py-2.5 text-center text-xs font-bold whitespace-nowrap text-white hover:bg-brand-700 sm:flex-none sm:px-6 sm:py-3 sm:text-sm"
                 >
                   Browse the directory
                 </Link>
                 <Link
                   href="/patient/auth"
-                  className="fluid-hover rounded-full border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-slate-700 hover:border-brand-300 hover:text-brand-700"
+                  className="fluid-hover flex-1 rounded-full border border-slate-300 bg-white px-2 py-2.5 text-center text-xs font-bold whitespace-nowrap text-slate-700 hover:border-brand-300 hover:text-brand-700 sm:flex-none sm:px-6 sm:py-3 sm:text-sm"
                 >
                   Create an account
                 </Link>
@@ -156,7 +165,7 @@ export default function Home() {
         {/* Closing panel */}
         <section className="mx-auto max-w-6xl px-6 pb-20">
           <div className="rounded-2xl bg-gradient-to-br from-brand-50 via-brand-100 to-slate-50 p-10 text-center sm:p-14">
-            <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+            <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-4xl">
               Not sure which doctor you need?
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-slate-600">

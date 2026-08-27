@@ -76,30 +76,35 @@ function StepDots({ step }: { step: 1 | 2 | 3 }) {
   );
 }
 
-// Reusable large-tap button group
+// Reusable large-tap button group. `lastFullWidth` puts the final option on
+// its own row (e.g. "None or Cash" below the HMO names) and lays the rest
+// out in a 2-per-row grid on phones, widening to one row once there's room.
 function ButtonGroup<T extends string | null>({
   options,
   value,
   onChange,
   idPrefix,
+  lastFullWidth = false,
 }: {
   options: { label: string; value: T }[];
   value: T | undefined;
   onChange: (v: T) => void;
   idPrefix: string;
+  lastFullWidth?: boolean;
 }) {
   return (
-    <div className="flex flex-wrap gap-3">
-      {options.map((opt) => {
+    <div className={lastFullWidth ? 'grid grid-cols-2 gap-3 sm:grid-cols-4' : 'flex flex-wrap gap-3'}>
+      {options.map((opt, i) => {
         const key = opt.value ?? '__null__';
         const isSelected = value === opt.value;
+        const isLast = lastFullWidth && i === options.length - 1;
         return (
           <button
             key={key}
             id={`${idPrefix}-${key}`}
             type="button"
             onClick={() => onChange(opt.value)}
-            className={`min-w-[6.5rem] flex-1 rounded-2xl border px-5 py-3.5 text-sm font-semibold transition active:scale-[0.97] focus:outline-none ${
+            className={`${lastFullWidth ? (isLast ? 'col-span-2 sm:col-span-4' : '') : 'min-w-[6.5rem] flex-1'} rounded-2xl border px-5 py-3.5 text-sm font-semibold transition active:scale-[0.97] focus:outline-none md:text-base ${
               isSelected
                 ? 'border-brand-600 bg-brand-50 text-brand-800 ring-2 ring-brand-500/20 shadow-sm'
                 : 'border-slate-200 bg-slate-50/70 text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900'
@@ -597,7 +602,7 @@ export default function IntakeFlow({ onComplete, initialData = null, initialStep
                 id="intake-target-myself"
                 type="button"
                 onClick={() => handleTargetChange('myself')}
-                className={`fluid-hover flex items-center justify-center gap-2 rounded-2xl border px-4 py-3.5 text-sm font-bold focus:outline-none ${
+                className={`fluid-hover flex items-center justify-center gap-2 rounded-2xl border px-4 py-3.5 text-[0.6rem] font-bold focus:outline-none md:text-base ${
                   !isFamily
                     ? 'border-transparent bg-brand-600 text-white shadow-md'
                     : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
@@ -610,13 +615,13 @@ export default function IntakeFlow({ onComplete, initialData = null, initialStep
                 id="intake-target-family"
                 type="button"
                 onClick={() => handleTargetChange('family_member')}
-                className={`fluid-hover flex items-center justify-center gap-2 rounded-2xl border px-4 py-3.5 text-sm font-bold focus:outline-none ${
+                className={`fluid-hover flex items-center justify-center gap-2 rounded-2xl border px-4 py-3.5 text-[0.6rem] font-bold focus:outline-none md:text-base ${
                   isFamily
                     ? 'border-transparent bg-brand-600 text-white shadow-md'
                     : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
                 }`}
               >
-                <span>A family member</span>
+                <span>Family Member</span>
               </button>
             </div>
 
@@ -641,7 +646,7 @@ export default function IntakeFlow({ onComplete, initialData = null, initialStep
               placeholder={isFamily ? "e.g. Ramon Santos (Father) or Chloe Santos (Daughter)" : 'e.g. Maria Santos'}
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="rounded-2xl border border-slate-200 bg-slate-50/60 px-5 py-4 text-base text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20"
+              className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20 sm:px-5 sm:py-4 sm:text-base"
             />
           </div>
 
@@ -665,7 +670,7 @@ export default function IntakeFlow({ onComplete, initialData = null, initialStep
               placeholder={isFamily ? 'e.g. 5 (for child) or 72 (for parent)' : 'e.g. 45'}
               value={age}
               onChange={(e) => setAge(e.target.value)}
-              className="rounded-2xl border border-slate-200 bg-slate-50/60 px-5 py-4 text-base text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none sm:px-5 sm:py-4 sm:text-base"
             />
           </div>
 
@@ -694,7 +699,7 @@ export default function IntakeFlow({ onComplete, initialData = null, initialStep
               placeholder="e.g. Angeles City, Pampanga"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              className="rounded-2xl border border-slate-200 bg-slate-50/60 px-5 py-4 text-base text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20"
+              className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20 sm:px-5 sm:py-4 sm:text-base"
             />
           </div>
         </div>
@@ -722,6 +727,7 @@ export default function IntakeFlow({ onComplete, initialData = null, initialStep
               value={hmoProvider as string | null | undefined}
               onChange={(v) => setHmoProvider(v as string | null)}
               idPrefix="intake-hmo"
+              lastFullWidth
             />
           </div>
 
@@ -822,7 +828,7 @@ export default function IntakeFlow({ onComplete, initialData = null, initialStep
                   ? `Halimbawa: "Masakit ang dibdib ng tatay ko at hirap huminga." o "May lagnat at ubo ang anak ko."\n\nYou can write in English or Tagalog.`
                   : `Sabihin mo lang kung ano ang nararamdaman mo. Halimbawa: "Malabo at namumula ang mata ko."\n\nYou can write in English or Tagalog.`
               }
-              className="rounded-2xl border border-slate-200 bg-slate-50/60 px-5 py-4 text-base text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20 resize-none leading-relaxed"
+              className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20 resize-none leading-relaxed sm:px-5 sm:py-4 sm:text-base"
             />
 
             {isListening && (
@@ -856,7 +862,7 @@ export default function IntakeFlow({ onComplete, initialData = null, initialStep
             type="button"
             onClick={handleBack}
             disabled={submitting}
-            className="fluid-hover rounded-2xl border border-slate-200 bg-white px-5 py-3 text-xs font-bold text-slate-600 hover:text-slate-900 transition disabled:opacity-50"
+            className="fluid-hover rounded-full border border-slate-200 bg-white px-5 py-4 min-h-[48px] text-xs font-bold text-slate-600 hover:text-slate-900 transition disabled:opacity-50"
           >
             Back
           </button>
@@ -867,7 +873,7 @@ export default function IntakeFlow({ onComplete, initialData = null, initialStep
             id={`intake-next-step${step}`}
             type="button"
             onClick={handleNext}
-            className="fluid-hover rounded-2xl bg-brand-600 px-8 py-4 min-h-[48px] text-base font-bold text-white shadow-md hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500/40"
+            className="fluid-hover rounded-full bg-brand-600 px-5 py-4 min-h-[48px] text-xs font-bold text-white shadow-md hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500/40"
           >
             Continue
           </button>
@@ -877,7 +883,7 @@ export default function IntakeFlow({ onComplete, initialData = null, initialStep
             type="button"
             onClick={handleSubmit}
             disabled={submitting || symptomText.trim().length < 3}
-            className="fluid-hover rounded-2xl bg-brand-600 px-8 py-4 min-h-[48px] text-base font-bold text-white shadow-md hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-brand-500/40"
+            className="fluid-hover rounded-full bg-brand-600 px-5 py-4 min-h-[48px] text-xs font-bold text-white shadow-md hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-brand-500/40"
           >
             {submitting ? 'Matching Specialist…' : 'Find the Right Doctor'}
           </button>
