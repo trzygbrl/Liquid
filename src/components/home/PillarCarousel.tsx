@@ -49,8 +49,8 @@ export default function PillarCarousel({ cards }: { cards: PillarCard[] }) {
           type="button"
           onClick={() => scrollBy(-1)}
           disabled={atStart}
-          aria-label="Show previous"
-          className="fluid-hover flex h-12 w-16 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 hover:border-brand-300 hover:text-brand-700 disabled:opacity-40"
+          aria-label="Show previous services"
+          className="fluid-hover flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 hover:border-brand-300 hover:text-brand-700 disabled:opacity-40"
         >
           <IconChevronLeft className="h-4 w-4" />
         </button>
@@ -58,8 +58,8 @@ export default function PillarCarousel({ cards }: { cards: PillarCard[] }) {
           type="button"
           onClick={() => scrollBy(1)}
           disabled={atEnd}
-          aria-label="Show more"
-          className="fluid-hover flex h-12 w-16 items-center justify-center rounded-full bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-40"
+          aria-label="Show more services"
+          className="fluid-hover flex h-10 w-10 items-center justify-center rounded-full bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-40"
         >
           <IconChevronRight className="h-4 w-4" />
         </button>
@@ -73,7 +73,7 @@ export default function PillarCarousel({ cards }: { cards: PillarCard[] }) {
         {cards.map((card) => (
           <article
             key={card.title}
-            className="relative h-[480px] w-[340px] shrink-0 snap-start overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 sm:h-[520px] sm:w-[400px]"
+            className="relative h-[480px] w-[320px] shrink-0 snap-start overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 sm:h-[580px] sm:w-[400px]"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={card.image} alt={card.alt} className="absolute inset-0 h-full w-full object-cover" />

@@ -114,13 +114,13 @@ export default function DoctorFilterPanel({
           />
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex w-full items-center gap-3 lg:w-auto">
           <button
             type="button"
             onClick={() => setOpen((prev) => !prev)}
             aria-expanded={open}
             aria-controls={panelId}
-            className={`fluid-hover inline-flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm font-bold ${
+            className={`fluid-hover flex flex-1 items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-bold lg:flex-none ${
               open || chips.length > 0
                 ? 'border-brand-200 bg-brand-50 text-brand-700'
                 : 'border-slate-200 bg-slate-50/60 text-slate-700 hover:bg-slate-100'
@@ -135,13 +135,13 @@ export default function DoctorFilterPanel({
             )}
           </button>
 
-          <label className="flex items-center gap-2 text-xs font-bold text-slate-500">
+          <label className="flex flex-1 items-center gap-2 text-xs font-bold text-slate-500 lg:flex-none">
             <span className="hidden sm:inline">Sort</span>
             <select
               value={filters.sort}
               onChange={(e) => set({ sort: e.target.value as SortKey })}
               aria-label="Sort doctors"
-              className="rounded-2xl border border-slate-200 bg-slate-50/60 px-3 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20"
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50/60 px-3 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20 lg:w-auto"
             >
               {SORT_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>

@@ -275,11 +275,11 @@ function PatientDashboardContent() {
       <div className="mx-auto w-full max-w-6xl">
         {/* Greeting. The primary action lives in the navbar, so it is not
             repeated here. */}
-        <div className="mb-6">
+        <div className="border-b border-slate-200/80 pb-6 mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
             Good day{patientName ? `, ${patientName}` : ''}
           </h1>
-          <p className="mt-1.5 text-sm text-slate-600">
+          <p className="mt-1.5 text-xs text-slate-600">
             Track your consultations and find the specialist you need.
           </p>
         </div>
@@ -288,9 +288,9 @@ function PatientDashboardContent() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <section className="lg:col-span-2">
             <div className="card overflow-hidden">
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4 sm:px-6">
-                <h2 className="text-base font-bold text-slate-900">My consultations</h2>
-                <div className="flex gap-1 rounded-full bg-slate-100 p-1">
+              <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4 sm:px-6">
+                <h2 className="min-w-0 truncate text-sm font-bold text-slate-900 md:text-lg">My consultations</h2>
+                <div className="flex shrink-0 gap-1 rounded-full bg-slate-100 p-1">
                   {(
                     [
                       ['upcoming', 'Upcoming', activeAppts.length],
@@ -302,14 +302,14 @@ function PatientDashboardContent() {
                       type="button"
                       onClick={() => setApptTab(id)}
                       aria-current={apptTab === id ? 'true' : undefined}
-                      className={`rounded-full px-3.5 py-1.5 text-sm font-semibold transition ${
+                      className={`rounded-full px-3.5 py-1.5 text-[0.4rem] md:text-xs font-semibold transition ${
                         apptTab === id
                           ? 'bg-white text-slate-900 shadow-sm'
                           : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
                       {label}
-                      <span className="ml-1.5 text-xs text-slate-500">{count}</span>
+                      <span className="ml-1.5 text-[0.4rem] md:text-xs text-slate-500">{count}</span>
                     </button>
                   ))}
                 </div>
@@ -375,21 +375,20 @@ function PatientDashboardContent() {
                         className="card p-5 sm:p-6 fluid-hover hover:border-brand-300/70 hover:shadow-md"
                       >
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                          <div className="flex min-w-0 gap-3.5">
-                            {appt.doctor && (
-                              <DoctorAvatar name={appt.doctor.name} id={appt.doctor.id} size={48} className="mt-0.5 shrink-0" />
-                            )}
-                            <div className="min-w-0 space-y-1">
-                            {/* Wraps as a unit: the specialty pill drops to its own
-                                line rather than squeezing the name into a break. */}
-                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                              <h4 className="text-base font-bold text-slate-900">
-                                {appt.doctor?.name || 'Specialist'}
-                              </h4>
-                              <span className="text-xs font-semibold text-brand-700 bg-brand-50 px-2.5 py-0.5 rounded-full border border-brand-100">
-                                {appt.doctor?.specialty}
-                                {appt.doctor?.sub_specialty ? ` (${appt.doctor.sub_specialty})` : ''}
-                              </span>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-3.5">
+                              {appt.doctor && (
+                                <DoctorAvatar name={appt.doctor.name} id={appt.doctor.id} size={48} className="shrink-0" />
+                              )}
+                              <div className="min-w-0">
+                                <h4 className="truncate text-sm font-bold text-slate-900">
+                                  {appt.doctor?.name || 'Specialist'}
+                                </h4>
+                                <p className="text-xs font-semibold text-brand-700">
+                                  {appt.doctor?.specialty}
+                                  {appt.doctor?.sub_specialty ? ` (${appt.doctor.sub_specialty})` : ''}
+                                </p>
+                              </div>
                             </div>
 
                             {appt.slot && (
@@ -498,7 +497,7 @@ function PatientDashboardContent() {
                                   setCancelReason('');
                                   setCancelError(null);
                                 }}
-                                className="fluid-hover rounded-2xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 hover:border-rose-300 hover:text-rose-600 hover:bg-rose-50/50"
+                                className="fluid-hover rounded-2xl border border-slate-200 bg-white px-4 py-1 text-xs font-semibold text-slate-600 hover:border-rose-300 hover:text-rose-600 hover:bg-rose-50/50"
                               >
                                 Cancel
                               </button>
@@ -506,7 +505,7 @@ function PatientDashboardContent() {
 
                             <a
                               href={`/patient/appointments/${appt.id}/confirmation`}
-                              className="fluid-hover rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                              className="fluid-hover rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900"
                             >
                               Details
                             </a>
@@ -538,7 +537,7 @@ function PatientDashboardContent() {
                                 disabled={cancelSubmitting}
                                 className="rounded-2xl bg-rose-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-rose-700 disabled:opacity-50"
                               >
-                                {cancelSubmitting ? '…' : 'Confirm Cancellation'}
+                                {cancelSubmitting ? '…' : 'Confirm'}
                               </button>
                               <button
                                 type="button"
@@ -573,7 +572,7 @@ function PatientDashboardContent() {
                           )}
                           <div className="min-w-0 space-y-1">
                             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                              <h4 className="text-base font-bold text-slate-900">
+                              <h4 className="text-sm font-bold text-slate-900">
                                 {appt.doctor?.name || 'Specialist'}
                               </h4>
                               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 border border-emerald-200">
@@ -582,7 +581,7 @@ function PatientDashboardContent() {
                             </div>
 
                             {appt.slot && (
-                              <p className="text-sm text-slate-600">
+                              <p className="text-xs text-slate-500 font-medium">
                                 Consulted on {fmtDate(appt.slot.date)}
                                 {appt.slot.clinic && ` at ${appt.slot.clinic.name}`}
                               </p>
@@ -624,10 +623,12 @@ function PatientDashboardContent() {
             </div>
           </section>
 
-          {/* Supporting rail */}
-          <aside className="space-y-5">
+          {/* Supporting rail. order-first (reset by lg:order-none) puts "At a
+              glance" ahead of the consultations list once the grid collapses
+              to a single column on mobile/tablet. */}
+          <aside className="order-first space-y-5 lg:order-none">
             <div className="card p-5">
-              <h2 className="text-sm font-bold text-slate-900">At a glance</h2>
+              <h2 className="text-sm font-bold text-slate-900 md:text-base">At a glance</h2>
               <dl className="mt-3 divide-y divide-slate-100">
                 {[
                   { label: 'Upcoming & active', value: activeAppts.length, tone: 'text-brand-700' },
@@ -635,15 +636,15 @@ function PatientDashboardContent() {
                   { label: 'Awaiting your review', value: awaitingReview, tone: 'text-amber-700' },
                 ].map((row) => (
                   <div key={row.label} className="flex items-center justify-between py-2.5">
-                    <dt className="text-sm text-slate-600">{row.label}</dt>
-                    <dd className={`text-lg font-bold ${row.tone}`}>{row.value}</dd>
+                    <dt className="text-xs text-slate-600 md:text-sm">{row.label}</dt>
+                    <dd className={`text-xs font-bold md:text-sm ${row.tone}`}>{row.value}</dd>
                   </div>
                 ))}
               </dl>
             </div>
 
-            <div className="card p-5">
-              <h2 className="text-sm font-bold text-slate-900">Quick actions</h2>
+            <div className="hidden card p-5 lg:block">
+              <h2 className="text-sm font-bold text-slate-900 md:text-base">Quick actions</h2>
               <div className="mt-3 space-y-2">
                 <a
                   id="patient-start-intake"
@@ -654,8 +655,8 @@ function PatientDashboardContent() {
                     <IconStethoscope className="h-4.5 w-4.5" />
                   </span>
                   <span className="min-w-0">
-                    <span className="block text-sm font-bold text-slate-900">Check symptoms</span>
-                    <span className="block text-xs leading-relaxed text-slate-600">
+                    <span className="block text-xs font-bold text-slate-900 md:text-sm">Check symptoms</span>
+                    <span className="block text-xs leading-relaxed text-slate-600 md:text-sm">
                       Describe what you feel in English or Tagalog.
                     </span>
                   </span>
@@ -670,8 +671,8 @@ function PatientDashboardContent() {
                     <IconUsers className="h-4.5 w-4.5" />
                   </span>
                   <span className="min-w-0">
-                    <span className="block text-sm font-bold text-slate-900">Find a doctor</span>
-                    <span className="block text-xs leading-relaxed text-slate-600">
+                    <span className="block text-xs font-bold text-slate-900 md:text-sm">Find a doctor</span>
+                    <span className="block text-xs leading-relaxed text-slate-600 md:text-sm">
                       Browse 200+ specialists by field, clinic and HMO.
                     </span>
                   </span>
