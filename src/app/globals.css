@@ -69,6 +69,14 @@
   --font-mono: var(--font-geist-mono), monospace;
 }
 
+/* Reserve the scrollbar gutter at all times. Without it, any centered
+   mx-auto page shifts sideways by half the scrollbar width the moment its
+   content grows past one screen -- e.g. the admin verification queue jumps
+   3px every time you switch from an empty status tab to a populated one. */
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
