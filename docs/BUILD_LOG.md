@@ -29,6 +29,26 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-27: Cross-Device Voice Input Stabilization & Duplicate Word Elimination
+**Task:** 1.1 Speech-to-Text Cross-Device & Mobile Optimization
+**Owner:** Coding agent
+**What changed:** Resolved voice dictation lag and the word duplication/repetition bug across mobile web (Android Chrome, Samsung Internet, iOS Safari) and desktop browsers:
+1. **Device-Adaptive Recognition Architecture (`src/lib/speechRecognition.ts` & `src/hooks/useVoiceInput.ts`):** Created a dedicated, modular voice input engine that detects mobile environments and configures recognition appropriately (`continuous = false` on mobile devices to prevent Android Chromium issue 536644 audio pipeline buffering and duplicate callbacks; `continuous = true` on desktop browsers for long-form dictation).
+2. **Intelligent Boundary Overlap & Phrase Deduplication (`speechRecognition.ts`):** Implemented `cleanAndMergeSpeechResults` and `appendWithOverlapRemoval` using longest-common-word suffix/prefix matching. It strips repeated hypotheses (e.g. where the speech engine re-emits prior phrases in subsequent interim/final slots), eliminates consecutive duplicate words and multi-word repeated phrases (up to 8 words), and merges cleanly with existing textarea text without duplication.
+3. **AnimationFrame / Throttled UI Updates (`createSpeechThrottler`):** Throttles rapid interim transcription events to 50ms animation frames. This stops synchronous 50Hz React state updates on mobile CPUs, completely eliminating UI freezing and audio thread starvation.
+4. **Enhanced Feedback & Graceful Error Handling (`IntakeFlow.tsx`):** Added clear user feedback banners for mic permissions (`not-allowed`), missing hardware (`audio-capture`), and connection drops (`network`), with an updated accessible mic button label ("Listening… (Tap to stop)").
+5. **Comprehensive Automated Test Coverage (`speechRecognition.test.ts`):** Added 18 unit tests covering Android Chrome cumulative hypotheses, duplicate final results, boundary overlap removals, consecutive repetitions, base text preservation, and throttler cancellations.
+**Files touched:**
+- `src/lib/speechRecognition.ts` [NEW] — cross-device speech recognition utilities, boundary overlap removal, phrase deduplication, and frame throttler.
+- `src/lib/speechRecognition.test.ts` [NEW] — automated unit test suite for speech transcript merging and deduplication algorithms.
+- `src/hooks/useVoiceInput.ts` [NEW] — reusable React hook managing speech recognition lifecycle, device-adaptive continuous listening, and error handling.
+- `src/components/IntakeFlow.tsx` [MODIFIED] — replaced raw inline speech code with `useVoiceInput`, added error alert banner and updated accessible button label.
+- `package.json` [MODIFIED] — updated `npm test` script to run both validation and speech recognition tests.
+- `docs/BUILD_LOG.md` [MODIFIED] — documented changes and architecture.
+**Notes/trade-offs:**
+- **Push-to-talk reliability on mobile:** By setting `continuous: false` on mobile, mobile devices use the native, ultra-responsive speech recognition dialog without audio buffer stalls. Patients can speak a thought, have it finalize cleanly, and tap again to append further details smoothly without losing or repeating text.
+- **Zero backend transcription costs:** The entire system relies on local/native browser Web Speech API engines with zero recurring API costs or server latency.
+
 ### 2026-08-26: Doctor-in-the-Loop (HITL) Specialty Verification & Patient Re-referral System
 **Task:** Human-in-the-Loop (HITL) Clinical Safeguard & Specialist Re-referral
 **Owner:** Coding agent
