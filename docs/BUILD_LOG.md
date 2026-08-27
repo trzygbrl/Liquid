@@ -29,6 +29,22 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-27: Multilingual Triage Expansion — Kapampangan, Taglish, Kampanglish & Dominant Language Mirroring
+**Task:** Multilingual Clinical Triage & Regional Language Support
+**Owner:** Coding agent
+**What changed:** Expanded the clinical triage and AI specialist matching pipeline to support **Kapampangan (Amanung Sisuan)**, **Tagalog/Filipino**, **English**, and code-switched queries (**Taglish** and **Kampanglish**), dynamically mirroring the AI's explanation in the patient's dominant language:
+1. **Multilingual Gemini System Prompt (`src/app/api/match/route.ts`):** Embedded language dominance detection heuristics analyzing regional markers (e.g. *ing, ning, keng, king, ku, mu, uling, ali* for Kapampangan; *ang, ng, sa, ko, mo, dahil, hindi* for Tagalog) and instructed Gemini to mirror the clinical nurse rationale in the detected dominant language while keeping specialty and sub-specialty names aligned with the standardized English taxonomy.
+2. **Kapampangan Health Lexicon & Guardrail Evaluation (`src/lib/symptomValidation.ts`):** Added anatomical and symptom terminology (e.g. *buntuk, atyan, gulut, salu, batal, lawe, lalagnat, misasalapung, kukukul, mambawas, mandukit, mangalgal, manasa*), vague-genuine expressions (e.g. *marok a panamdam, ali masanting ing panamdam*), and localized Kapampangan gentle retry prompts.
+3. **Dominant Language Resolver (`detectLanguage`):** Extended `SupportedLanguage` to `'en' | 'tl' | 'pam'` with token-frequency scoring to determine language dominance across code-switched inputs.
+4. **Intake Flow Localization (`IntakeFlow.tsx`):** Updated subtitle to invite English, Tagalog, or Kapampangan descriptions, and added localized Kapampangan warning messages for unrecognized inputs.
+5. **Automated Unit Testing (`symptomValidation.test.ts`):** Added test coverage for Kapampangan symptom acceptance, vague-genuine recognition, dominant language detection, and Kampanglish/Taglish resolution (76/76 tests passing).
+**Files touched:**
+- `src/app/api/match/route.ts` [MODIFIED] — updated system prompt with Kapampangan, Taglish, Kampanglish and dominant language mirroring instructions.
+- `src/lib/symptomValidation.ts` [MODIFIED] — added Kapampangan lexicon, vague patterns, `SupportedLanguage` (`pam`), and Kapampangan retry prompts.
+- `src/lib/symptomValidation.test.ts` [MODIFIED] — added unit test suite for Kapampangan and multilingual code-switching.
+- `src/components/IntakeFlow.tsx` [MODIFIED] — updated intake subtitle and localized warning banner for Kapampangan.
+- `docs/BUILD_LOG.md` [MODIFIED] — documented implementation.
+
 ### 2026-08-27: Cross-Device Voice Input Stabilization & Duplicate Word Elimination
 **Task:** 1.1 Speech-to-Text Cross-Device & Mobile Optimization
 **Owner:** Coding agent

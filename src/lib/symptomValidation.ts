@@ -21,6 +21,8 @@ export type SymptomPlausibilityStatus =
   | 'too_short_or_empty'
   | 'off_topic';
 
+export type SupportedLanguage = 'en' | 'tl' | 'pam';
+
 export interface SymptomValidationResult {
   /** True if the input is a plausible or vague-genuine symptom description */
   isPlausible: boolean;
@@ -28,11 +30,11 @@ export interface SymptomValidationResult {
   reason?: string;
   gentlePrompt?: string;
   examples?: string[];
-  detectedLanguage: 'en' | 'tl';
+  detectedLanguage: SupportedLanguage;
 }
 
 // Warm, supportive prompts by language
-const GENTLE_PROMPTS = {
+const GENTLE_PROMPTS: Record<SupportedLanguage, { prompt: string; examples: string[] }> = {
   en: {
     prompt:
       "We want to make sure we connect you with the right doctor. Could you describe what you're feeling physically, or where you're experiencing discomfort?",
@@ -47,6 +49,14 @@ const GENTLE_PROMPTS = {
     examples: [
       'Masakit ang likod kapag yumuyuko nang mahigit 3 araw na',
       'May tuyong ubo at sinat mula pa kahapon',
+    ],
+  },
+  pam: {
+    prompt:
+      'Bisa keng makasiguradu a mitud ka king ustung doktor. Maliari mu pung ipaliwanag nung nanu ing panamdam mu king kekang katawan o nung nukarin ing masakit?',
+    examples: [
+      'Masakit ing gulut neng susukad o magbubuhat nang 3 aldo',
+      'Kukukul a maki malisangan a lagnat manibat napun',
     ],
   },
 };
@@ -139,6 +149,27 @@ const SHORT_GENUINE_SYMPTOMS = new Set([
   'nilalagnat',
   'sinisipon',
   'inuubo',
+  // Kapampangan (Amanung Sisuan)
+  'buntuk',
+  'atyan',
+  'gulut',
+  'salu',
+  'batal',
+  'lawe',
+  'lalagnat',
+  'misasalapung',
+  'kukukul',
+  'kuku',
+  'mambawas',
+  'magbawas',
+  'mandukit',
+  'mangalgal',
+  'manasa',
+  'panas',
+  'paltuk',
+  'panamdam',
+  'mangayna',
+  'kasu-kasuan',
 ]);
 
 // Non-symptom trivial words
@@ -206,6 +237,7 @@ const TRIVIAL_NON_SYMPTOM_WORDS = new Set([
 const VAGUE_GENUINE_PATTERNS = [
   /\b(i\s+do\s*n\s*'?\s*t\s+feel\s+good|not\s+feeling\s+well|feel\s+sick|feeling\s+sick|feeling\s+unwell|feel\s+unwell|feel\s+terrible|feel\s+bad|body\s+malaise|my\s+body\s+hurts|body\s+(is\s+)?aching|something\s+(feels|is)\s+wrong|i('?m|\s+am)\s+sick|feeling\s+weak|weakness\s+all\s+over|general\s+weakness|unwell|sickly)\b/i,
   /\b(hindi\s+maganda\s+(ang\s+)?pakiramdam|masama\s+(ang\s+)?pakiramdam|masama\s+pakiramdam|masakit\s+ang\s+katawan|masakit\s+katawan|nanghihina\s+ako|parang\s+lalagnatin|may\s+nararamdaman\s+ako|nanlalata|hindi\s+ako\s+okay|parang\s+may\s+sakit|masama\s+timpla|mabigat\s+ang\s+katawan)\b/i,
+  /\b(ali\s+masanting\s+(ing\s+)?panamdam|marok\s+(a\s+)?panamdam|masakit\s+ing\s+katawan|mangayna\s+ku|parang\s+misasalapung|misasalapung\s+ku|maki\s+panamdam\s+ku|mababa\s+ing\s+panamdam|masakit\s+ku\s+panamdam)\b/i,
 ];
 
 // Patterns for obvious off-topic non-medical queries
@@ -253,12 +285,14 @@ const CONTAINS_SYMPTOM_PATTERN = new RegExp(
     'ubo|inuubo|sipon|sinisipon|plema|hininga|makahinga|hinihingal|hingal|hika|hinihika|paos|namamalat|' +
     'bahing|bumabahing|pantal|makati|pangangati|singaw|bulutong|pigsa|nana|sugat|nasugatan|pasa|paso|napaso|' +
     'gatol|bungang araw|malabo|namumula|katarata|panginginig|kombulsyon|hilab|sikmura|kabag|kinakabag|dighay|' +
-    'almoranas|pilay|bali|rayuma|ihi|balisawsaw|regla|puson|namamaga|pamamaga|manas' +
+    'almoranas|pilay|bali|rayuma|ihi|balisawsaw|regla|puson|namamaga|pamamaga|manas|' +
+    // Kapampangan symptoms and health complaints
+    'buntuk|atyan|gulut|salu|batal|lawe|mangalgal|lalagnat|misasalapung|kukukul|kuku|mambawas|magbawas|mandukit|manasa|mangayna|pamangan|panamdam|malisangan' +
   ')\\b',
   'i'
 );
 
-// Body parts in English & Tagalog
+// Body parts in English, Tagalog & Kapampangan
 const ANATOMY_PATTERN = new RegExp(
   '\\b(' +
     // English
@@ -270,7 +304,9 @@ const ANATOMY_PATTERN = new RegExp(
     // Tagalog
     'ulo|noo|sentido|mata|talukap|tenga|ilong|bibig|labi|dila|ngipin|gilagid|panga|pisngi|lalamunan|leeg|batok|balikat|' +
     'braso|kilikili|siko|pulso|kamay|palad|daliri|dibdib|suso|tadyang|likod|gulugod|baywang|tiyan|pusod|sikmura|balakang|' +
-    'singit|puwet|hita|tuhod|binti|sakong|paa|balat|kuko|buto|kasu-kasuan|kalamnan|puso|baga|atay' +
+    'singit|puwet|hita|tuhod|binti|sakong|paa|balat|kuko|buto|kasu-kasuan|kalamnan|puso|baga|atay|' +
+    // Kapampangan
+    'buntuk|lupa|balugbug|arung|asbuk|ipang|pundadu|gulut|salu|tagyang|atyan|pusad|puwit|tud|butit|bitis|talampakan|butul|litid' +
   ')\\b',
   'i'
 );
@@ -313,26 +349,45 @@ const KEYBOARD_MASH_PATTERNS = [
 ];
 
 /**
- * Detects whether the input is primarily Tagalog/Filipino or English.
+ * Detects whether the input is primarily Kapampangan, Tagalog/Filipino, or English.
  */
-export function detectLanguage(text: string): 'en' | 'tl' {
+export function detectLanguage(text: string): SupportedLanguage {
   const normalized = text.toLowerCase();
-  const tagalogTokens = [
-    /\b(ang|ng|sa|mga|ko|mo|siya|sila|kami|tayo|po|opo)\b/,
-    /\b(masakit|pakiramdam|katawan|ulo|tiyan|lalamunan|lagnat|ubo|sipon|hilo)\b/,
-    /\b(nanghihina|nanlalata|sinat|binti|braso|likod|mata|tenga|ngipin|balat)\b/,
-    /\b(pantal|makati|hirap|wala|ewan|meron|mayroon|sumasakit|kumikirot|parang)\b/,
-    /\b(naninikip|mabigat|nahihirapan|kahapon|araw|linggo|buwan|gamot|doktor)\b/,
+
+  // Kapampangan specific tokens, particles and lexical markers
+  const kapampanganTokens = [
+    /\b(ing|ning|keng|king|ku|mu|ya|la|kekami|kekayu|kekatamu|naku|ne|de|ali|uling|obat|nanu|nukarin|makananu|aldo|napun|bukas|pasibayu|potang|ampo|kaybat)\b/,
+    /\b(buntuk|atyan|gulut|salu|batal|lawe|panamdam|lalagnat|misasalapung|kuku|kukukul|magbawas|mambawas|mandukit|mangalgal|mangangatal|manasa|panas|pamangan|bituka|paltuk|kasu-kasuan|lukluk|talakad|tud|gamat|bitis)\b/,
   ];
 
-  let matches = 0;
-  for (const pattern of tagalogTokens) {
-    if (pattern.test(normalized)) {
-      matches++;
-    }
+  // Tagalog / Filipino specific tokens, particles and lexical markers
+  const tagalogTokens = [
+    /\b(ang|ng|sa|mga|ko|mo|siya|sila|kami|tayo|po|opo|hindi|dahil|bakit|ano|saan|paano|araw|kahapon|bukas)\b/,
+    /\b(masakit|pakiramdam|katawan|ulo|tiyan|lalamunan|lagnat|ubo|sipon|hilo|dibdib|likod|binti|braso|tuhod|gamot|doktor)\b/,
+    /\b(nanghihina|nanlalata|sinat|ngipin|balat|pantal|makati|hirap|wala|ewan|meron|mayroon|sumasakit|kumikirot|parang|naninikip|mabigat|nahihirapan)\b/,
+  ];
+
+  let pamMatches = 0;
+  for (const pattern of kapampanganTokens) {
+    const m = normalized.match(new RegExp(pattern, 'g'));
+    if (m) pamMatches += m.length;
   }
 
-  return matches >= 1 ? 'tl' : 'en';
+  let tlMatches = 0;
+  for (const pattern of tagalogTokens) {
+    const m = normalized.match(new RegExp(pattern, 'g'));
+    if (m) tlMatches += m.length;
+  }
+
+  if (pamMatches > 0 && pamMatches >= tlMatches) {
+    return 'pam';
+  }
+
+  if (tlMatches > 0) {
+    return 'tl';
+  }
+
+  return 'en';
 }
 
 /**

@@ -6,6 +6,7 @@ import {
   getSpeechRecognitionConstructor,
   cleanAndMergeSpeechResults,
   createSpeechThrottler,
+  resolvePhilippineSpeechLanguage,
 } from '@/lib/speechRecognition';
 
 export interface UseVoiceInputOptions {
@@ -121,10 +122,7 @@ export function useVoiceInput({
       // On desktop, continuous = true provides smooth multi-sentence dictation.
       recognition.continuous = !isMobile;
       recognition.interimResults = true;
-      recognition.lang =
-        lang ||
-        (typeof navigator !== 'undefined' ? navigator.language : 'en-US') ||
-        'en-US';
+      recognition.lang = resolvePhilippineSpeechLanguage(lang);
 
       recognition.onstart = () => {
         setIsListening(true);

@@ -672,7 +672,7 @@ export default function IntakeFlow({ onComplete, initialData = null, initialStep
               {isFamily ? `What is ${name || 'your family member'} feeling?` : 'What are you feeling?'}
             </h2>
             <p className="mt-1 text-xs text-slate-500 font-medium">
-              Tell us in your own words (English or Tagalog).
+              Tell us in your own words (English, Tagalog, or Kapampangan).
             </p>
           </div>
 
@@ -689,19 +689,27 @@ export default function IntakeFlow({ onComplete, initialData = null, initialStep
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200">
-                    {plausibilityWarning.detectedLanguage === 'tl' ? 'Pansin: Hindi Sintomas' : 'Warning: Unrecognized Symptoms'}
+                    {plausibilityWarning.detectedLanguage === 'pam'
+                      ? 'Pansin: Ali Sintomas'
+                      : plausibilityWarning.detectedLanguage === 'tl'
+                      ? 'Pansin: Hindi Sintomas'
+                      : 'Warning: Unrecognized Symptoms'}
                   </span>
                   <span className="text-[11px] font-bold text-amber-700">
                     (Attempt 1 of 2)
                   </span>
                 </div>
                 <h3 className="text-sm font-bold text-amber-950 mt-1">
-                  {plausibilityWarning.detectedLanguage === 'tl'
+                  {plausibilityWarning.detectedLanguage === 'pam'
+                    ? 'Deng salitang binyag mu ali la proper a sintomas ning sakit.'
+                    : plausibilityWarning.detectedLanguage === 'tl'
                     ? 'Ang inilagay na mga salita ay hindi proper na sintomas ng sakit.'
                     : 'The words entered were not proper symptoms at all.'}
                 </h3>
                 <p className="text-xs text-amber-900/90 mt-1 leading-relaxed">
-                  {plausibilityWarning.detectedLanguage === 'tl'
+                  {plausibilityWarning.detectedLanguage === 'pam'
+                    ? 'Pakisubuk pasibayu at isulat nung nanu ing panamdam mu king kekang katawan o nung nukarin ing masakit.'
+                    : plausibilityWarning.detectedLanguage === 'tl'
                     ? 'Mangyaring ilarawan kung ano ang nararamdaman mo sa iyong katawan o kung saan ang sumasakit, at subukan muli.'
                     : 'Please retry and type the physical symptoms or bodily discomfort being experienced.'}
                 </p>

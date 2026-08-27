@@ -6,6 +6,7 @@ import {
   mergeTextChunks,
   cleanAndMergeSpeechResults,
   createSpeechThrottler,
+  resolvePhilippineSpeechLanguage,
 } from './speechRecognition.ts';
 import type { SpeechResultItem } from './speechRecognition.ts';
 
@@ -163,5 +164,34 @@ describe('createSpeechThrottler', () => {
       assert.equal(executed, false);
       done();
     }, 80);
+  });
+});
+
+describe('resolvePhilippineSpeechLanguage', () => {
+  it('returns requested language when explicitly provided', () => {
+    assert.equal(resolvePhilippineSpeechLanguage('en-US'), 'en-US');
+    assert.equal(resolvePhilippineSpeechLanguage('fil-PH'), 'fil-PH');
+  });
+
+  it('detects Filipino / Tagalog preference from browser language', () => {
+    assert.equal(
+      resolvePhilippineSpeechLanguage(undefined, { language: 'fil-PH', languages: ['fil-PH', 'en'] }),
+      'fil-PH'
+    );
+    assert.equal(
+      resolvePhilippineSpeechLanguage(undefined, { language: 'tl-PH', languages: ['tl'] }),
+      'fil-PH'
+    );
+  });
+
+  it('detects Philippine English preference from browser language', () => {
+    assert.equal(
+      resolvePhilippineSpeechLanguage(undefined, { language: 'en-PH', languages: ['en-PH'] }),
+      'en-PH'
+    );
+  });
+
+  it('defaults gracefully when navigator is empty or unconfigured', () => {
+    assert.equal(resolvePhilippineSpeechLanguage(undefined, {}), 'fil-PH');
   });
 });

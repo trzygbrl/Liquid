@@ -313,3 +313,39 @@ export function createSpeechThrottler<T extends (...args: any[]) => void>(
 
   return { schedule, flush, cancel };
 }
+
+/**
+ * Resolves the optimal speech recognition language tag for Philippine multilingual healthcare.
+ * Supports Filipino/Tagalog ('fil-PH'), Philippine English ('en-PH'), and regional vernaculars.
+ */
+export function resolvePhilippineSpeechLanguage(
+  requestedLang?: string,
+  nav?: { language?: string; languages?: readonly string[] }
+): string {
+  if (requestedLang) return requestedLang;
+
+  const n = nav !== undefined ? nav : (typeof navigator !== 'undefined' ? navigator : undefined);
+  if (!n || !n.language) return 'fil-PH';
+
+  const navLang = (n.language || '').toLowerCase();
+  const navLangs = Array.isArray(n.languages)
+    ? n.languages.map((l) => l.toLowerCase())
+    : [];
+
+  // Check for explicit Filipino / Tagalog preference
+  if (
+    navLang.startsWith('fil') ||
+    navLang.startsWith('tl') ||
+    navLangs.some((l) => l.startsWith('fil') || l.startsWith('tl'))
+  ) {
+    return 'fil-PH';
+  }
+
+  // Check for Philippine English preference
+  if (navLang === 'en-ph' || navLangs.includes('en-ph')) {
+    return 'en-PH';
+  }
+
+  // Default to system language if available or fil-PH
+  return n.language || 'fil-PH';
+}

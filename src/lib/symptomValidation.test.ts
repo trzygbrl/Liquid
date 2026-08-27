@@ -204,4 +204,56 @@ describe('evaluateSymptomPlausibility', () => {
       assert.equal(attempt2.isPlausible, true);
     });
   });
+
+  describe('8. Kapampangan & Multilingual Code-Switching', () => {
+    it('accepts valid Kapampangan symptoms', () => {
+      const kapampanganSamples = [
+        'Masakit ing atyan ku banda king wanan lalam',
+        'Masakit ing buntuk ku at malalabug ing lawe ku',
+        'Kukukul ku at lalagnat manibat napun',
+        'Ali masanting ing panamdam ku',
+        'Masakit ing gulut neng magbuhat',
+      ];
+
+      for (const sample of kapampanganSamples) {
+        const result = evaluateSymptomPlausibility(sample);
+        assert.equal(
+          result.isPlausible,
+          true,
+          `Expected Kapampangan input "${sample}" to be accepted`
+        );
+      }
+    });
+
+    it('detects Kapampangan as dominant language and returns Kapampangan prompt', () => {
+      const result = evaluateSymptomPlausibility('nanu ing gawan ku ali ku balu');
+      assert.equal(result.isPlausible, false);
+      assert.equal(result.detectedLanguage, 'pam');
+      assert.match(result.gentlePrompt!, /doktor|panamdam|masakit/i);
+      assert.ok(result.examples && result.examples.length >= 1);
+    });
+
+    it('accurately resolves dominant language in code-switched inputs (Taglish vs Kampanglish)', () => {
+      // Pure Kapampangan
+      assert.equal(detectLanguage('Masakit ing buntuk ku ampo salu'), 'pam');
+
+      // Kampanglish (Kapampangan structure with English loanwords)
+      assert.equal(
+        detectLanguage('Doc, sobrang sakit ing back ku banda king gulut'),
+        'pam'
+      );
+
+      // Taglish (Tagalog structure with English loanwords)
+      assert.equal(
+        detectLanguage('Grabe yung headache ko tapos may fever din since yesterday'),
+        'tl'
+      );
+
+      // Pure English
+      assert.equal(
+        detectLanguage('Severe throbbing headache on my left temple'),
+        'en'
+      );
+    });
+  });
 });
