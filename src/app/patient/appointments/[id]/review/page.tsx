@@ -50,11 +50,11 @@ interface ExistingReview {
 }
 
 const RATING_LABELS: Record<number, string> = {
-  1: '1 - Poor Experience',
-  2: '2 - Fair / Room for Improvement',
-  3: '3 - Good / Satisfactory',
-  4: '4 - Very Good / Attentive Care',
-  5: '5 - Excellent / Highly Recommended',
+  1: 'Poor Experience',
+  2: 'Fair / Room for Improvement',
+  3: 'Good / Satisfactory',
+  4: 'Very Good / Attentive Care',
+  5: 'Excellent / Highly Recommended',
 };
 
 function formatDate(iso: string): string {
@@ -259,7 +259,7 @@ function ReviewPageContent() {
     const rawStatus = errorStatus.split(':')[1] || 'pending';
     return (
       <main className="flex min-h-screen flex-col items-center justify-center px-4 py-12 sm:px-6">
-        <div className="w-full max-w-lg card p-8 text-center">
+        <div className="w-full max-w-lg card p-5 sm:p-8 text-center">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
             <IconWarning className="h-8 w-8" />
           </div>
@@ -268,7 +268,7 @@ function ReviewPageContent() {
             Verified-Visit Only
           </span>
 
-          <h1 className="mt-2 text-2xl font-bold text-slate-900">Review Unavailable</h1>
+          <h1 className="mt-2 text-xl sm:text-2xl font-bold text-slate-900">Review Unavailable</h1>
           <p className="mt-2 text-xs leading-relaxed text-slate-500">
             To ensure authentic, high-quality patient feedback, reviews can only be submitted after your consultation has been marked as{' '}
             <strong className="text-emerald-700 font-bold">completed</strong> by the clinic.
@@ -318,7 +318,7 @@ function ReviewPageContent() {
   if (errorStatus || !appointment) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center px-4 py-12 text-center">
-        <div className="w-full max-w-md card p-8">
+        <div className="w-full max-w-md card p-5 sm:p-8">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
             <IconClose className="h-7 w-7" />
           </div>
@@ -344,30 +344,29 @@ function ReviewPageContent() {
     const rev = existingReview!;
     return (
       <main className="flex min-h-screen flex-col items-center justify-center px-4 py-12 sm:px-6">
-        <div className="w-full max-w-lg card p-8 text-center">
+        <div className="w-full max-w-lg card p-5 sm:p-8 text-center">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
             <IconCheck className="h-8 w-8" />
           </div>
 
           <span className="mt-4 inline-flex items-center gap-1 rounded-full bg-brand-50 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-brand-700 border border-brand-100">
-            <IconCheck className="h-3 w-3" /> Verified Review Submitted
+            Verified Review Submitted
           </span>
 
-          <h1 className="mt-2 text-2xl font-bold text-slate-900">Thank You For Your Feedback!</h1>
+          <h1 className="mt-2 text-xl sm:text-2xl font-bold text-slate-900">Thank You For Your Feedback!</h1>
           <p className="mt-2 text-xs leading-relaxed text-slate-500">
             Your review for <span className="font-bold text-slate-900">{appointment.doctor?.name}</span> helps other patients make informed healthcare choices.
           </p>
 
           {/* Submitted Review Card */}
           <div className="mt-6 rounded-2xl border border-slate-100 bg-slate-50/80 p-5 text-left text-xs space-y-3 text-slate-700">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1 text-amber-500">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex shrink-0 items-center gap-1 text-amber-500">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <IconStar key={star} className="h-4.5 w-4.5" filled={star <= rev.rating} />
                 ))}
-                <span className="ml-2 font-bold text-slate-900">{rev.rating}.0 / 5.0</span>
               </div>
-              <span className="text-xs text-slate-500 font-medium">
+              <span className="text-right text-xs text-slate-500 font-medium">
                 {RATING_LABELS[rev.rating]}
               </span>
             </div>
@@ -423,12 +422,12 @@ function ReviewPageContent() {
         </div>
 
         {/* Form Container */}
-        <div className="card p-6 sm:p-8">
+        <div className="card p-5 sm:p-8">
           <div className="text-center">
             <span className="inline-block rounded-full bg-brand-50 px-3 py-1 text-xs font-bold uppercase tracking-wider text-brand-700 border border-brand-100">
               Verified Consultation
             </span>
-            <h1 className="mt-3 text-2xl font-bold text-slate-900 tracking-tight">
+            <h1 className="mt-3 text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
               How was your consultation?
             </h1>
             <p className="mt-1 text-xs text-slate-500">

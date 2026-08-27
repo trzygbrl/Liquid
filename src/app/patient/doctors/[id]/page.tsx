@@ -363,11 +363,11 @@ function DoctorDetailPageContent() {
         {/* Doctor Hero Profile Card */}
         <div className="relative overflow-hidden card p-6 sm:p-8">
           <div className="relative z-10 flex flex-col sm:flex-row sm:items-stretch sm:justify-between gap-6">
-            <div className="flex flex-1 gap-5">
-              <DoctorAvatar name={doctor.name} id={doctor.id} size={88} className="mt-1" />
+            <div className="flex flex-col items-center text-left gap-4 sm:flex-row sm:items-start sm:text-left sm:gap-5">
+              <DoctorAvatar name={doctor.name} id={doctor.id} size={88} className="sm:mt-1" />
               <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2.5">
-                <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+              <div className="flex flex-wrap items-center justify-center gap-2.5 sm:justify-start">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight">
                   {doctor.name}
                 </h1>
                 {doctor.verification_status === 'verified' && (
@@ -385,14 +385,14 @@ function DoctorDetailPageContent() {
               </div>
 
               {/* Specialty & Rating Row */}
-              <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
-                <span className="font-bold text-brand-700 text-lg">
+              <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-[0.625rem] sm:justify-start sm:text-sm">
+                <span className="font-bold text-brand-700 text-[0.625rem] sm:text-lg">
                   {doctor.specialty}
                 </span>
                 {doctor.sub_specialty && (
                   <>
                     <span className="text-slate-400">•</span>
-                    <span className="rounded-md bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-800">
+                    <span className="rounded-md bg-slate-100 px-3 py-1 text-[0.625rem] sm:text-sm font-semibold text-slate-800">
                       {doctor.sub_specialty}
                     </span>
                   </>
@@ -400,14 +400,14 @@ function DoctorDetailPageContent() {
                 {avgRating !== null ? (
                   <>
                     <span className="text-slate-400">•</span>
-                    <span className="inline-flex items-center gap-1 font-bold text-amber-700 text-sm bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
+                    <span className="inline-flex items-center gap-1 font-bold text-amber-700 text-[0.625rem] sm:text-sm bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
                       <IconStar className="h-3.5 w-3.5" /> {avgRating} ({doctor.reviews.length} {doctor.reviews.length === 1 ? 'review' : 'reviews'})
                     </span>
                   </>
                 ) : (
                   <>
                     <span className="text-slate-400">•</span>
-                    <span className="inline-flex items-center gap-1 text-slate-600 text-sm">
+                    <span className="inline-flex items-center gap-1 text-slate-600 text-[0.625rem] sm:text-sm">
                       <IconStar className="h-3.5 w-3.5" filled={false} /> New Doctor
                     </span>
                   </>
@@ -420,7 +420,7 @@ function DoctorDetailPageContent() {
                 const plain = getPlainSpecialtyInfo(doctor.specialty);
                 if (!plain) return null;
                 return (
-                  <p className="mt-2 text-sm text-slate-700">
+                  <p className="mt-2 text-center text-sm text-slate-700 sm:text-left">
                     <span className="text-brand-700 font-semibold">{plain.plainName}</span>
                     <span className="text-slate-400 mx-1.5">•</span>
                     <span className="italic text-slate-600">{plain.tagalogName}</span>
@@ -541,11 +541,11 @@ function DoctorDetailPageContent() {
 
           {/* Step 2: Time slot -- only once a clinic is resolved. */}
           {!effectiveClinicId ? (
-            <div className="rounded-2xl border border-slate-100 bg-slate-50 p-8 text-center text-slate-500 text-sm">
+            <div className="rounded-2xl border border-slate-100 bg-slate-50 p-8 text-right text-slate-500 text-sm">
               <p className="font-medium">Choose a clinic above to see its open schedule.</p>
             </div>
           ) : datesWithSlots.length === 0 ? (
-            <div className="rounded-2xl border border-slate-100 bg-slate-50 p-8 text-center text-slate-500 text-sm">
+            <div className="rounded-2xl border border-slate-100 bg-slate-50 p-8 text-right text-slate-500 text-sm">
               <p className="font-medium">No available appointment slots posted for this clinic at this time.</p>
               <p className="mt-1 text-xs text-slate-500">Please check back later or contact the clinic directly.</p>
             </div>
@@ -678,7 +678,7 @@ function DoctorDetailPageContent() {
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-bold text-slate-900">Patient Reviews & Ratings</h2>
-                <span className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-bold text-brand-700 border border-brand-100">
+                <span className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2.5 py-0.5 text-[0.625rem] sm:text-xs font-bold text-brand-700 border border-brand-100">
                   <IconCheck className="h-3 w-3" /> Verified Visits
                 </span>
               </div>
@@ -688,9 +688,6 @@ function DoctorDetailPageContent() {
             </div>
             {avgRating && (
               <div className="text-right">
-                <span className="inline-flex items-center gap-1 text-2xl font-bold text-amber-500">
-                  <IconStar className="h-5 w-5" /> {avgRating}
-                </span>
                 <span className="text-xs text-slate-500 block font-medium">
                   {doctor.reviews.length} {doctor.reviews.length === 1 ? 'review' : 'reviews'}
                 </span>
