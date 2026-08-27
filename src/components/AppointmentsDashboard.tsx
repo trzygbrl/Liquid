@@ -8,6 +8,13 @@ import {
   noteMissingStatusReason,
 } from '@/lib/statusReasonCompat';
 import { SPECIALTY_PLAIN_MAP } from '@/lib/specialtyHelpers';
+import {
+  IconMapPin,
+  IconSparkles,
+  IconFileText,
+  IconCalendar,
+  IconUser,
+} from '@/components/Icons';
 
 const ALL_SPECIALTIES = Object.keys(SPECIALTY_PLAIN_MAP).sort();
 
@@ -395,34 +402,34 @@ export default function AppointmentsDashboard() {
                           {patient?.name ?? 'Patient'}
                         </p>
                         {(patient?.age || patient?.sex) && (
-                          <span className="rounded-full bg-white border border-slate-200/80 px-2.5 py-0.5 text-xs text-slate-600 font-medium shadow-2xs">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-white border border-slate-200/80 px-2.5 py-0.5 text-xs text-slate-600 font-medium shadow-2xs">
+                            <IconUser className="h-3.5 w-3.5 text-slate-400" />
                             {[patient.age ? `${patient.age} y/o` : null, fmtSex(patient.sex)]
                               .filter(Boolean)
                               .join(' · ')}
                           </span>
                         )}
                         {patient?.location && (
-                          <span className="rounded-full bg-white border border-slate-200/80 px-2.5 py-0.5 text-xs text-slate-600 font-medium shadow-2xs">
-                            📍 {patient.location}
+                          <span className="inline-flex items-center gap-1 rounded-full bg-white border border-slate-200/80 px-2.5 py-0.5 text-xs text-slate-600 font-medium shadow-2xs">
+                            <IconMapPin className="h-3.5 w-3.5 text-brand-600" />
+                            {patient.location}
                           </span>
                         )}
                         {patient?.hmo_provider && (
                           <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-xs font-bold text-emerald-800">
-                            🛡️ {patient.hmo_provider}
+                            {patient.hmo_provider}
                           </span>
                         )}
-                        <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-800 border border-amber-200">
-                          Pending Review
-                        </span>
                       </div>
 
                       {/* AI Triage Recommendation Badge */}
                       {appt.ai_recommended_specialty && (
                         <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                          <span className="text-[11px] font-bold uppercase tracking-wider text-blue-700">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-brand-700">
+                            <IconSparkles className="h-3.5 w-3.5 text-brand-600" />
                             AI Recommendation:
                           </span>
-                          <span className="rounded-full bg-blue-100/70 border border-blue-200 px-2.5 py-0.5 text-xs font-bold text-blue-800">
+                          <span className="rounded-full bg-brand-50 border border-brand-200 px-2.5 py-0.5 text-xs font-bold text-brand-800">
                             {appt.ai_recommended_specialty}
                             {appt.ai_recommended_sub_specialty ? ` · ${appt.ai_recommended_sub_specialty}` : ''}
                           </span>
@@ -432,22 +439,32 @@ export default function AppointmentsDashboard() {
                       {/* Patient-reported symptoms */}
                       {appt.symptom_summary && (
                         <div className="rounded-xl bg-white/80 border border-amber-200/70 p-2.5 text-xs text-slate-800">
-                          <span className="font-bold uppercase tracking-wide text-slate-500 mr-1.5 text-[11px]">
-                            Reported Symptoms:
-                          </span>
-                          <span className="font-medium leading-relaxed">{appt.symptom_summary}</span>
+                          <div className="flex items-start gap-1.5">
+                            <IconFileText className="h-3.5 w-3.5 text-amber-700 shrink-0 mt-0.5" />
+                            <div>
+                              <span className="font-bold uppercase tracking-wide text-slate-500 mr-1.5 text-[11px]">
+                                Reported Symptoms:
+                              </span>
+                              <span className="font-medium leading-relaxed">{appt.symptom_summary}</span>
+                            </div>
+                          </div>
                         </div>
                       )}
 
                       {/* Requested slot details */}
                       {slot ? (
-                        <p className="text-xs text-slate-500 font-medium">
-                          <span>Requested slot: </span>
-                          <strong className="text-slate-900 font-bold">{fmtDate(slot.date)}&nbsp;·&nbsp;{fmt24to12(slot.start_time)} to {fmt24to12(slot.end_time)}</strong>
-                          {slot.clinics?.name && (
-                            <>&nbsp;·&nbsp;<span className="text-slate-600">{slot.clinics.name}</span></>
-                          )}
-                        </p>
+                        <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                          <IconCalendar className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                          <span>
+                            Requested slot:{' '}
+                            <strong className="text-slate-900 font-bold">
+                              {fmtDate(slot.date)}&nbsp;·&nbsp;{fmt24to12(slot.start_time)} to {fmt24to12(slot.end_time)}
+                            </strong>
+                            {slot.clinics?.name && (
+                              <>&nbsp;·&nbsp;<span className="text-slate-600">{slot.clinics.name}</span></>
+                            )}
+                          </span>
+                        </div>
                       ) : (
                         <p className="text-xs text-slate-500 italic">Slot details unavailable</p>
                       )}

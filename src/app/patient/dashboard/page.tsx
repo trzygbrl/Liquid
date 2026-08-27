@@ -408,7 +408,7 @@ function PatientDashboardContent() {
                             {appt.status === 'declined' && (appt.doctor_recommended_specialty || appt.reassigned_by_doctor) ? (
                               <div className="mt-2.5 rounded-2xl border border-amber-300/80 bg-amber-50/70 p-3.5 sm:p-4">
                                 <div className="flex items-center gap-1.5 mb-1.5">
-                                  <span className="text-sm">🩺</span>
+                                  <IconStethoscope className="h-3.5 w-3.5 text-amber-800" />
                                   <span className="rounded-full bg-amber-100 border border-amber-300 px-2 py-0.5 text-[10px] font-extrabold text-amber-900 uppercase tracking-wider">
                                     Doctor-in-the-Loop Specialty Reassignment
                                   </span>
