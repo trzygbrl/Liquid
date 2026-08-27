@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { IconCheck, IconInfo, IconMic, IconWarning, IconShield } from '@/components/Icons';
 import { evaluateSymptomPlausibility, type SymptomValidationResult } from '@/lib/symptomValidation';
+import { useVoiceInput } from '@/hooks/useVoiceInput';
 
 // Types
 type Sex = 'male' | 'female' | 'other';
@@ -187,104 +188,28 @@ export default function IntakeFlow({ onComplete, initialData = null, initialStep
   // Prefill flag -- skipped entirely when initialData is already supplied
   const [prefillLoading, setPrefillLoading] = useState(!initialData);
 
-  // Speech Recognition (Web Speech API) - Feature 1.1
-  const [isSpeechSupported, setIsSpeechSupported] = useState(false);
-  const [isListening, setIsListening] = useState(false);
-  const recognitionRef = useRef<any>(null);
-  const baseTextRef = useRef('');
+  // Voice Input (Web Speech API) - Feature 1.1 upgraded for cross-device support
+  const {
+    isSupported: isSpeechSupported,
+    isListening,
+    error: speechError,
+    toggleListening,
+    stopListening,
+    clearError: clearSpeechError,
+  } = useVoiceInput({
+    onTranscriptChange: (text) => {
+      setSymptomText(text);
+      if (plausibilityWarning) {
+        setPlausibilityWarning(null);
+      }
+    },
+    currentText: symptomText,
+  });
 
-  // Detect Web Speech API support safely on client mount
+  // Stop listening helper on step change
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const SpeechRecognition =
-        (window as any).SpeechRecognition ||
-        (window as any).webkitSpeechRecognition;
-      if (SpeechRecognition) {
-        setIsSpeechSupported(true);
-      }
-    }
-  }, []);
-
-  // Stop listening helper
-  const stopListening = () => {
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.stop();
-      } catch {
-        // Ignore
-      }
-    }
-    setIsListening(false);
-  };
-
-  // Toggle voice recognition
-  const toggleListening = () => {
-    if (typeof window === 'undefined') return;
-    const SpeechRecognition =
-      (window as any).SpeechRecognition ||
-      (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
-
-    if (isListening) {
-      stopListening();
-      return;
-    }
-
-    try {
-      const recognition = new SpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = navigator.language || 'en-US';
-
-      baseTextRef.current = symptomText;
-
-      recognition.onstart = () => {
-        setIsListening(true);
-      };
-
-      recognition.onresult = (event: any) => {
-        let sessionTranscript = '';
-        for (let i = 0; i < event.results.length; i++) {
-          sessionTranscript += event.results[i][0].transcript;
-        }
-
-        const prefix = baseTextRef.current.trim();
-        const combined = prefix
-          ? `${prefix} ${sessionTranscript.trim()}`
-          : sessionTranscript.trim();
-
-        setSymptomText(combined);
-      };
-
-      recognition.onerror = (event: any) => {
-        console.warn('[IntakeFlow] Speech recognition error:', event.error);
-        setIsListening(false);
-      };
-
-      recognition.onend = () => {
-        setIsListening(false);
-      };
-
-      recognitionRef.current = recognition;
-      recognition.start();
-    } catch (err) {
-      console.warn('[IntakeFlow] Failed to start speech recognition:', err);
-      setIsListening(false);
-    }
-  };
-
-  // Abort / clean up speech recognition on step change or unmount
-  useEffect(() => {
-    return () => {
-      if (recognitionRef.current) {
-        try {
-          recognitionRef.current.abort();
-        } catch {
-          // Ignore
-        }
-      }
-    };
-  }, [step]);
+    stopListening();
+  }, [step, stopListening]);
 
   // Prefill user profile from existing patients row on mount
   useEffect(() => {
@@ -800,7 +725,7 @@ export default function IntakeFlow({ onComplete, initialData = null, initialStep
                     <>
                       <span className="h-2 w-2 rounded-full bg-rose-600 animate-ping" />
                       <IconMic className="h-3.5 w-3.5 text-rose-600" />
-                      <span>Listening… (Click to stop)</span>
+                      <span>Listening… (Tap to stop)</span>
                     </>
                   ) : (
                     <>
@@ -811,6 +736,23 @@ export default function IntakeFlow({ onComplete, initialData = null, initialStep
                 </button>
               )}
             </div>
+
+            {speechError && (
+              <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800">
+                <div className="flex items-center gap-2">
+                  <IconWarning className="h-4 w-4 shrink-0 text-rose-600" />
+                  <span>{speechError}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={clearSpeechError}
+                  className="text-rose-600 hover:text-rose-900 font-bold px-1.5 py-0.5"
+                  aria-label="Dismiss speech error"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
 
             <textarea
               id="intake-symptoms"
