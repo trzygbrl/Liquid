@@ -7,50 +7,7 @@
 // Auth: Bearer token matching SUPABASE_SERVICE_ROLE_KEY in the Authorization header.
 
 import { createClient } from '@supabase/supabase-js';
-import { GoogleGenAI } from '@google/genai';
-import { SPECIALTY_PLAIN_MAP } from '@/lib/specialtyHelpers';
-
-const EMBEDDING_MODELS = ['gemini-embedding-001', 'gemini-embedding-2', 'text-embedding-004'];
-const EMBEDDING_DIMENSIONS = 768;
-
-interface ClinicInfo {
-  name: string;
-  location: string;
-}
-
-interface DoctorProfileData {
-  id: string;
-  name: string;
-  credentials: string | null;
-  specialty: string;
-  sub_specialty: string | null;
-  clinics: ClinicInfo[] | null;
-}
-
-/**
- * Builds the canonical structured profile string for vector embedding.
- */
-function buildDoctorProfileString(doctor: DoctorProfileData): string {
-  const subSpecialtyPart = doctor.sub_specialty
-    ? `, sub-specialty: ${doctor.sub_specialty}`
-    : '';
-
-  const credentials = doctor.credentials?.trim() || 'Not specified';
-
-  const clinicList = (doctor.clinics ?? [])
-    .map((c) => `${c.name} in ${c.location}`)
-    .join(', ') || 'Not specified';
-
-  const focusEntry = SPECIALTY_PLAIN_MAP[doctor.specialty];
-  const medicalFocus = focusEntry?.description ?? doctor.specialty;
-
-  return [
-    `${doctor.name} is a ${doctor.specialty} specialist${subSpecialtyPart}.`,
-    `Credentials: ${credentials}.`,
-    `Clinic(s): ${clinicList}.`,
-    `Medical focus: ${medicalFocus}`,
-  ].join(' ');
-}
+import { buildDoctorProfileString, embedText, type ProfileInput } from '@/lib/vectorMatch';
 
 export async function POST(request: Request): Promise<Response> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -106,36 +63,14 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   // 4. Build structured profile string
-  const profileString = buildDoctorProfileString(doctor as unknown as DoctorProfileData);
+  const profileString = buildDoctorProfileString(doctor as unknown as ProfileInput);
 
-  // 5. Call Gemini embedding model with 768-dim output
-  const ai = new GoogleGenAI({ apiKey: geminiApiKey });
-  let vector: number[] | null = null;
-  let lastEmbedError: unknown = null;
-
-  for (const model of EMBEDDING_MODELS) {
-    try {
-      const response = await ai.models.embedContent({
-        model,
-        contents: profileString,
-        config: {
-          taskType: 'RETRIEVAL_DOCUMENT',
-          outputDimensionality: EMBEDDING_DIMENSIONS,
-        },
-      });
-
-      const vals = response.embeddings?.[0]?.values;
-      if (vals && vals.length === EMBEDDING_DIMENSIONS) {
-        vector = vals;
-        break;
-      }
-    } catch (err) {
-      lastEmbedError = err;
-    }
-  }
-
-  if (!vector || vector.length !== EMBEDDING_DIMENSIONS) {
-    const errorMsg = lastEmbedError instanceof Error ? lastEmbedError.message : String(lastEmbedError);
+  // 5. Call Gemini embedding model with 768-dim output via vectorMatch helper
+  let vector: number[];
+  try {
+    vector = await embedText(profileString, 'RETRIEVAL_DOCUMENT');
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
     return Response.json(
       { error: `Failed to generate vector embedding: ${errorMsg}` },
       { status: 500 }

@@ -29,6 +29,23 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-31: Vector Matching — vectorMatch.ts Helper Library
+**Task:** PROMPT 4 — vectorMatch.ts Helper Library
+**Owner:** AI/Integration Lead (Role D) & Backend Lead (Role A)
+**What changed:** Created `src/lib/vectorMatch.ts` as the central library for vector-based specialist matching, embedding generation, and pgvector cosine search:
+1. **`ProfileInput` Interface:** Standardized input interface for doctor profile data (name, credentials, specialty, sub-specialty, clinics).
+2. **`buildDoctorProfileString()`:** Single canonical source for constructing doctor profile strings including plain-language medical focus from `SPECIALTY_PLAIN_MAP`.
+3. **`embedText()`:** Generates 768-dimensional float embeddings using Gemini `gemini-embedding-001` (with multi-model fallback) supporting both `RETRIEVAL_DOCUMENT` and `RETRIEVAL_QUERY` task types.
+4. **`vectorSearchDoctors()`:** Calls the `match_doctors_by_embedding` Supabase RPC function and returns results sorted by similarity descending. Built with strict graceful degradation (catches any RPC or network failure and returns `[]` without throwing).
+5. **Route Refactoring:** Refactored `src/app/api/embed/route.ts` to consume `buildDoctorProfileString` and `embedText` directly from `src/lib/vectorMatch.ts`.
+**Files touched:**
+- `src/lib/vectorMatch.ts` [NEW] — embedding and vector search helper library.
+- `src/app/api/embed/route.ts` [MODIFIED] — refactored to use vectorMatch helpers.
+- `docs/BUILD_LOG.md` [MODIFIED] — logged changes.
+**Notes/trade-offs:**
+- **Zero Side Effects:** All exports are pure functions with zero execution side effects on import.
+
+
 ### 2026-08-31: Vector Matching — Admin Doctor Re-Embedding API Route
 **Task:** PROMPT 3 — Admin Re-embedding API Route
 **Owner:** AI/Integration Lead (Role D) & Backend Lead (Role A)
