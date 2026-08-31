@@ -16,7 +16,7 @@ import {
   type RankedDoctor,
 } from './doctorRanking';
 
-export type SortKey = 'best' | 'rating' | 'price_asc' | 'price_desc' | 'soonest' | 'name';
+export type SortKey = 'best' | 'semantic' | 'rating' | 'price_asc' | 'price_desc' | 'soonest' | 'name';
 export type AvailabilityKey = 'any' | 'open' | 'week' | 'month';
 
 export interface DoctorFilters {
@@ -52,6 +52,7 @@ export const DEFAULT_FILTERS: DoctorFilters = {
 
 export const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: 'best', label: 'Best match' },
+  { value: 'semantic', label: 'Best clinical match' },
   { value: 'rating', label: 'Highest rated' },
   { value: 'price_asc', label: 'Lowest fee' },
   { value: 'price_desc', label: 'Highest fee' },
@@ -321,6 +322,9 @@ export function sortDoctors(doctors: RankedDoctor[], sort: SortKey): RankedDocto
   const sorted = [...doctors];
 
   switch (sort) {
+    case 'semantic':
+      sorted.sort((a, b) => (b.similarityScore ?? 0) - (a.similarityScore ?? 0));
+      break;
     case 'rating':
       sorted.sort((a, b) => {
         const cmp = nullsLast(a.averageRating, b.averageRating, (x, y) => y - x);

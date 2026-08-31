@@ -28,6 +28,8 @@ interface DoctorFilterPanelProps {
   /** The specialty select only makes sense when browsing every specialty. */
   showSpecialty: boolean;
   resultCount: number;
+  /** Whether vector search was successfully applied (enables semantic sort option) */
+  vectorSearchApplied?: boolean;
 }
 
 const CONTROL_CLASS =
@@ -79,6 +81,7 @@ export default function DoctorFilterPanel({
   options,
   showSpecialty,
   resultCount,
+  vectorSearchApplied = false,
 }: DoctorFilterPanelProps) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
@@ -98,32 +101,36 @@ export default function DoctorFilterPanel({
         : [...filters.hmos, hmo],
     });
 
+  const availableSortOptions = SORT_OPTIONS.filter(
+    (option) => option.value !== 'semantic' || vectorSearchApplied
+  );
+
   return (
-    <div className="mb-6 card p-4 sm:p-5">
-      {/* Always-visible row: search, filter toggle, sort */}
+    <div className="mb-6 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
+      {/* Search bar + filter toggle + sort row */}
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+        {/* Search input with leading icon */}
         <div className="relative flex-1">
           <IconSearch className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
             type="search"
             value={filters.search}
             onChange={(e) => set({ search: e.target.value })}
-            placeholder="Search by doctor name, specialty, or clinic..."
-            aria-label="Search doctors"
-            className={`${CONTROL_CLASS} pl-11 placeholder-slate-400`}
+            placeholder="Search doctors by name, clinic, or HMO…"
+            className={`${CONTROL_CLASS} pl-10`}
           />
         </div>
 
-        <div className="flex w-full items-center gap-3 lg:w-auto">
+        <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => setOpen((prev) => !prev)}
+            onClick={() => setOpen(!open)}
             aria-expanded={open}
             aria-controls={panelId}
-            className={`fluid-hover flex flex-1 items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-bold lg:flex-none ${
+            className={`flex flex-1 items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold transition lg:flex-none ${
               open || chips.length > 0
-                ? 'border-brand-200 bg-brand-50 text-brand-700'
-                : 'border-slate-200 bg-slate-50/60 text-slate-700 hover:bg-slate-100'
+                ? 'border-brand-500 bg-brand-50/60 text-brand-700'
+                : 'border-slate-200 bg-slate-50/60 text-slate-700 hover:bg-white'
             }`}
           >
             <IconSliders className="h-4 w-4" />
@@ -143,7 +150,7 @@ export default function DoctorFilterPanel({
               aria-label="Sort doctors"
               className="w-full rounded-2xl border border-slate-200 bg-slate-50/60 px-3 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20 lg:w-auto"
             >
-              {SORT_OPTIONS.map((option) => (
+              {availableSortOptions.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>

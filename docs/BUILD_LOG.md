@@ -29,6 +29,27 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-31: Vector Matching — Frontend Match Quality Badges & Semantic Sort
+**Task:** PROMPT 7 — Frontend: Surface the Semantic Match Score
+**Owner:** Frontend Lead (Role B) & Product / UX Lead (Role C)
+**What changed:** Updated patient-facing screens and controls to surface vector match intelligence, match quality badges, and instant pre-population:
+1. **Pre-population (CHANGE 1):** Caches successful match results in `sessionStorage` (`kayapp_last_match`) in `src/app/patient/intake/page.tsx`, allowing `/patient/doctors` to instantly display pre-ranked doctor candidates on page mount without waiting for network fetches.
+2. **Match Quality Badges (CHANGE 2):** Displayed on doctor cards in `src/app/patient/doctors/page.tsx`:
+   - `0.85–1.0`: "Top match" (`bg-emerald-50 text-emerald-800 border-emerald-200`) / Tagalog: "Pinakamainam"
+   - `0.70–0.85`: "Good match" (`bg-sky-50 text-sky-800 border-sky-200`) / Tagalog: "Magandang tugma"
+   - Scores below 0.70 show no badge to preserve patient confidence.
+3. **"Best Clinical Match" Sort Option (CHANGE 3):** Added `semantic` sort key to `src/lib/doctorFilters.ts` and `src/components/DoctorFilterPanel.tsx`, conditionally displayed only when `vectorSearchApplied === true`.
+4. **"Why this specialist?" Supporting Note (CHANGE 4):** Added a subtle, localized supporting note to `src/components/MatchResultView.tsx` when `vectorSearchApplied === true` ("Doctors are ranked by how closely their expertise matches your description" / Tagalog equivalent).
+5. **Strict Graceful Degradation:** All elements disappear cleanly if vector search was not applied or when browsing all specialties directly.
+**Files touched:**
+- `src/lib/doctorFilters.ts` [MODIFIED] — added `semantic` sort key, option, and sorting logic.
+- `src/components/DoctorFilterPanel.tsx` [MODIFIED] — conditional `semantic` sort option rendering.
+- `src/components/MatchResultView.tsx` [MODIFIED] — supporting note when vector search is applied.
+- `src/app/patient/intake/page.tsx` [MODIFIED] — cached match results for instant doctor pre-population.
+- `src/app/patient/doctors/page.tsx` [MODIFIED] — pre-population and match quality badge rendering.
+- `docs/BUILD_LOG.md` [MODIFIED] — logged changes.
+
+
 ### 2026-08-31: Vector Matching — Two-Track Retrieval & Locality Boost in /api/match
 **Task:** PROMPT 5 — Integrate Vector Retrieval into /api/match & PROMPT 6 — Tier 0 Vector Ranking
 **Owner:** AI/Integration Lead (Role D) & Backend Lead (Role A)
