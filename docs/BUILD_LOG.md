@@ -29,6 +29,21 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-31: Vector Matching — Admin Doctor Re-Embedding API Route
+**Task:** PROMPT 3 — Admin Re-embedding API Route
+**Owner:** AI/Integration Lead (Role D) & Backend Lead (Role A)
+**What changed:** Created `src/app/api/embed/route.ts`, an authenticated Next.js API route enabling on-demand re-embedding of single doctor profiles (e.g. after a physician updates their credentials, specialty, sub-specialty, or clinic locations):
+1. **Bearer Token Authentication:** Gated by `Authorization: Bearer <SUPABASE_SERVICE_ROLE_KEY>` header to ensure only authorized administrative actions can invoke embedding updates.
+2. **Profile Construction:** Builds structured profile text incorporating the doctor's name, specialty, sub-specialty, credentials, clinic locations, and medical focus plain-language descriptions from `src/lib/specialtyHelpers.ts`.
+3. **Gemini Embedding Generation:** Uses `gemini-embedding-001` with `outputDimensionality: 768` and `taskType: 'RETRIEVAL_DOCUMENT'` with fallback resilience.
+4. **Database Upsert & Logging:** Updates the doctor's `embedding` vector in Supabase and logs the re-embedding action for auditability.
+**Files touched:**
+- `src/app/api/embed/route.ts` [NEW] — admin single-doctor re-embedding API endpoint.
+- `docs/BUILD_LOG.md` [MODIFIED] — logged changes.
+**Notes/trade-offs:**
+- **Shared Canonical Profile String Format:** Profile formatting mirrors `scripts/embed_doctors.mjs` and will cleanly import from `src/lib/vectorMatch.ts` once PROMPT 4 is executed.
+
+
 ### 2026-08-31: Vector Matching — Doctor Profile Embedding Script
 **Task:** PROMPT 2 — Doctor Profile Embedding Script
 **Owner:** AI/Integration Lead (Role D)
