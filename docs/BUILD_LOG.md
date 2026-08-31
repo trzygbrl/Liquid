@@ -29,6 +29,22 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-31: Vector-Based AI Specialist Matching - Database Migration & pgvector Setup
+**Task:** PROMPT 1 — Database Migration: pgvector + embedding column
+**Owner:** AI/Integration Lead (Role D) & Backend Lead (Role A)
+**What changed:** Added Supabase migration `0010_pgvector_doctor_embeddings.sql` to prepare the database for vector-based semantic specialist matching:
+1. **pgvector Extension:** Enabled `vector` extension in Postgres.
+2. **Embedding Column:** Added `embedding vector(768)` nullable column on `public.doctors` matching Gemini's `text-embedding-004` output dimensionality.
+3. **IVFFlat Index:** Created `doctors_embedding_idx` using `ivfflat (embedding vector_cosine_ops)` with `lists = 100` for fast approximate nearest-neighbor search across the doctor roster.
+4. **Cosine Similarity RPC Function:** Created `match_doctors_by_embedding(query_embedding vector(768), match_count int)` returning `(id uuid, similarity float)` calculated via `1 - (embedding <=> query_embedding)` ordered by proximity.
+**Files touched:**
+- `supabase/migrations/0010_pgvector_doctor_embeddings.sql` [NEW] — pgvector schema migration, index, and similarity RPC function.
+- `docs/BUILD_LOG.md` [MODIFIED] — logged database schema update.
+**Notes/trade-offs:**
+- **Zero Downtime / Nullable Column:** Setting `embedding` as nullable ensures all existing doctor seed records and dashboard flows continue operating without disruption prior to batch embedding generation.
+- **RPC Decoupling:** The RPC returns raw similarity without hard-coded taxonomy filters so that application code can flexibly merge and re-rank exact matches and semantic shortlists.
+
+
 ### 2026-08-27: Cross-Device Voice Input Stabilization & Duplicate Word Elimination
 **Task:** 1.1 Speech-to-Text Cross-Device & Mobile Optimization
 **Owner:** Coding agent
