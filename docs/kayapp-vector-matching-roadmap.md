@@ -133,16 +133,18 @@ Ranked list shown to patient
 
 ### 2.4 Embedding model
 
-Use **Gemini text-embedding-004** via the `@google/genai` SDK already in the
+Use **Gemini `gemini-embedding-001`** (with fallback support) via the `@google/genai` SDK already in the
 project. Same `GEMINI_API_KEY`. No new vendor.
 
 ```ts
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 const result = await ai.models.embedContent({
-  model: 'text-embedding-004',
+  model: 'gemini-embedding-001',
   contents: profileString,
-  config: { taskType: 'RETRIEVAL_DOCUMENT' }, // for doctor profiles
-  // config: { taskType: 'RETRIEVAL_QUERY' }, // for patient symptom queries
+  config: {
+    taskType: 'RETRIEVAL_DOCUMENT', // for doctor profiles; use 'RETRIEVAL_QUERY' for patient symptom queries
+    outputDimensionality: 768,      // produces 768-dim float array matching vector(768)
+  },
 });
 const vector = result.embeddings[0].values; // float32[], length 768
 ```

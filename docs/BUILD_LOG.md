@@ -29,6 +29,23 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-31: Vector Matching — Doctor Profile Embedding Script
+**Task:** PROMPT 2 — Doctor Profile Embedding Script
+**Owner:** AI/Integration Lead (Role D)
+**What changed:** Created `scripts/embed_doctors.mjs`, a batch Node.js script that generates 768-dimensional Gemini `gemini-embedding-001` (`outputDimensionality: 768`) vectors for every doctor's profile in the database and writes them to the `embedding` column added in migration 0010.
+1. **Profile string format:** Structured as `"[name] is a [specialty] specialist[, sub-specialty: X]. Credentials: [...]. Clinic(s): [...]. Medical focus: [plain-language description]."` — matches the canonical format defined in the roadmap and will be shared with `src/lib/vectorMatch.ts` (PROMPT 4).
+2. **Model resolution & dimensions:** Configured `gemini-embedding-001` with `outputDimensionality: 768` and automated fallback handling, producing exact 768-dim embeddings matching `vector(768)`.
+3. **Batch processing & rate limiting:** Doctors are processed in batches of 10 with a 500ms pause between batches to stay safely within Gemini API rate limits.
+4. **Execution verified:** Executed `npm run embed` against the live database — successfully generated and stored embeddings for all 215 doctor records with 0 errors.
+5. **SPECIALTY_PLAIN_MAP inlined:** Dynamic import of a TypeScript source file from a `.mjs` script is not reliable without a TS loader, so the description lookup is copied inline and annotated to stay in sync with `src/lib/specialtyHelpers.ts`.
+**Files touched:**
+- `scripts/embed_doctors.mjs` [NEW] — batch embedding script with model fallback and dry-run support.
+- `package.json` [MODIFIED] — added `"embed": "node scripts/embed_doctors.mjs"` script.
+- `docs/BUILD_LOG.md` [MODIFIED] — logged changes and verification.
+**Notes/trade-offs:**
+- **Zero failure rate:** All 215 active doctors now possess 768-dimension vectors in Supabase ready for real-time vector similarity RPC queries.
+
+
 ### 2026-08-31: Vector-Based AI Specialist Matching - Database Migration & pgvector Setup
 **Task:** PROMPT 1 — Database Migration: pgvector + embedding column
 **Owner:** AI/Integration Lead (Role D) & Backend Lead (Role A)
