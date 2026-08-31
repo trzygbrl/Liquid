@@ -29,6 +29,25 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-31: Vector Matching — Two-Track Retrieval & Locality Boost in /api/match
+**Task:** PROMPT 5 — Integrate Vector Retrieval into /api/match & PROMPT 6 — Tier 0 Vector Ranking
+**Owner:** AI/Integration Lead (Role D) & Backend Lead (Role A)
+**What changed:** Integrated vector-based retrieval, locality-weighted re-ranking, and doctor shortlisting directly into `src/app/api/match/route.ts` and `src/lib/doctorRanking.ts`:
+1. **On-the-Fly Symptom Embedding (Step A):** Generates query embedding vectors via `embedText(symptomText, 'RETRIEVAL_QUERY')` on valid symptom inputs.
+2. **Two-Track Retrieval (Step B):** Executes parallel non-blocking queries: Track A (exact taxonomy match up to 50 doctors) + Track B (`vectorSearchDoctors()` semantic shortlist of 20 doctors). Handled via `Promise.allSettled`.
+3. **Locality-Aware Boosting (Step C):** Deduplicates doctor records and applies a proximity multiplier to similarity scores (`1.5x` for same city, `1.2x` for same province, `1.0x` baseline) using patient intake location, ensuring top clinical matches are geographically accessible.
+4. **Tier 0 Vector Ranking (Step D & PROMPT 6):** Updated `rankDoctors()` to prioritize cosine similarity with a `0.01` tolerance band before falling through to sub-specialty, HMO, rating, and schedule tiers.
+5. **Enriched API Response (Step E & F):** Extended `MatchResult` with `rankedDoctors` (top 10 `RankedDoctorSummary` records including similarityScore, primary clinic, fees, and soonest slots) and `vectorSearchApplied: boolean`.
+6. **Robust Graceful Degradation:** All vector operations run within safe try/catch wrappers; any failure silently falls back to standard taxonomy matching without throwing 500 errors.
+**Files touched:**
+- `src/app/api/match/route.ts` [MODIFIED] — integrated two-track retrieval, locality boost, and doctor shortlisting.
+- `src/lib/doctorRanking.ts` [MODIFIED] — implemented Tier 0 vector similarity ranking.
+- `src/lib/matchApi.ts` [MODIFIED] — added `RankedDoctorSummary` interface and updated `MatchResult` and `MatchApiRequest`.
+- `docs/BUILD_LOG.md` [MODIFIED] — logged changes.
+**Notes/trade-offs:**
+- **Zero Latency Impact on Non-Matches:** Clarification questions and emergency gates bypass vector search entirely.
+
+
 ### 2026-08-31: Vector Matching — vectorMatch.ts Helper Library
 **Task:** PROMPT 4 — vectorMatch.ts Helper Library
 **Owner:** AI/Integration Lead (Role D) & Backend Lead (Role A)

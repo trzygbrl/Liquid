@@ -49,6 +49,7 @@ export interface SoonestSlotInfo {
 }
 
 export interface RankedDoctor extends DoctorRecord {
+  similarityScore: number;
   isExactSubSpecialty: boolean;
   isHmoCovered: boolean;
   averageRating: number | null;
@@ -64,6 +65,7 @@ export interface RankingResult {
   totalCount: number;
   exactMatchCount: number;
   coveredCount: number;
+  vectorSearchApplied: boolean;
 }
 
 /**
@@ -122,16 +124,33 @@ export function pickSoonestSlot(
 /**
  * Ranks doctor records according to PRD 8.4 multi-factor criteria
  * and identifies HMO mismatch state per PRD 8.3.
+ *
+ * Tiers:
+ *   Tier 0: Vector similarity score (if similarityScores map provided)
+ *   Tier 1: Sub-specialty match strength (exact match first)
+ *   Tier 2: HMO Coverage (if patient has HMO)
+ *   Tier 3: Rating (higher average rating first)
+ *   Tier 4: Soonest available slot (earlier dates/times first; no slot last)
+ *
+ * @param doctors - List of doctor records to rank
+ * @param targetSpecialty - Desired medical specialty
+ * @param targetSubSpecialty - Desired sub-specialty or null
+ * @param patientHmo - Patient's HMO provider name or null
+ * @param similarityScores - Optional Map of doctorId -> cosine similarity score for Tier 0 sort
  */
 export function rankDoctors(
   doctors: DoctorRecord[],
   targetSpecialty: string,
   targetSubSpecialty: string | null,
-  patientHmo: string | null
+  patientHmo: string | null,
+  similarityScores?: Map<string, number>
 ): RankingResult {
   const todayStr = todayISO();
 
   const processed: RankedDoctor[] = doctors.map((doc) => {
+    // 0. Vector similarity score
+    const similarityScore = similarityScores?.get(doc.id) ?? 0;
+
     // 1. Sub-specialty match strength
     const isExactSubSpecialty = targetSubSpecialty
       ? (doc.sub_specialty || '').trim().toLowerCase() === targetSubSpecialty.trim().toLowerCase()
@@ -166,6 +185,7 @@ export function rankDoctors(
 
     return {
       ...doc,
+      similarityScore,
       isExactSubSpecialty,
       isHmoCovered,
       averageRating,
@@ -194,6 +214,15 @@ export function rankDoctors(
 
   // Multi-tier sort
   processed.sort((a, b) => {
+    // Tier 0: Vector similarity
+    // Only fires when both candidates have a non-zero score — avoids penalising
+    // Track A-only doctors that never got a vector score.
+    if (similarityScores && a.similarityScore > 0 && b.similarityScore > 0) {
+      const diff = b.similarityScore - a.similarityScore;
+      if (Math.abs(diff) > 0.01) return diff > 0 ? 1 : -1;
+      // within 0.01 tolerance -> fall through to Tier 1
+    }
+
     // Tier 1: Sub-specialty match strength (exact match first)
     if (a.isExactSubSpecialty !== b.isExactSubSpecialty) {
       return a.isExactSubSpecialty ? -1 : 1;
@@ -229,5 +258,6 @@ export function rankDoctors(
     totalCount: processed.length,
     exactMatchCount,
     coveredCount,
+    vectorSearchApplied: Boolean(similarityScores && similarityScores.size > 0),
   };
 }
