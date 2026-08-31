@@ -23,7 +23,7 @@ import { GoogleGenAI } from '@google/genai';
 import { createClient } from '@supabase/supabase-js';
 import type { MatchResult, ClarifyResult, EmergencyResult, OffTopicResult, MatchApiResult, RankedDoctorSummary } from '@/lib/matchApi';
 import { checkEmergencySymptoms } from '@/lib/safetyGate';
-import { evaluateSymptomPlausibility } from '@/lib/symptomValidation';
+import { evaluateSymptomPlausibility, detectLanguage } from '@/lib/symptomValidation';
 import { embedText, vectorSearchDoctors } from '@/lib/vectorMatch';
 import { rankDoctors, type DoctorRecord } from '@/lib/doctorRanking';
 
@@ -281,10 +281,10 @@ ACCESSIBILITY, PLAIN-LANGUAGE & NURSE-TONE RULES (PRD 8.7 - CRITICAL):
      * Example (Bad - Generic): "Dahil masakit ang mata mo, kailangan mo ng eye doctor para matingnan ka."
    - Keep it strictly non-diagnostic: explain why the referral is suited, do NOT diagnose a specific disease or condition.
 3. ELIMINATE all dense clinical jargon (e.g. do NOT say "etiology", "pathology", "bilateral presentation", "manifests", "symptomatology"). Use everyday words like "swelling", "stiffness", "airways", "digestion", "joint wear", "retina/eye lining".
-4. LANGUAGE MIRRORING:
-   - Detect whether the patient's symptom description is in English or Tagalog.
-   - ENGLISH INPUT -> Write "reason" and "question" strictly in ENGLISH.
-   - TAGALOG INPUT -> Write "reason" and "question" strictly in natural, conversational TAGALOG.
+4. LANGUAGE MIRRORING (STRICT RULE):
+   - If the patient described their symptoms in ENGLISH -> Write "reason" and "question" strictly in clear, warm ENGLISH.
+   - If the patient described their symptoms in TAGALOG -> Write "reason" and "question" strictly in natural TAGALOG.
+   - NEVER output a Tagalog "reason" for an English symptom description.
 5. The "specialty" and "sub_specialty" fields MUST ALWAYS be returned in their exact English taxonomy names from the list below, regardless of the patient's input language.
 6. The "reason" must be 1 to 3 clear sentences (approx. 20 to 50 words). Concise, reassuring, and easy for elderly or low-literacy patients to understand.
 7. The "question" field (if asking a follow-up) must be a single short question in the patient's language. No numbered lists, no bullet points.
@@ -306,14 +306,21 @@ ${noSubLines}`;
   const demoContext =
     demoParts.length > 0 ? `${demoParts.join(' | ')}\n\n` : '';
 
+  // Determine language of symptoms to reinforce deterministic mirroring
+  const detectedLang = detectLanguage(symptomText);
+  const langDirectives =
+    detectedLang === 'tl'
+      ? '[LANGUAGE DIRECTIVE: Symptoms are in Tagalog. Output "reason" or "question" in natural Tagalog.]'
+      : '[LANGUAGE DIRECTIVE: Symptoms are in English. Output "reason" or "question" strictly in English.]';
+
   // Assumption 7: if conversation is at the turn cap, force a best-effort match
   const forceMatchNote =
     conversationHistory.length >= 4
-      ? '\n\n[SYSTEM NOTE: This is your final attempt. You must return a best-effort {"type":"match",...} response even if uncertain. Do not ask another question.]'
+      ? '\n[SYSTEM NOTE: This is your final attempt. You must return a best-effort {"type":"match",...} response even if uncertain. Do not ask another question.]'
       : '';
 
   const currentUserText =
-    `${demoContext}Symptoms: ${symptomText.trim()}${forceMatchNote}`;
+    `${demoContext}Symptoms: ${symptomText.trim()}\n\n${langDirectives}${forceMatchNote}`;
 
   // Build the full contents array: history turns first, then the current user turn
   const contents = [

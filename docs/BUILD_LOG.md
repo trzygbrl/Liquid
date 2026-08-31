@@ -29,6 +29,20 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-31: Bug Fixes — Tier 0 Vector Ranking & Deterministic Language Mirroring
+**Task:** QA Follow-up — Locality-Aware Re-ranking & Referral Language Fix
+**Owner:** Backend Lead (Role A) & AI Lead (Role D)
+**What changed:**
+1. **Tier 0 Vector Ranking Condition:** In `src/lib/doctorRanking.ts`, modified the condition from `(a.similarityScore > 0 && b.similarityScore > 0)` to `(a.similarityScore > 0 || b.similarityScore > 0)`. Previously, doctors with a 0 similarity score were bypassing Tier 0 and beating vector-matched doctors due to earlier calendar slot dates. Now, doctors with high semantic similarity and locality boosts (e.g. `Dr. Clarisse Villanueva` in Angeles City at `0.8439`) correctly rank #1.
+2. **Calibrated Match Badge Thresholds:** In `src/app/patient/doctors/page.tsx`, calibrated badge thresholds to `similarityScore >= 0.80` for `"Top match"` / `"Pinakamainam"` and `>= 0.65` for `"Good match"` / `"Magandang tugma"`.
+3. **Deterministic Language Mirroring in Gemini Prompt:** In `src/app/api/match/route.ts`, integrated server-side `detectLanguage(symptomText)` and injected strict language directives into both the system prompt and the user turn content. English symptom inputs now strictly return English nurse-tone rationales, while Tagalog inputs return Tagalog.
+**Files touched:**
+- `src/lib/doctorRanking.ts` [MODIFIED] — fixed Tier 0 sorting condition.
+- `src/app/patient/doctors/page.tsx` [MODIFIED] — calibrated match badge threshold.
+- `src/app/api/match/route.ts` [MODIFIED] — enforced language mirroring with `detectLanguage`.
+- `docs/BUILD_LOG.md` [MODIFIED] — logged bug fixes.
+
+
 ### 2026-08-31: Vector Matching — End-to-End Unit & Smoke Test Suite
 **Task:** PROMPT 8 — End-to-End Smoke Test
 **Owner:** QA / AI Lead (Role D & C)

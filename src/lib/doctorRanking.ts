@@ -215,9 +215,8 @@ export function rankDoctors(
   // Multi-tier sort
   processed.sort((a, b) => {
     // Tier 0: Vector similarity
-    // Only fires when both candidates have a non-zero score — avoids penalising
-    // Track A-only doctors that never got a vector score.
-    if (similarityScores && a.similarityScore > 0 && b.similarityScore > 0) {
+    // Prioritizes candidates with higher vector similarity score when vector matching is active.
+    if (similarityScores && (a.similarityScore > 0 || b.similarityScore > 0)) {
       const diff = b.similarityScore - a.similarityScore;
       if (Math.abs(diff) > 0.01) return diff > 0 ? 1 : -1;
       // within 0.01 tolerance -> fall through to Tier 1

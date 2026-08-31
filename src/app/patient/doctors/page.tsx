@@ -413,16 +413,16 @@ function DoctorListContent() {
                           </h2>
                           <div className="flex flex-wrap items-center gap-2">
                             {/* Semantic Match Quality Badge (PROMPT 7) */}
-                            {doctor.similarityScore >= 0.70 && (
+                            {doctor.similarityScore >= 0.65 && (
                               <span
                                 className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold border shadow-xs ${
-                                  doctor.similarityScore >= 0.85
+                                  doctor.similarityScore >= 0.80
                                     ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                                     : 'bg-sky-50 text-sky-800 border-sky-200'
                                 }`}
                               >
                                 <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                                {doctor.similarityScore >= 0.85
+                                {doctor.similarityScore >= 0.80
                                   ? isTagalog
                                     ? 'Pinakamainam'
                                     : 'Top match'
