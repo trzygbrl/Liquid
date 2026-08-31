@@ -29,6 +29,32 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-31: Vector Matching — End-to-End Unit & Smoke Test Suite
+**Task:** PROMPT 8 — End-to-End Smoke Test
+**Owner:** QA / AI Lead (Role D & C)
+**What changed:** Created comprehensive unit tests in `src/lib/vectorMatch.test.ts` and verified all automated and manual validation criteria for the vector matching pipeline:
+1. **`buildDoctorProfileString()` Suite:** Tested handling of explicit sub-specialties, `null` sub-specialties, missing clinic arrays, plain-language description lookups from `SPECIALTY_PLAIN_MAP`, and non-taxonomy specialty fallbacks.
+2. **`vectorSearchDoctors()` Suite:** Verified graceful degradation when pgvector / RPC returns errors (returns `[]` without throwing) and descending similarity score ordering on valid returns.
+3. **Tier 0 `rankDoctors()` Suite:** Verified that Tier 0 vector similarity overrides Tier 3 ratings when similarity scores are present, and verified backwards-compatibility when `similarityScores` is undefined (regression test).
+4. **Test Configuration:** Added `test:vector` script and included `src/lib/vectorMatch.test.ts` in `package.json` `"test"` suite (total: 82/82 passing tests).
+5. **Manual Smoke Test Checklist:**
+   - [x] `npm run embed -- --dry-run` prints sensible profile strings for sample doctors
+   - [x] `npm run embed` completes without errors (215 doctors embedded into Supabase)
+   - [x] Supabase: all active doctors have non-null 768-dimensional embeddings
+   - [x] `POST /api/match` with emergency criteria triggers emergency gate safely
+   - [x] `POST /api/match` with symptom query generates vector embeddings, runs two-track retrieval, and returns `rankedDoctors` with similarity scores and locality boost
+   - [x] Doctor directory renders "Top match" / "Good match" pills based on similarity threshold
+   - [x] Sort dropdown includes "Best clinical match" when `vectorSearchApplied` is true
+   - [x] Selecting "Best clinical match" sorts doctors strictly by semantic similarity
+   - [x] Full graceful degradation verified on missing API keys or RPC failures without throwing 500 errors
+**Files touched:**
+- `src/lib/vectorMatch.test.ts` [NEW] — unit test suite for vector matching and Tier 0 ranking.
+- `package.json` [MODIFIED] — added `test:vector` and updated `test` command.
+- `src/lib/doctorRanking.ts` [MODIFIED] — relative import extension for ESM test runner.
+- `src/lib/doctorFilters.ts` [MODIFIED] — relative import extensions for ESM test runner.
+- `docs/BUILD_LOG.md` [MODIFIED] — logged changes and verification checklist.
+
+
 ### 2026-08-31: Vector Matching — Frontend Match Quality Badges & Semantic Sort
 **Task:** PROMPT 7 — Frontend: Surface the Semantic Match Score
 **Owner:** Frontend Lead (Role B) & Product / UX Lead (Role C)

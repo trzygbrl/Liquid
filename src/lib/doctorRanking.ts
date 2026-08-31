@@ -8,7 +8,7 @@
 //   3. Average rating (higher rating ranks first)
 //   4. Soonest available slot (earliest available date/time ranks first)
 
-import { todayISO } from './dateUtils';
+import { todayISO } from './dateUtils.ts';
 
 export interface Clinic {
   id: string;

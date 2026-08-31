@@ -8,13 +8,13 @@
 // re-deriving them. "Best match" sorting is therefore just the ranker's own
 // PRD 8.4 order with the non-matching doctors removed.
 
-import { todayISO, isoDate } from './dateUtils';
+import { todayISO, isoDate } from './dateUtils.ts';
 import {
   pickSoonestSlot,
   type Clinic,
   type DoctorRecord,
   type RankedDoctor,
-} from './doctorRanking';
+} from './doctorRanking.ts';
 
 export type SortKey = 'best' | 'semantic' | 'rating' | 'price_asc' | 'price_desc' | 'soonest' | 'name';
 export type AvailabilityKey = 'any' | 'open' | 'week' | 'month';
