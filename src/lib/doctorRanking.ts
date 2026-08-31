@@ -121,6 +121,62 @@ export function pickSoonestSlot(
   };
 }
 
+export interface OptimalClinicResult {
+  primaryClinic: Clinic | null;
+  soonestSlot: SoonestSlotInfo | null;
+  otherClinics: Clinic[];
+}
+
+/**
+ * Picks which of a doctor's clinics to show as the default/primary one
+ * on their card, plus that specific clinic's own earliest open slot.
+ *
+ * Replaces the old "soonest slot anywhere, else whichever clinic happens
+ * to be first in the array" default: clinics are ranked by (1) proximity
+ * to the patient's location -- same city, then same province, then same
+ * region, then unknown, via src/lib/locationData.ts's whitelist -- and
+ * (2) which has the soonest open slot, with a slot-having clinic always
+ * preferred over one with none. `otherClinics` is returned in this same
+ * relevance order so the alternate-clinic picker lists the next-best
+ * options first, not just registration order.
+ */
+export function pickOptimalClinic(
+  clinics: Clinic[] | null | undefined,
+  slots: ScheduleSlot[] | null | undefined,
+  patientLocation: string | null,
+  todayStr: string = todayISO()
+): OptimalClinicResult {
+  const list = clinics ?? [];
+  if (list.length === 0) return { primaryClinic: null, soonestSlot: null, otherClinics: [] };
+
+  const scored = list.map((clinic) => ({
+    clinic,
+    tier: proximityTier(patientLocation, clinic.location) as ProximityTier,
+    slot: pickSoonestSlot(slots, clinic.id, todayStr),
+  }));
+
+  scored.sort((a, b) => {
+    // A clinic with an open slot always beats one with none.
+    if (Boolean(a.slot) !== Boolean(b.slot)) return a.slot ? -1 : 1;
+    // Then closer beats farther.
+    if (a.tier !== b.tier) return a.tier - b.tier;
+    // Then, among equally-close clinics with slots, earlier wins.
+    if (a.slot && b.slot) {
+      const dateCmp = a.slot.date.localeCompare(b.slot.date);
+      if (dateCmp !== 0) return dateCmp;
+      return a.slot.time.localeCompare(b.slot.time);
+    }
+    return 0;
+  });
+
+  const [best, ...rest] = scored;
+  return {
+    primaryClinic: best.clinic,
+    soonestSlot: best.slot,
+    otherClinics: rest.map((s) => s.clinic),
+  };
+}
+
 /**
  * Ranks doctor records according to PRD 8.4 multi-factor criteria
  * and identifies HMO mismatch state per PRD 8.3.
@@ -137,13 +193,16 @@ export function pickSoonestSlot(
  * @param targetSubSpecialty - Desired sub-specialty or null
  * @param patientHmo - Patient's HMO provider name or null
  * @param similarityScores - Optional Map of doctorId -> cosine similarity score for Tier 0 sort
+ * @param patientLocation - Patient's location string, used to pick each doctor's
+ *   closest clinic as their card's default/primary one (see pickOptimalClinic)
  */
 export function rankDoctors(
   doctors: DoctorRecord[],
   targetSpecialty: string,
   targetSubSpecialty: string | null,
   patientHmo: string | null,
-  similarityScores?: Map<string, number>
+  similarityScores?: Map<string, number>,
+  patientLocation: string | null = null
 ): RankingResult {
   const todayStr = todayISO();
 
@@ -171,17 +230,15 @@ export function rankDoctors(
         ? ratings.reduce((sum, val) => sum + val, 0) / ratings.length
         : null;
 
-    // 4. Soonest available slot (date >= today, is_booked === 'available')
-    const soonestSlot = pickSoonestSlot(doc.schedule_slots, null, todayStr);
-
-    // The primary clinic shown on the card is the one hosting the soonest
-    // slot (so the displayed clinic and displayed slot always agree); falls
-    // back to the first clinic only when there's no posted availability.
-    const primaryClinic =
-      (soonestSlot && doc.clinics?.find((c) => c.id === soonestSlot!.clinicId)) ||
-      doc.clinics?.[0] ||
-      null;
-    const otherClinics = (doc.clinics ?? []).filter((c) => c.id !== primaryClinic?.id);
+    // 4. Optimal clinic: closest to the patient with an open slot, else
+    // just closest (see pickOptimalClinic) -- the displayed clinic and
+    // displayed slot always agree since they're picked together.
+    const { primaryClinic, soonestSlot, otherClinics } = pickOptimalClinic(
+      doc.clinics,
+      doc.schedule_slots,
+      patientLocation,
+      todayStr
+    );
 
     return {
       ...doc,

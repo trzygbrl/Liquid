@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import RequireRole from '@/components/RequireRole';
 import { supabase } from '@/lib/supabaseClient';
-import { rankDoctors, type DoctorRecord } from '@/lib/doctorRanking';
+import { rankDoctors, pickSoonestSlot, type DoctorRecord, type RankedDoctor, type Clinic } from '@/lib/doctorRanking';
 import {
   applyDoctorFilters,
   deriveFilterOptions,
@@ -33,6 +33,11 @@ function DoctorListContent() {
   const [availableSubSpecialties, setAvailableSubSpecialties] = useState<string[]>([]);
   const [selectedSubSpecialty, setSelectedSubSpecialty] = useState<string | null>(initialSubSpecialty);
   const [patientHmo, setPatientHmo] = useState<string | null>(initialHmo);
+  // Best-effort: used only to pick each doctor's closest clinic as the
+  // default shown on their card (see pickOptimalClinic). A patient who
+  // isn't signed in, or hasn't saved a location, just gets no proximity
+  // signal -- everything degrades gracefully to "soonest slot wins".
+  const [patientLocation, setPatientLocation] = useState<string | null>(null);
   const [similarityScores, setSimilarityScores] = useState<Map<string, number> | undefined>(undefined);
   const [vectorSearchApplied, setVectorSearchApplied] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
@@ -43,6 +48,9 @@ function DoctorListContent() {
   // Applied after ranking (see below) and rendered by DoctorFilterPanel.
   const [filters, setFilters] = useState<DoctorFilters>(DEFAULT_FILTERS);
 
+  // doctorId -> clinicId the patient picked from that card's clinic
+  // dropdown; unset means "use the optimal (primary) clinic".
+  const [selectedClinicByDoctor, setSelectedClinicByDoctor] = useState<Map<string, string>>(new Map());
   // Doctor ids whose "other locations" list is expanded on the card
   const [expandedClinics, setExpandedClinics] = useState<Set<string>>(new Set());
 
@@ -51,6 +59,32 @@ function DoctorListContent() {
     setSelectedSubSpecialty(searchParams.get('sub_specialty') || null);
     setPatientHmo(searchParams.get('hmo') || null);
   }, [searchParams]);
+
+  // Best-effort fetch of the signed-in patient's saved location, for
+  // proximity-based clinic ranking (see pickOptimalClinic in doctorRanking.ts).
+  useEffect(() => {
+    let cancelled = false;
+    async function loadPatientLocation() {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session || cancelled) return;
+
+      const { data } = await supabase
+        .from('patients')
+        .select('location')
+        .eq('id', session.user.id)
+        .maybeSingle();
+
+      if (!cancelled && data?.location) {
+        setPatientLocation(data.location);
+      }
+    }
+    loadPatientLocation();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Read cached AI match result from sessionStorage for instant pre-population
   useEffect(() => {
@@ -190,8 +224,16 @@ function DoctorListContent() {
   // order with the non-matching doctors removed. hasHmoMismatch stays a
   // property of the whole specialty search rather than of the filtered view.
   const { ranked: rankedAll, hasHmoMismatch } = useMemo(
-    () => rankDoctors(doctors, specialtyParam ?? '', selectedSubSpecialty, patientHmo, similarityScores),
-    [doctors, specialtyParam, selectedSubSpecialty, patientHmo, similarityScores]
+    () =>
+      rankDoctors(
+        doctors,
+        specialtyParam ?? '',
+        selectedSubSpecialty,
+        patientHmo,
+        similarityScores,
+        patientLocation
+      ),
+    [doctors, specialtyParam, selectedSubSpecialty, patientHmo, similarityScores, patientLocation]
   );
 
   const isTagalog = useMemo(
@@ -218,6 +260,24 @@ function DoctorListContent() {
     setFilters(DEFAULT_FILTERS);
     setSelectedSubSpecialty(null);
   };
+
+  // Resolves which of a doctor's clinics the card should currently show:
+  // whichever the patient picked from the dropdown, else the optimal
+  // (primary) one the ranker already chose. The slot shown always belongs
+  // to whichever clinic that turns out to be. `otherClinics` is recomputed
+  // against the *active* clinic (not just doctor.primaryClinic, which is
+  // static) so the recommended clinic reappears as a switch-back option
+  // once the patient has picked something else.
+  function resolveActiveClinic(
+    doctor: RankedDoctor
+  ): { clinic: Clinic | null; slot: ReturnType<typeof pickSoonestSlot>; otherClinics: Clinic[] } {
+    const candidates = doctor.primaryClinic ? [doctor.primaryClinic, ...doctor.otherClinics] : doctor.otherClinics;
+    const selectedId = selectedClinicByDoctor.get(doctor.id);
+    const clinic = (selectedId && candidates.find((c) => c.id === selectedId)) || doctor.primaryClinic || candidates[0] || null;
+    const slot = clinic ? pickSoonestSlot(doctor.schedule_slots, clinic.id) : null;
+    const otherClinics = candidates.filter((c) => c.id !== clinic?.id);
+    return { clinic, slot, otherClinics };
+  }
 
   return (
     <main className="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
@@ -376,7 +436,7 @@ function DoctorListContent() {
             {ranked.map((doctor, index) => {
               const isTopRecommendation =
                 index === 0 && (doctor.isExactSubSpecialty || ranked.length === 1);
-              const clinic = doctor.primaryClinic;
+              const { clinic, slot: activeSlot, otherClinics: switchableClinics } = resolveActiveClinic(doctor);
               const formattedFee = clinic
                 ? `₱${Number(clinic.consultation_fee).toLocaleString('en-US', {
                     minimumFractionDigits: 2,
@@ -496,15 +556,17 @@ function DoctorListContent() {
                           </p>
                         )}
 
-                        {/* Clinic / hospital list -- tap anywhere in the box to
-                            expand or hide the doctor's other locations. */}
+                        {/* Optimal clinic (closest to the patient with an open
+                            slot, see pickOptimalClinic) shown by default --
+                            tap anywhere in the box to expand and pick one of
+                            the doctor's other registered locations instead. */}
                         {clinic && (
                           <div
-                            role={doctor.otherClinics.length > 0 ? 'button' : undefined}
-                            tabIndex={doctor.otherClinics.length > 0 ? 0 : undefined}
-                            aria-expanded={doctor.otherClinics.length > 0 ? expandedClinics.has(doctor.id) : undefined}
+                            role={switchableClinics.length > 0 ? 'button' : undefined}
+                            tabIndex={switchableClinics.length > 0 ? 0 : undefined}
+                            aria-expanded={switchableClinics.length > 0 ? expandedClinics.has(doctor.id) : undefined}
                             onClick={() => {
-                              if (doctor.otherClinics.length === 0) return;
+                              if (switchableClinics.length === 0) return;
                               setExpandedClinics((prev) => {
                                 const next = new Set(prev);
                                 if (next.has(doctor.id)) next.delete(doctor.id);
@@ -513,7 +575,7 @@ function DoctorListContent() {
                               });
                             }}
                             onKeyDown={(e) => {
-                              if (doctor.otherClinics.length === 0) return;
+                              if (switchableClinics.length === 0) return;
                               if (e.key !== 'Enter' && e.key !== ' ') return;
                               e.preventDefault();
                               setExpandedClinics((prev) => {
@@ -524,7 +586,7 @@ function DoctorListContent() {
                               });
                             }}
                             className={`rounded-2xl border border-slate-100 bg-slate-50/80 p-4 text-[0.65rem] md:text-sm ${
-                              doctor.otherClinics.length > 0 ? 'fluid-hover cursor-pointer hover:border-brand-200 hover:bg-brand-50/30 focus:outline-none focus:ring-2 focus:ring-brand-500/30' : ''
+                              switchableClinics.length > 0 ? 'fluid-hover cursor-pointer hover:border-brand-200 hover:bg-brand-50/30 focus:outline-none focus:ring-2 focus:ring-brand-500/30' : ''
                             }`}
                           >
                             <div className="flex items-center justify-between gap-2">
@@ -540,7 +602,7 @@ function DoctorListContent() {
                                   <span className="text-slate-500 block font-medium">Consultation Fee</span>
                                   <span className="font-bold text-slate-900">{formattedFee}</span>
                                 </div>
-                                {doctor.otherClinics.length > 0 && (
+                                {switchableClinics.length > 0 && (
                                   <IconChevronRight
                                     className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${
                                       expandedClinics.has(doctor.id) ? 'rotate-90' : ''
@@ -550,20 +612,37 @@ function DoctorListContent() {
                               </div>
                             </div>
 
-                            {doctor.otherClinics.length > 0 && (
+                            {switchableClinics.length > 0 && (
                               <p className="mt-2.5 border-t border-slate-200/60 pt-2.5 font-bold text-brand-700">
                                 {expandedClinics.has(doctor.id)
                                   ? 'Hide other locations'
-                                  : `Show ${doctor.otherClinics.length} more ${doctor.otherClinics.length === 1 ? 'location' : 'locations'}`}
+                                  : `Show ${switchableClinics.length} more ${switchableClinics.length === 1 ? 'location' : 'locations'}`}
                               </p>
                             )}
 
                             {expandedClinics.has(doctor.id) && (
                               <div className="mt-2.5 flex flex-col gap-2">
-                                {doctor.otherClinics.map((other) => (
-                                  <div
+                                {switchableClinics.map((other) => (
+                                  <button
                                     key={other.id}
-                                    className="flex items-center justify-between gap-2 rounded-xl bg-white border border-slate-200/70 px-3 py-2"
+                                    type="button"
+                                    onClick={(e) => {
+                                      // Don't let this bubble up to the box's
+                                      // own onClick, which would immediately
+                                      // re-toggle the expansion it just set.
+                                      e.stopPropagation();
+                                      setSelectedClinicByDoctor((prev) => {
+                                        const next = new Map(prev);
+                                        next.set(doctor.id, other.id);
+                                        return next;
+                                      });
+                                      setExpandedClinics((prev) => {
+                                        const nextSet = new Set(prev);
+                                        nextSet.delete(doctor.id);
+                                        return nextSet;
+                                      });
+                                    }}
+                                    className="fluid-hover flex w-full items-center justify-between gap-2 rounded-xl bg-white border border-slate-200/70 px-3 py-2 text-left hover:border-brand-300 hover:bg-brand-50/40"
                                   >
                                     <div className="min-w-0">
                                       <p className="font-semibold text-slate-800 truncate">{other.name}</p>
@@ -575,7 +654,7 @@ function DoctorListContent() {
                                         maximumFractionDigits: 2,
                                       })}
                                     </span>
-                                  </div>
+                                  </button>
                                 ))}
                               </div>
                             )}
@@ -631,9 +710,9 @@ function DoctorListContent() {
                         <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block">
                           Earliest Open Slot
                         </span>
-                        {doctor.soonestSlot ? (
+                        {activeSlot ? (
                           <div className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-2xl bg-brand-50 border border-brand-100 px-3.5 py-2 text-xs font-bold text-brand-800">
-                            <span>{doctor.soonestSlot.formatted}</span>
+                            <span>{activeSlot.formatted}</span>
                           </div>
                         ) : (
                           <p className="mt-2 w-full text-xs text-slate-500 italic">

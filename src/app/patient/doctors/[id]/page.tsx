@@ -511,9 +511,7 @@ function DoctorDetailPageContent() {
             <div>
               <h2 className="text-xl font-bold text-slate-900">Book a Consultation</h2>
               <p className="mt-1 text-xs text-slate-500">
-                {doctor.clinics.length > 1
-                  ? 'Choose a clinic, then an open schedule time to request your appointment.'
-                  : 'Choose an open schedule time to request your appointment.'}
+                Choose a clinic, then an open schedule time to request your appointment.
               </p>
             </div>
             {selectedSlot && (
@@ -523,9 +521,11 @@ function DoctorDetailPageContent() {
             )}
           </div>
 
-          {/* Step 1: Clinic -- skipped entirely when the doctor only
-              practices at one location. */}
-          {doctor.clinics.length > 1 && (
+          {/* Step 1: Clinic -- the same picker UI regardless of clinic count,
+              so a single-clinic doctor still shows where they're booking
+              (auto-selected, see effectiveClinicId) without a separate
+              non-interactive layout to keep in sync. */}
+          {doctor.clinics.length > 0 && (
             <div className="mb-7">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
                 Step 1 · Choose a Clinic
@@ -567,6 +567,9 @@ function DoctorDetailPageContent() {
           )}
 
           {/* Step 2: Time slot -- only once a clinic is resolved. */}
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
+            Step 2 · Choose a Time
+          </h3>
           {!effectiveClinicId ? (
             <div className="rounded-2xl border border-slate-100 bg-slate-50 p-8 text-center text-slate-500 text-sm">
               <p className="font-medium">Choose a clinic above to see its open schedule.</p>
