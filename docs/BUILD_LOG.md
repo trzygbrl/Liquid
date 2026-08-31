@@ -29,6 +29,20 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-31: Fully Automated Vector Embedding on Admin Doctor License Approval
+**Task:** Feature Enhancement — Zero-Touch Doctor Embedding on Approval
+**Owner:** Backend Lead (Role A) & AI Lead (Role D)
+**What changed:** In `src/app/api/admin/doctors/[id]/route.ts`, hooked up fully automated vector embedding:
+- When an admin approves a doctor's license (`PATCH /api/admin/doctors/[id]` with `verification_status: 'verified'`), the server automatically fetches the doctor's full profile, credentials, and clinic locations.
+- Constructs the embedding profile string using `buildDoctorProfileString()`.
+- Generates the 768-dimensional float vector via `embedText(..., 'RETRIEVAL_DOCUMENT')`.
+- Stores the vector in the doctor's `embedding` column in Supabase in real-time.
+- Wrapped in a non-blocking try/catch so license approval always succeeds safely without latency hiccups.
+**Files touched:**
+- `src/app/api/admin/doctors/[id]/route.ts` [MODIFIED] — added auto-embedding trigger on admin verification.
+- `docs/BUILD_LOG.md` [MODIFIED] — logged update.
+
+
 ### 2026-08-31: Bug Fixes — Tier 0 Vector Ranking & Deterministic Language Mirroring
 **Task:** QA Follow-up — Locality-Aware Re-ranking & Referral Language Fix
 **Owner:** Backend Lead (Role A) & AI Lead (Role D)
