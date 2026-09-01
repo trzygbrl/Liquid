@@ -9,6 +9,7 @@
 //   4. Soonest available slot (earliest available date/time ranks first)
 
 import { todayISO } from './dateUtils.ts';
+import { proximityTier, type ProximityTier } from './locationData.ts';
 
 export interface Clinic {
   id: string;
