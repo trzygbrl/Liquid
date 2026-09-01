@@ -9,6 +9,7 @@
 // PRD 8.4 order with the non-matching doctors removed.
 
 import { todayISO, isoDate } from './dateUtils.ts';
+import { normalizeLocation } from './locationData.ts';
 import {
   pickSoonestSlot,
   type Clinic,
@@ -84,7 +85,7 @@ export function formatFee(value: number): string {
 // =============================================================
 
 export interface LocationGroup {
-  /** Province (the text after the last comma), or 'Other locations'. */
+  /** Province, per the Region III whitelist (src/lib/locationData.ts). */
   province: string;
   locations: string[];
 }
@@ -113,7 +114,8 @@ export function deriveFilterOptions(
 ): FilterOptions {
   const specialties = new Set<string>();
   const subSpecialties = new Set<string>();
-  const locations = new Set<string>();
+  // canonical "City, Province" display -> province, for whitelisted clinic locations only
+  const locations = new Map<string, string>();
   const hmos = new Map<string, string>(); // lowercased key -> first-seen casing
   let feeMin = Number.POSITIVE_INFINITY;
   let feeMax = 0;
@@ -128,7 +130,12 @@ export function deriveFilterOptions(
       if (key && !hmos.has(key)) hmos.set(key, hmo.trim());
     }
     for (const clinic of doctor.clinics ?? []) {
-      if (clinic.location) locations.add(clinic.location.trim());
+      // A clinic location that doesn't normalize to the whitelist is
+      // omitted from the dropdown/grouping entirely -- the doctor stays
+      // visible under "All locations" (filters.location === 'all' skips
+      // the location check in clinicMatches()), just unfilterable by city.
+      const normalized = clinic.location ? normalizeLocation(clinic.location) : null;
+      if (normalized) locations.set(normalized.display, normalized.province);
       const fee = Number(clinic.consultation_fee);
       if (Number.isFinite(fee)) {
         feeMin = Math.min(feeMin, fee);
@@ -137,15 +144,12 @@ export function deriveFilterOptions(
     }
   }
 
-  // Group "City, Province" strings under their province so a long location
-  // dropdown stays scannable.
+  // Group whitelisted "City, Province" display strings under their real province.
   const byProvince = new Map<string, string[]>();
-  for (const location of locations) {
-    const comma = location.lastIndexOf(',');
-    const province = comma === -1 ? 'Other locations' : location.slice(comma + 1).trim();
+  for (const [display, province] of locations) {
     const bucket = byProvince.get(province);
-    if (bucket) bucket.push(location);
-    else byProvince.set(province, [location]);
+    if (bucket) bucket.push(display);
+    else byProvince.set(province, [display]);
   }
   const locationGroups: LocationGroup[] = Array.from(byProvince.entries())
     .map(([province, group]) => ({ province, locations: group.sort() }))
@@ -194,7 +198,10 @@ function matchesSearch(doctor: RankedDoctor, query: string): boolean {
 }
 
 function clinicMatches(clinic: Clinic, filters: DoctorFilters): boolean {
-  if (filters.location !== 'all' && clinic.location?.trim() !== filters.location) return false;
+  if (filters.location !== 'all') {
+    const normalized = normalizeLocation(clinic.location);
+    if (!normalized || normalized.display !== filters.location) return false;
+  }
   if (filters.maxFee !== null && Number(clinic.consultation_fee) > filters.maxFee) return false;
   return true;
 }

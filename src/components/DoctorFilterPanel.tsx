@@ -215,11 +215,17 @@ export default function DoctorFilterPanel({
                 <option value="all">All locations</option>
                 {options.locationGroups.map((group) => (
                   <optgroup key={group.province} label={group.province}>
-                    {group.locations.map((location) => (
-                      <option key={location} value={location}>
-                        {location}
-                      </option>
-                    ))}
+                    {group.locations.map((location) => {
+                      const comma = location.lastIndexOf(',');
+                      // The optgroup already names the province, so
+                      // showing it again per-option is redundant.
+                      const cityLabel = comma === -1 ? location : location.slice(0, comma);
+                      return (
+                        <option key={location} value={location}>
+                          {cityLabel}
+                        </option>
+                      );
+                    })}
                   </optgroup>
                 ))}
               </select>
