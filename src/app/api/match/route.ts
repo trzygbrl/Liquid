@@ -21,9 +21,11 @@
 
 import { GoogleGenAI } from '@google/genai';
 import { createClient } from '@supabase/supabase-js';
-import type { MatchResult, ClarifyResult, EmergencyResult, OffTopicResult, MatchApiResult } from '@/lib/matchApi';
+import type { MatchResult, ClarifyResult, EmergencyResult, OffTopicResult, MatchApiResult, RankedDoctorSummary } from '@/lib/matchApi';
 import { checkEmergencySymptoms } from '@/lib/safetyGate';
-import { evaluateSymptomPlausibility } from '@/lib/symptomValidation';
+import { evaluateSymptomPlausibility, detectLanguage } from '@/lib/symptomValidation';
+import { embedText, vectorSearchDoctors } from '@/lib/vectorMatch';
+import { rankDoctors, type DoctorRecord } from '@/lib/doctorRanking';
 
 // Types
 
@@ -33,8 +35,27 @@ interface RequestBody {
   age?: number;
   sex?: string;
   location?: string;
+  hmo?: string;
   isForFamilyMember?: boolean;
   conversationHistory?: Array<{ role: 'user' | 'model'; text: string }>;
+}
+
+/**
+ * Calculates a geographic multiplier for similarity scores based on patient location:
+ * - 1.5x multiplier for clinics in the same city
+ * - 1.2x multiplier for clinics in the same province
+ * - 1.0x baseline multiplier
+ */
+function localityBoost(doctorCities: string[], patientCity: string, patientProvince: string): number {
+  if (!patientCity && !patientProvince) return 1.0;
+
+  if (patientCity && doctorCities.some((c) => c.toLowerCase().includes(patientCity.toLowerCase()))) {
+    return 1.5;
+  }
+  if (patientProvince && doctorCities.some((c) => c.toLowerCase().includes(patientProvince.toLowerCase()))) {
+    return 1.2;
+  }
+  return 1.0;
 }
 
 // Response parser
@@ -260,10 +281,10 @@ ACCESSIBILITY, PLAIN-LANGUAGE & NURSE-TONE RULES (PRD 8.7 - CRITICAL):
      * Example (Bad - Generic): "Dahil masakit ang mata mo, kailangan mo ng eye doctor para matingnan ka."
    - Keep it strictly non-diagnostic: explain why the referral is suited, do NOT diagnose a specific disease or condition.
 3. ELIMINATE all dense clinical jargon (e.g. do NOT say "etiology", "pathology", "bilateral presentation", "manifests", "symptomatology"). Use everyday words like "swelling", "stiffness", "airways", "digestion", "joint wear", "retina/eye lining".
-4. LANGUAGE MIRRORING:
-   - Detect whether the patient's symptom description is in English or Tagalog.
-   - ENGLISH INPUT -> Write "reason" and "question" strictly in ENGLISH.
-   - TAGALOG INPUT -> Write "reason" and "question" strictly in natural, conversational TAGALOG.
+4. LANGUAGE MIRRORING (STRICT RULE):
+   - If the patient described their symptoms in ENGLISH -> Write "reason" and "question" strictly in clear, warm ENGLISH.
+   - If the patient described their symptoms in TAGALOG -> Write "reason" and "question" strictly in natural TAGALOG.
+   - NEVER output a Tagalog "reason" for an English symptom description.
 5. The "specialty" and "sub_specialty" fields MUST ALWAYS be returned in their exact English taxonomy names from the list below, regardless of the patient's input language.
 6. The "reason" must be 1 to 3 clear sentences (approx. 20 to 50 words). Concise, reassuring, and easy for elderly or low-literacy patients to understand.
 7. The "question" field (if asking a follow-up) must be a single short question in the patient's language. No numbered lists, no bullet points.
@@ -285,14 +306,21 @@ ${noSubLines}`;
   const demoContext =
     demoParts.length > 0 ? `${demoParts.join(' | ')}\n\n` : '';
 
+  // Determine language of symptoms to reinforce deterministic mirroring
+  const detectedLang = detectLanguage(symptomText);
+  const langDirectives =
+    detectedLang === 'tl'
+      ? '[LANGUAGE DIRECTIVE: Symptoms are in Tagalog. Output "reason" or "question" in natural Tagalog.]'
+      : '[LANGUAGE DIRECTIVE: Symptoms are in English. Output "reason" or "question" strictly in English.]';
+
   // Assumption 7: if conversation is at the turn cap, force a best-effort match
   const forceMatchNote =
     conversationHistory.length >= 4
-      ? '\n\n[SYSTEM NOTE: This is your final attempt. You must return a best-effort {"type":"match",...} response even if uncertain. Do not ask another question.]'
+      ? '\n[SYSTEM NOTE: This is your final attempt. You must return a best-effort {"type":"match",...} response even if uncertain. Do not ask another question.]'
       : '';
 
   const currentUserText =
-    `${demoContext}Symptoms: ${symptomText.trim()}${forceMatchNote}`;
+    `${demoContext}Symptoms: ${symptomText.trim()}\n\n${langDirectives}${forceMatchNote}`;
 
   // Build the full contents array: history turns first, then the current user turn
   const contents = [
@@ -358,6 +386,146 @@ ${noSubLines}`;
     return Response.json(PARSE_FALLBACK);
   }
 
-  // 9. Return
-  return Response.json(parsed);
+  // If the result is not a match (e.g. clarify, off_topic), return immediately
+  if (parsed.type !== 'match') {
+    return Response.json(parsed);
+  }
+
+  // 9. Vector Retrieval & Specialist Shortlist Enrichment (PROMPT 5)
+  const startEnrichment = Date.now();
+  let vectorEnrichedMatch: MatchResult = { ...parsed };
+
+  try {
+    const matchedSpecialty = parsed.specialty;
+    const matchedSubSpecialty = parsed.sub_specialty;
+
+    // NEW STEP A — Embed the patient symptom text
+    let symptomEmbedding: number[] | null = null;
+    try {
+      symptomEmbedding = await embedText(symptomText, 'RETRIEVAL_QUERY');
+    } catch (embedErr) {
+      console.warn('[match] Symptom embedding generation failed, falling back to taxonomy match:', embedErr);
+    }
+
+    // NEW STEP B — Parallel doctor queries (Track A + Track B)
+    const selectQuery =
+      'id, name, credentials, specialty, sub_specialty, hmo_accreditations, verification_status, clinics(id, name, room_details, location, consultation_fee), schedule_slots(id, clinic_id, date, start_time, end_time, is_booked), reviews(rating)';
+
+    const trackAPromise = serviceClient
+      .from('doctors')
+      .select(selectQuery)
+      .eq('specialty', matchedSpecialty)
+      .eq('verification_status', 'verified')
+      .limit(50);
+
+    const trackBPromise = (async () => {
+      if (!symptomEmbedding) return { ids: [], docs: [] };
+      const similarResults = await vectorSearchDoctors(serviceClient, symptomEmbedding, 20);
+      if (similarResults.length === 0) return { ids: [], docs: [] };
+
+      const docIds = similarResults.map((r) => r.id);
+      const { data: vectorDocs, error: vectorFetchErr } = await serviceClient
+        .from('doctors')
+        .select(selectQuery)
+        .in('id', docIds)
+        .eq('verification_status', 'verified');
+
+      if (vectorFetchErr) {
+        console.warn('[match] Track B doctor fetch error:', vectorFetchErr.message);
+        return { ids: similarResults, docs: [] };
+      }
+
+      return { ids: similarResults, docs: vectorDocs ?? [] };
+    })();
+
+    const [trackAResult, trackBResult] = await Promise.allSettled([trackAPromise, trackBPromise]);
+
+    const trackADocs: DoctorRecord[] =
+      trackAResult.status === 'fulfilled' && trackAResult.value.data
+        ? (trackAResult.value.data as unknown as DoctorRecord[])
+        : [];
+
+    const trackBData =
+      trackBResult.status === 'fulfilled' ? trackBResult.value : { ids: [], docs: [] };
+    const trackBDocs: DoctorRecord[] = trackBData.docs as unknown as DoctorRecord[];
+    const similarityRawMap = new Map<string, number>(
+      trackBData.ids.map((r) => [r.id, r.similarity])
+    );
+
+    // Parse patient location for locality boost
+    const locationStr = location || '';
+    const parts = locationStr.split(',');
+    const patientProvince = parts.length > 1 ? (parts.at(-1)?.trim() ?? '') : '';
+    const patientCity = parts.length > 1 ? parts.slice(0, -1).join(',').trim() : locationStr.trim();
+
+    // NEW STEP C — Merge and deduplicate
+    const doctorMap = new Map<string, DoctorRecord>();
+    for (const doc of trackADocs) {
+      doctorMap.set(doc.id, doc);
+    }
+    for (const doc of trackBDocs) {
+      doctorMap.set(doc.id, doc);
+    }
+    const mergedDoctors = Array.from(doctorMap.values());
+
+    // Apply locality boost to similarity scores
+    const similarityMap = new Map<string, number>();
+    for (const doc of mergedDoctors) {
+      const rawSim = similarityRawMap.get(doc.id) ?? 0;
+      if (rawSim > 0) {
+        const clinicLocations = (doc.clinics ?? []).map((c) => c.location);
+        const boost = localityBoost(clinicLocations, patientCity, patientProvince);
+        similarityMap.set(doc.id, rawSim * boost);
+      } else {
+        similarityMap.set(doc.id, 0);
+      }
+    }
+
+    // NEW STEP D — Rank doctors using Tier 0 vector similarity & multi-tier sort
+    const patientHmo = body.hmo || null;
+    const rankingResult = rankDoctors(
+      mergedDoctors,
+      matchedSpecialty,
+      matchedSubSpecialty,
+      patientHmo,
+      similarityRawMap.size > 0 ? similarityMap : undefined
+    );
+
+    // NEW STEP E — Convert top 10 ranked doctors to RankedDoctorSummary
+    const rankedDoctorSummaries: RankedDoctorSummary[] = rankingResult.ranked
+      .slice(0, 10)
+      .map((d) => ({
+        id: d.id,
+        name: d.name,
+        specialty: d.specialty,
+        sub_specialty: d.sub_specialty,
+        similarityScore: d.similarityScore,
+        isHmoCovered: d.isHmoCovered,
+        averageRating: d.averageRating,
+        soonestSlot: d.soonestSlot ? { formatted: d.soonestSlot.formatted } : null,
+        primaryClinic: d.primaryClinic
+          ? {
+              name: d.primaryClinic.name,
+              location: d.primaryClinic.location,
+              consultation_fee: d.primaryClinic.consultation_fee,
+            }
+          : null,
+      }));
+
+    // NEW STEP F — Spread response
+    vectorEnrichedMatch = {
+      ...parsed,
+      rankedDoctors: rankedDoctorSummaries,
+      vectorSearchApplied: rankingResult.vectorSearchApplied,
+    };
+
+    console.log(
+      `[match] Vector enrichment took ${Date.now() - startEnrichment}ms (${rankedDoctorSummaries.length} doctors shortlisted, vectorSearchApplied=${rankingResult.vectorSearchApplied})`
+    );
+  } catch (enrichmentErr) {
+    console.warn('[match] Vector enrichment failed, returning base match:', enrichmentErr);
+    // Graceful degradation: never fail the API request if enrichment fails
+  }
+
+  return Response.json(vectorEnrichedMatch);
 }

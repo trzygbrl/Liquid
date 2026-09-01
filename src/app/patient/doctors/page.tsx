@@ -33,6 +33,8 @@ function DoctorListContent() {
   const [availableSubSpecialties, setAvailableSubSpecialties] = useState<string[]>([]);
   const [selectedSubSpecialty, setSelectedSubSpecialty] = useState<string | null>(initialSubSpecialty);
   const [patientHmo, setPatientHmo] = useState<string | null>(initialHmo);
+  const [similarityScores, setSimilarityScores] = useState<Map<string, number> | undefined>(undefined);
+  const [vectorSearchApplied, setVectorSearchApplied] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,6 +51,36 @@ function DoctorListContent() {
     setSelectedSubSpecialty(searchParams.get('sub_specialty') || null);
     setPatientHmo(searchParams.get('hmo') || null);
   }, [searchParams]);
+
+  // Read cached AI match result from sessionStorage for instant pre-population
+  useEffect(() => {
+    if (typeof window !== 'undefined' && specialtyParam) {
+      try {
+        const cachedRaw = sessionStorage.getItem('kayapp_last_match');
+        if (cachedRaw) {
+          const cached = JSON.parse(cachedRaw);
+          if (cached && cached.type === 'match' && cached.specialty === specialtyParam) {
+            if (cached.vectorSearchApplied) {
+              setVectorSearchApplied(true);
+            }
+            if (Array.isArray(cached.rankedDoctors) && cached.rankedDoctors.length > 0) {
+              const simMap = new Map<string, number>();
+              for (const doc of cached.rankedDoctors) {
+                if (typeof doc.similarityScore === 'number' && doc.similarityScore > 0) {
+                  simMap.set(doc.id, doc.similarityScore);
+                }
+              }
+              if (simMap.size > 0) {
+                setSimilarityScores(simMap);
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('Could not read cached AI match:', e);
+      }
+    }
+  }, [specialtyParam]);
 
   // Fetch doctors and sub-specialty taxonomy on mount
   useEffect(() => {
@@ -158,8 +190,16 @@ function DoctorListContent() {
   // order with the non-matching doctors removed. hasHmoMismatch stays a
   // property of the whole specialty search rather than of the filtered view.
   const { ranked: rankedAll, hasHmoMismatch } = useMemo(
-    () => rankDoctors(doctors, specialtyParam ?? '', selectedSubSpecialty, patientHmo),
-    [doctors, specialtyParam, selectedSubSpecialty, patientHmo]
+    () => rankDoctors(doctors, specialtyParam ?? '', selectedSubSpecialty, patientHmo, similarityScores),
+    [doctors, specialtyParam, selectedSubSpecialty, patientHmo, similarityScores]
+  );
+
+  const isTagalog = useMemo(
+    () =>
+      /[\b\s](ang|ng|mga|sa|ko|mo|siya|kami|tayo|sila|ito|iyan|iyon|may|mayroon|wala|hindi|masakit|lagnat|ubo|sipon|tiyan|ulo|katawan|nahihilo|nanghihina)[\b\s]/i.test(
+        ` ${symptomsParam} `
+      ),
+    [symptomsParam]
   );
 
   const ranked = useMemo(
@@ -284,6 +324,7 @@ function DoctorListContent() {
           // In specialty mode the specialty is fixed by the query param.
           showSpecialty={browseAll}
           resultCount={ranked.length}
+          vectorSearchApplied={vectorSearchApplied}
         />
 
         {/* Results summary header */}
@@ -371,6 +412,25 @@ function DoctorListContent() {
                             {doctor.name}
                           </h2>
                           <div className="flex flex-wrap items-center gap-2">
+                            {/* Semantic Match Quality Badge (PROMPT 7) */}
+                            {doctor.similarityScore >= 0.65 && (
+                              <span
+                                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold border shadow-xs ${
+                                  doctor.similarityScore >= 0.80
+                                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                    : 'bg-sky-50 text-sky-800 border-sky-200'
+                                }`}
+                              >
+                                <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                                {doctor.similarityScore >= 0.80
+                                  ? isTagalog
+                                    ? 'Pinakamainam'
+                                    : 'Top match'
+                                  : isTagalog
+                                    ? 'Magandang tugma'
+                                    : 'Good match'}
+                              </span>
+                            )}
                             {doctor.verification_status === 'verified' && (
                               <span
                                 title="Verified Medical License"

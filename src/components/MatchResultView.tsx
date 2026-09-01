@@ -144,6 +144,15 @@ export default function MatchResultView({
               <p className="mt-3 text-sm leading-relaxed text-slate-800 font-medium">
                 {match.reason}
               </p>
+              {match.vectorSearchApplied && (
+                <p className="mt-2.5 text-xs text-brand-800 font-medium bg-brand-100/60 p-2.5 rounded-xl border border-brand-200/60">
+                  {/[\b\s](ang|ng|mga|sa|ko|mo|siya|kami|tayo|sila|ito|iyan|iyon|may|mayroon|wala|hindi|masakit|lagnat|ubo|sipon|tiyan|ulo|katawan|nahihilo|nanghihina)[\b\s]/i.test(
+                    ` ${patientData.symptomText || ''} `
+                  )
+                    ? 'Ang mga doktor ay inayos ayon sa kung gaano kagaling ang pagtutugma sa iyong inilarawan.'
+                    : 'Doctors are ranked by how closely their expertise matches your description.'}
+                </p>
+              )}
             </div>
 
             <div className="mt-5 border-t border-brand-200/60 pt-3.5 text-[11px] text-slate-500 font-medium flex items-center gap-1.5">

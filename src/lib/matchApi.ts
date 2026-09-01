@@ -22,11 +22,29 @@
 //     //   with conversationHistory appended
 //   }} />
 
+export interface RankedDoctorSummary {
+  id: string;
+  name: string;
+  specialty: string;
+  sub_specialty: string | null;
+  similarityScore: number;
+  isHmoCovered: boolean;
+  averageRating: number | null;
+  soonestSlot: { formatted: string } | null;
+  primaryClinic: {
+    name: string;
+    location: string;
+    consultation_fee: number;
+  } | null;
+}
+
 export type MatchResult = {
   type: 'match';
   specialty: string;
   sub_specialty: string | null;
   reason: string;
+  rankedDoctors?: RankedDoctorSummary[];
+  vectorSearchApplied?: boolean;
 };
 
 export type ClarifyResult = {
@@ -62,6 +80,8 @@ export interface MatchApiRequest {
   sex?: string;
   /** Optional. City/province, e.g. "Angeles City, Pampanga" */
   location?: string;
+  /** Optional. Patient's HMO provider name */
+  hmo?: string;
   /** Optional. True if consultation is being booked on behalf of a family member */
   isForFamilyMember?: boolean;
   /**

@@ -6,10 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "node --test src/lib/symptomValidation.test.ts src/lib/speechRecognition.test.ts",
+    "test": "node --test src/lib/symptomValidation.test.ts src/lib/speechRecognition.test.ts src/lib/vectorMatch.test.ts",
     "test:speech": "node --test src/lib/speechRecognition.test.ts",
     "test:validation": "node --test src/lib/symptomValidation.test.ts",
-    "icons": "node scripts/gen_icons.mjs"
+    "test:vector": "node --test src/lib/vectorMatch.test.ts",
+    "icons": "node scripts/gen_icons.mjs",
+    "embed": "node scripts/embed_doctors.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.17.1",

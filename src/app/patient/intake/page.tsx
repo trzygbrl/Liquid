@@ -38,6 +38,11 @@ function IntakePageContent() {
         setState('intake');
         return;
       }
+      if (res.type === 'match' && typeof window !== 'undefined') {
+        try {
+          sessionStorage.setItem('kayapp_last_match', JSON.stringify(res));
+        } catch {}
+      }
       setMatchResult(res);
       setState('result');
     } catch (err) {
@@ -68,6 +73,11 @@ function IntakePageContent() {
         isForFamilyMember: patientData.isForFamilyMember,
         conversationHistory: updatedHistory,
       });
+      if (res.type === 'match' && typeof window !== 'undefined') {
+        try {
+          sessionStorage.setItem('kayapp_last_match', JSON.stringify(res));
+        } catch {}
+      }
       setMatchResult(res);
     } catch (err) {
       console.error('Clarification match failed:', err);

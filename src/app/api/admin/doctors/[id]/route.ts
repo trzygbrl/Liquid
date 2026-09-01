@@ -8,6 +8,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { checkAdminPasscode } from '@/lib/adminAuth';
+import { buildDoctorProfileString, embedText, type ProfileInput } from '@/lib/vectorMatch';
 
 interface PatchBody {
   verification_status: 'verified' | 'rejected';
@@ -60,6 +61,39 @@ export async function PATCH(
 
   if (error) {
     return Response.json({ error: error.message }, { status: 500 });
+  }
+
+  // Fully Automated Embedding: When a doctor is approved, automatically build and save their vector embedding
+  if (body.verification_status === 'verified') {
+    try {
+      const { data: doctorData } = await serviceClient
+        .from('doctors')
+        .select('id, name, credentials, specialty, sub_specialty, clinics(name, location)')
+        .eq('id', id)
+        .single();
+
+      if (doctorData) {
+        const profileInput: ProfileInput = {
+          name: doctorData.name,
+          specialty: doctorData.specialty,
+          sub_specialty: doctorData.sub_specialty,
+          credentials: doctorData.credentials,
+          clinics: (doctorData.clinics ?? []).map((c: any) => ({
+            name: c.name,
+            location: c.location,
+          })),
+        };
+        const profileString = buildDoctorProfileString(profileInput);
+        const vector = await embedText(profileString, 'RETRIEVAL_DOCUMENT');
+        await serviceClient
+          .from('doctors')
+          .update({ embedding: vector as unknown as string })
+          .eq('id', id);
+        console.log(`[admin/verify] Successfully generated and stored vector embedding for Dr. ${doctorData.name} (${id})`);
+      }
+    } catch (embedErr) {
+      console.warn(`[admin/verify] Non-blocking warning: Failed to auto-generate embedding for doctor ${id}:`, embedErr);
+    }
   }
 
   return Response.json({ ok: true });

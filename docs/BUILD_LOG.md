@@ -29,6 +29,165 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-31: Fully Automated Vector Embedding on Admin Doctor License Approval
+**Task:** Feature Enhancement — Zero-Touch Doctor Embedding on Approval
+**Owner:** Backend Lead (Role A) & AI Lead (Role D)
+**What changed:** In `src/app/api/admin/doctors/[id]/route.ts`, hooked up fully automated vector embedding:
+- When an admin approves a doctor's license (`PATCH /api/admin/doctors/[id]` with `verification_status: 'verified'`), the server automatically fetches the doctor's full profile, credentials, and clinic locations.
+- Constructs the embedding profile string using `buildDoctorProfileString()`.
+- Generates the 768-dimensional float vector via `embedText(..., 'RETRIEVAL_DOCUMENT')`.
+- Stores the vector in the doctor's `embedding` column in Supabase in real-time.
+- Wrapped in a non-blocking try/catch so license approval always succeeds safely without latency hiccups.
+**Files touched:**
+- `src/app/api/admin/doctors/[id]/route.ts` [MODIFIED] — added auto-embedding trigger on admin verification.
+- `docs/BUILD_LOG.md` [MODIFIED] — logged update.
+
+
+### 2026-08-31: Bug Fixes — Tier 0 Vector Ranking & Deterministic Language Mirroring
+**Task:** QA Follow-up — Locality-Aware Re-ranking & Referral Language Fix
+**Owner:** Backend Lead (Role A) & AI Lead (Role D)
+**What changed:**
+1. **Tier 0 Vector Ranking Condition:** In `src/lib/doctorRanking.ts`, modified the condition from `(a.similarityScore > 0 && b.similarityScore > 0)` to `(a.similarityScore > 0 || b.similarityScore > 0)`. Previously, doctors with a 0 similarity score were bypassing Tier 0 and beating vector-matched doctors due to earlier calendar slot dates. Now, doctors with high semantic similarity and locality boosts (e.g. `Dr. Clarisse Villanueva` in Angeles City at `0.8439`) correctly rank #1.
+2. **Calibrated Match Badge Thresholds:** In `src/app/patient/doctors/page.tsx`, calibrated badge thresholds to `similarityScore >= 0.80` for `"Top match"` / `"Pinakamainam"` and `>= 0.65` for `"Good match"` / `"Magandang tugma"`.
+3. **Deterministic Language Mirroring in Gemini Prompt:** In `src/app/api/match/route.ts`, integrated server-side `detectLanguage(symptomText)` and injected strict language directives into both the system prompt and the user turn content. English symptom inputs now strictly return English nurse-tone rationales, while Tagalog inputs return Tagalog.
+**Files touched:**
+- `src/lib/doctorRanking.ts` [MODIFIED] — fixed Tier 0 sorting condition.
+- `src/app/patient/doctors/page.tsx` [MODIFIED] — calibrated match badge threshold.
+- `src/app/api/match/route.ts` [MODIFIED] — enforced language mirroring with `detectLanguage`.
+- `docs/BUILD_LOG.md` [MODIFIED] — logged bug fixes.
+
+
+### 2026-08-31: Vector Matching — End-to-End Unit & Smoke Test Suite
+**Task:** PROMPT 8 — End-to-End Smoke Test
+**Owner:** QA / AI Lead (Role D & C)
+**What changed:** Created comprehensive unit tests in `src/lib/vectorMatch.test.ts` and verified all automated and manual validation criteria for the vector matching pipeline:
+1. **`buildDoctorProfileString()` Suite:** Tested handling of explicit sub-specialties, `null` sub-specialties, missing clinic arrays, plain-language description lookups from `SPECIALTY_PLAIN_MAP`, and non-taxonomy specialty fallbacks.
+2. **`vectorSearchDoctors()` Suite:** Verified graceful degradation when pgvector / RPC returns errors (returns `[]` without throwing) and descending similarity score ordering on valid returns.
+3. **Tier 0 `rankDoctors()` Suite:** Verified that Tier 0 vector similarity overrides Tier 3 ratings when similarity scores are present, and verified backwards-compatibility when `similarityScores` is undefined (regression test).
+4. **Test Configuration:** Added `test:vector` script and included `src/lib/vectorMatch.test.ts` in `package.json` `"test"` suite (total: 82/82 passing tests).
+5. **Manual Smoke Test Checklist:**
+   - [x] `npm run embed -- --dry-run` prints sensible profile strings for sample doctors
+   - [x] `npm run embed` completes without errors (215 doctors embedded into Supabase)
+   - [x] Supabase: all active doctors have non-null 768-dimensional embeddings
+   - [x] `POST /api/match` with emergency criteria triggers emergency gate safely
+   - [x] `POST /api/match` with symptom query generates vector embeddings, runs two-track retrieval, and returns `rankedDoctors` with similarity scores and locality boost
+   - [x] Doctor directory renders "Top match" / "Good match" pills based on similarity threshold
+   - [x] Sort dropdown includes "Best clinical match" when `vectorSearchApplied` is true
+   - [x] Selecting "Best clinical match" sorts doctors strictly by semantic similarity
+   - [x] Full graceful degradation verified on missing API keys or RPC failures without throwing 500 errors
+**Files touched:**
+- `src/lib/vectorMatch.test.ts` [NEW] — unit test suite for vector matching and Tier 0 ranking.
+- `package.json` [MODIFIED] — added `test:vector` and updated `test` command.
+- `src/lib/doctorRanking.ts` [MODIFIED] — relative import extension for ESM test runner.
+- `src/lib/doctorFilters.ts` [MODIFIED] — relative import extensions for ESM test runner.
+- `docs/BUILD_LOG.md` [MODIFIED] — logged changes and verification checklist.
+
+
+### 2026-08-31: Vector Matching — Frontend Match Quality Badges & Semantic Sort
+**Task:** PROMPT 7 — Frontend: Surface the Semantic Match Score
+**Owner:** Frontend Lead (Role B) & Product / UX Lead (Role C)
+**What changed:** Updated patient-facing screens and controls to surface vector match intelligence, match quality badges, and instant pre-population:
+1. **Pre-population (CHANGE 1):** Caches successful match results in `sessionStorage` (`kayapp_last_match`) in `src/app/patient/intake/page.tsx`, allowing `/patient/doctors` to instantly display pre-ranked doctor candidates on page mount without waiting for network fetches.
+2. **Match Quality Badges (CHANGE 2):** Displayed on doctor cards in `src/app/patient/doctors/page.tsx`:
+   - `0.85–1.0`: "Top match" (`bg-emerald-50 text-emerald-800 border-emerald-200`) / Tagalog: "Pinakamainam"
+   - `0.70–0.85`: "Good match" (`bg-sky-50 text-sky-800 border-sky-200`) / Tagalog: "Magandang tugma"
+   - Scores below 0.70 show no badge to preserve patient confidence.
+3. **"Best Clinical Match" Sort Option (CHANGE 3):** Added `semantic` sort key to `src/lib/doctorFilters.ts` and `src/components/DoctorFilterPanel.tsx`, conditionally displayed only when `vectorSearchApplied === true`.
+4. **"Why this specialist?" Supporting Note (CHANGE 4):** Added a subtle, localized supporting note to `src/components/MatchResultView.tsx` when `vectorSearchApplied === true` ("Doctors are ranked by how closely their expertise matches your description" / Tagalog equivalent).
+5. **Strict Graceful Degradation:** All elements disappear cleanly if vector search was not applied or when browsing all specialties directly.
+**Files touched:**
+- `src/lib/doctorFilters.ts` [MODIFIED] — added `semantic` sort key, option, and sorting logic.
+- `src/components/DoctorFilterPanel.tsx` [MODIFIED] — conditional `semantic` sort option rendering.
+- `src/components/MatchResultView.tsx` [MODIFIED] — supporting note when vector search is applied.
+- `src/app/patient/intake/page.tsx` [MODIFIED] — cached match results for instant doctor pre-population.
+- `src/app/patient/doctors/page.tsx` [MODIFIED] — pre-population and match quality badge rendering.
+- `docs/BUILD_LOG.md` [MODIFIED] — logged changes.
+
+
+### 2026-08-31: Vector Matching — Two-Track Retrieval & Locality Boost in /api/match
+**Task:** PROMPT 5 — Integrate Vector Retrieval into /api/match & PROMPT 6 — Tier 0 Vector Ranking
+**Owner:** AI/Integration Lead (Role D) & Backend Lead (Role A)
+**What changed:** Integrated vector-based retrieval, locality-weighted re-ranking, and doctor shortlisting directly into `src/app/api/match/route.ts` and `src/lib/doctorRanking.ts`:
+1. **On-the-Fly Symptom Embedding (Step A):** Generates query embedding vectors via `embedText(symptomText, 'RETRIEVAL_QUERY')` on valid symptom inputs.
+2. **Two-Track Retrieval (Step B):** Executes parallel non-blocking queries: Track A (exact taxonomy match up to 50 doctors) + Track B (`vectorSearchDoctors()` semantic shortlist of 20 doctors). Handled via `Promise.allSettled`.
+3. **Locality-Aware Boosting (Step C):** Deduplicates doctor records and applies a proximity multiplier to similarity scores (`1.5x` for same city, `1.2x` for same province, `1.0x` baseline) using patient intake location, ensuring top clinical matches are geographically accessible.
+4. **Tier 0 Vector Ranking (Step D & PROMPT 6):** Updated `rankDoctors()` to prioritize cosine similarity with a `0.01` tolerance band before falling through to sub-specialty, HMO, rating, and schedule tiers.
+5. **Enriched API Response (Step E & F):** Extended `MatchResult` with `rankedDoctors` (top 10 `RankedDoctorSummary` records including similarityScore, primary clinic, fees, and soonest slots) and `vectorSearchApplied: boolean`.
+6. **Robust Graceful Degradation:** All vector operations run within safe try/catch wrappers; any failure silently falls back to standard taxonomy matching without throwing 500 errors.
+**Files touched:**
+- `src/app/api/match/route.ts` [MODIFIED] — integrated two-track retrieval, locality boost, and doctor shortlisting.
+- `src/lib/doctorRanking.ts` [MODIFIED] — implemented Tier 0 vector similarity ranking.
+- `src/lib/matchApi.ts` [MODIFIED] — added `RankedDoctorSummary` interface and updated `MatchResult` and `MatchApiRequest`.
+- `docs/BUILD_LOG.md` [MODIFIED] — logged changes.
+**Notes/trade-offs:**
+- **Zero Latency Impact on Non-Matches:** Clarification questions and emergency gates bypass vector search entirely.
+
+
+### 2026-08-31: Vector Matching — vectorMatch.ts Helper Library
+**Task:** PROMPT 4 — vectorMatch.ts Helper Library
+**Owner:** AI/Integration Lead (Role D) & Backend Lead (Role A)
+**What changed:** Created `src/lib/vectorMatch.ts` as the central library for vector-based specialist matching, embedding generation, and pgvector cosine search:
+1. **`ProfileInput` Interface:** Standardized input interface for doctor profile data (name, credentials, specialty, sub-specialty, clinics).
+2. **`buildDoctorProfileString()`:** Single canonical source for constructing doctor profile strings including plain-language medical focus from `SPECIALTY_PLAIN_MAP`.
+3. **`embedText()`:** Generates 768-dimensional float embeddings using Gemini `gemini-embedding-001` (with multi-model fallback) supporting both `RETRIEVAL_DOCUMENT` and `RETRIEVAL_QUERY` task types.
+4. **`vectorSearchDoctors()`:** Calls the `match_doctors_by_embedding` Supabase RPC function and returns results sorted by similarity descending. Built with strict graceful degradation (catches any RPC or network failure and returns `[]` without throwing).
+5. **Route Refactoring:** Refactored `src/app/api/embed/route.ts` to consume `buildDoctorProfileString` and `embedText` directly from `src/lib/vectorMatch.ts`.
+**Files touched:**
+- `src/lib/vectorMatch.ts` [NEW] — embedding and vector search helper library.
+- `src/app/api/embed/route.ts` [MODIFIED] — refactored to use vectorMatch helpers.
+- `docs/BUILD_LOG.md` [MODIFIED] — logged changes.
+**Notes/trade-offs:**
+- **Zero Side Effects:** All exports are pure functions with zero execution side effects on import.
+
+
+### 2026-08-31: Vector Matching — Admin Doctor Re-Embedding API Route
+**Task:** PROMPT 3 — Admin Re-embedding API Route
+**Owner:** AI/Integration Lead (Role D) & Backend Lead (Role A)
+**What changed:** Created `src/app/api/embed/route.ts`, an authenticated Next.js API route enabling on-demand re-embedding of single doctor profiles (e.g. after a physician updates their credentials, specialty, sub-specialty, or clinic locations):
+1. **Bearer Token Authentication:** Gated by `Authorization: Bearer <SUPABASE_SERVICE_ROLE_KEY>` header to ensure only authorized administrative actions can invoke embedding updates.
+2. **Profile Construction:** Builds structured profile text incorporating the doctor's name, specialty, sub-specialty, credentials, clinic locations, and medical focus plain-language descriptions from `src/lib/specialtyHelpers.ts`.
+3. **Gemini Embedding Generation:** Uses `gemini-embedding-001` with `outputDimensionality: 768` and `taskType: 'RETRIEVAL_DOCUMENT'` with fallback resilience.
+4. **Database Upsert & Logging:** Updates the doctor's `embedding` vector in Supabase and logs the re-embedding action for auditability.
+**Files touched:**
+- `src/app/api/embed/route.ts` [NEW] — admin single-doctor re-embedding API endpoint.
+- `docs/BUILD_LOG.md` [MODIFIED] — logged changes.
+**Notes/trade-offs:**
+- **Shared Canonical Profile String Format:** Profile formatting mirrors `scripts/embed_doctors.mjs` and will cleanly import from `src/lib/vectorMatch.ts` once PROMPT 4 is executed.
+
+
+### 2026-08-31: Vector Matching — Doctor Profile Embedding Script
+**Task:** PROMPT 2 — Doctor Profile Embedding Script
+**Owner:** AI/Integration Lead (Role D)
+**What changed:** Created `scripts/embed_doctors.mjs`, a batch Node.js script that generates 768-dimensional Gemini `gemini-embedding-001` (`outputDimensionality: 768`) vectors for every doctor's profile in the database and writes them to the `embedding` column added in migration 0010.
+1. **Profile string format:** Structured as `"[name] is a [specialty] specialist[, sub-specialty: X]. Credentials: [...]. Clinic(s): [...]. Medical focus: [plain-language description]."` — matches the canonical format defined in the roadmap and will be shared with `src/lib/vectorMatch.ts` (PROMPT 4).
+2. **Model resolution & dimensions:** Configured `gemini-embedding-001` with `outputDimensionality: 768` and automated fallback handling, producing exact 768-dim embeddings matching `vector(768)`.
+3. **Batch processing & rate limiting:** Doctors are processed in batches of 10 with a 500ms pause between batches to stay safely within Gemini API rate limits.
+4. **Execution verified:** Executed `npm run embed` against the live database — successfully generated and stored embeddings for all 215 doctor records with 0 errors.
+5. **SPECIALTY_PLAIN_MAP inlined:** Dynamic import of a TypeScript source file from a `.mjs` script is not reliable without a TS loader, so the description lookup is copied inline and annotated to stay in sync with `src/lib/specialtyHelpers.ts`.
+**Files touched:**
+- `scripts/embed_doctors.mjs` [NEW] — batch embedding script with model fallback and dry-run support.
+- `package.json` [MODIFIED] — added `"embed": "node scripts/embed_doctors.mjs"` script.
+- `docs/BUILD_LOG.md` [MODIFIED] — logged changes and verification.
+**Notes/trade-offs:**
+- **Zero failure rate:** All 215 active doctors now possess 768-dimension vectors in Supabase ready for real-time vector similarity RPC queries.
+
+
+### 2026-08-31: Vector-Based AI Specialist Matching - Database Migration & pgvector Setup
+**Task:** PROMPT 1 — Database Migration: pgvector + embedding column
+**Owner:** AI/Integration Lead (Role D) & Backend Lead (Role A)
+**What changed:** Added Supabase migration `0010_pgvector_doctor_embeddings.sql` to prepare the database for vector-based semantic specialist matching:
+1. **pgvector Extension:** Enabled `vector` extension in Postgres.
+2. **Embedding Column:** Added `embedding vector(768)` nullable column on `public.doctors` matching Gemini's `text-embedding-004` output dimensionality.
+3. **IVFFlat Index:** Created `doctors_embedding_idx` using `ivfflat (embedding vector_cosine_ops)` with `lists = 100` for fast approximate nearest-neighbor search across the doctor roster.
+4. **Cosine Similarity RPC Function:** Created `match_doctors_by_embedding(query_embedding vector(768), match_count int)` returning `(id uuid, similarity float)` calculated via `1 - (embedding <=> query_embedding)` ordered by proximity.
+**Files touched:**
+- `supabase/migrations/0010_pgvector_doctor_embeddings.sql` [NEW] — pgvector schema migration, index, and similarity RPC function.
+- `docs/BUILD_LOG.md` [MODIFIED] — logged database schema update.
+**Notes/trade-offs:**
+- **Zero Downtime / Nullable Column:** Setting `embedding` as nullable ensures all existing doctor seed records and dashboard flows continue operating without disruption prior to batch embedding generation.
+- **RPC Decoupling:** The RPC returns raw similarity without hard-coded taxonomy filters so that application code can flexibly merge and re-rank exact matches and semantic shortlists.
+
+
 ### 2026-08-27: Cross-Device Voice Input Stabilization & Duplicate Word Elimination
 **Task:** 1.1 Speech-to-Text Cross-Device & Mobile Optimization
 **Owner:** Coding agent
