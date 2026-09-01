@@ -167,15 +167,17 @@ export default function ScheduleManager() {
               const deleted = payload.old as { id: string };
               setSlots((prev) => prev.filter((s) => s.id !== deleted.id));
             } else if (payload.eventType === 'INSERT') {
-              // Another device/tab added a slot, so add it to the list if it's upcoming
+              // Another device/tab added a slot, so add it to the list if it's upcoming and not already present
               const inserted = payload.new as Slot;
               if (inserted.date >= today) {
                 setSlots((prev) =>
-                  [...prev, inserted].sort((a, b) =>
-                    a.date !== b.date
-                      ? a.date.localeCompare(b.date)
-                      : a.start_time.localeCompare(b.start_time)
-                  )
+                  prev.some((s) => s.id === inserted.id)
+                    ? prev
+                    : [...prev, inserted].sort((a, b) =>
+                        a.date !== b.date
+                          ? a.date.localeCompare(b.date)
+                          : a.start_time.localeCompare(b.start_time)
+                      )
                 );
               }
             }
@@ -242,11 +244,13 @@ export default function ScheduleManager() {
     if (newSlot) {
       // Optimistic append. Keep list sorted by date then start_time
       setSlots((prev) =>
-        [...prev, newSlot as Slot].sort((a, b) =>
-          a.date !== b.date
-            ? a.date.localeCompare(b.date)
-            : a.start_time.localeCompare(b.start_time)
-        )
+        prev.some((s) => s.id === newSlot.id)
+          ? prev
+          : [...prev, newSlot as Slot].sort((a, b) =>
+              a.date !== b.date
+                ? a.date.localeCompare(b.date)
+                : a.start_time.localeCompare(b.start_time)
+            )
       );
     }
 
