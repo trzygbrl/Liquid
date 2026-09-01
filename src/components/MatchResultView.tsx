@@ -41,7 +41,9 @@ export default function MatchResultView({
       match.specialty
     )}&sub_specialty=${encodeURIComponent(
       match.sub_specialty || ''
-    )}&hmo=${encodeURIComponent(patientData.hmoProvider || '')}`;
+    )}&hmo=${encodeURIComponent(patientData.hmoProvider || '')}&symptoms=${encodeURIComponent(
+      patientData.symptomText || ''
+    )}`;
 
     return (
       <div className="animate-fade-slide-up flex flex-col gap-6">

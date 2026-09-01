@@ -29,6 +29,47 @@ If you're building manually (not through an agent), add the same entry yourself 
 
 ## Entries
 
+### 2026-08-27: Cross-Device Voice Input Stabilization & Duplicate Word Elimination
+**Task:** 1.1 Speech-to-Text Cross-Device & Mobile Optimization
+**Owner:** Coding agent
+**What changed:** Resolved voice dictation lag and the word duplication/repetition bug across mobile web (Android Chrome, Samsung Internet, iOS Safari) and desktop browsers:
+1. **Device-Adaptive Recognition Architecture (`src/lib/speechRecognition.ts` & `src/hooks/useVoiceInput.ts`):** Created a dedicated, modular voice input engine that detects mobile environments and configures recognition appropriately (`continuous = false` on mobile devices to prevent Android Chromium issue 536644 audio pipeline buffering and duplicate callbacks; `continuous = true` on desktop browsers for long-form dictation).
+2. **Intelligent Boundary Overlap & Phrase Deduplication (`speechRecognition.ts`):** Implemented `cleanAndMergeSpeechResults` and `appendWithOverlapRemoval` using longest-common-word suffix/prefix matching. It strips repeated hypotheses (e.g. where the speech engine re-emits prior phrases in subsequent interim/final slots), eliminates consecutive duplicate words and multi-word repeated phrases (up to 8 words), and merges cleanly with existing textarea text without duplication.
+3. **AnimationFrame / Throttled UI Updates (`createSpeechThrottler`):** Throttles rapid interim transcription events to 50ms animation frames. This stops synchronous 50Hz React state updates on mobile CPUs, completely eliminating UI freezing and audio thread starvation.
+4. **Enhanced Feedback & Graceful Error Handling (`IntakeFlow.tsx`):** Added clear user feedback banners for mic permissions (`not-allowed`), missing hardware (`audio-capture`), and connection drops (`network`), with an updated accessible mic button label ("Listening… (Tap to stop)").
+5. **Comprehensive Automated Test Coverage (`speechRecognition.test.ts`):** Added 18 unit tests covering Android Chrome cumulative hypotheses, duplicate final results, boundary overlap removals, consecutive repetitions, base text preservation, and throttler cancellations.
+**Files touched:**
+- `src/lib/speechRecognition.ts` [NEW] — cross-device speech recognition utilities, boundary overlap removal, phrase deduplication, and frame throttler.
+- `src/lib/speechRecognition.test.ts` [NEW] — automated unit test suite for speech transcript merging and deduplication algorithms.
+- `src/hooks/useVoiceInput.ts` [NEW] — reusable React hook managing speech recognition lifecycle, device-adaptive continuous listening, and error handling.
+- `src/components/IntakeFlow.tsx` [MODIFIED] — replaced raw inline speech code with `useVoiceInput`, added error alert banner and updated accessible button label.
+- `package.json` [MODIFIED] — updated `npm test` script to run both validation and speech recognition tests.
+- `docs/BUILD_LOG.md` [MODIFIED] — documented changes and architecture.
+**Notes/trade-offs:**
+- **Push-to-talk reliability on mobile:** By setting `continuous: false` on mobile, mobile devices use the native, ultra-responsive speech recognition dialog without audio buffer stalls. Patients can speak a thought, have it finalize cleanly, and tap again to append further details smoothly without losing or repeating text.
+- **Zero backend transcription costs:** The entire system relies on local/native browser Web Speech API engines with zero recurring API costs or server latency.
+
+### 2026-08-26: Doctor-in-the-Loop (HITL) Specialty Verification & Patient Re-referral System
+**Task:** Human-in-the-Loop (HITL) Clinical Safeguard & Specialist Re-referral
+**Owner:** Coding agent
+**What changed:** Implemented a Doctor-in-the-Loop (HITL) clinical verification system to ensure patient referrals are validated by licensed physicians before confirmation, providing a vital human safeguard over AI triage recommendations:
+1. **AI Recommendation & Intake Context Persistence:** When a patient completes intake and books a doctor, `ai_recommended_specialty` and `ai_recommended_sub_specialty` are persisted directly into `public.appointments` alongside the patient's symptoms.
+2. **Comprehensive Doctor Review Card (`AppointmentsDashboard.tsx`):** In the doctor's pending consultation request queue, doctors now review the patient's full demographic profile (Age, Sex, Location, HMO Provider), reported symptoms in full, and a badge highlighting the AI's triage recommendation.
+3. **General Decline Flow with Optional Re-referral:** Replaced specific re-referral action buttons with a clean universal "Decline" button. Inside the decline panel, a clear explanation is always strictly mandatory regardless of reason. If the decline is due to a specialty mismatch, the doctor checks "Re-refer patient to another specialist (Doctor-in-the-Loop)", which then requires selecting the recommended medical specialty from the taxonomy.
+4. **Patient Notification & 1-Click Re-routing (`/patient/dashboard`):** Patients with reassigned appointments are greeted with a prominent Doctor Review card displaying the reviewing physician's name, clinical explanation note, and recommended specialty, accompanied by a 1-click CTA button (`Find [Recommended Specialty] Doctors`) that pre-filters matching specialists while preserving symptoms.
+5. **Outline Clipart Replacement for Emojis & UI Streamlining:** Replaced platform emojis across pending requests and patient reassignment cards with cohesive monochrome SVG outline icons. Streamlined patient demographic chips by keeping the HMO provider pill as text-only and removing the redundant "Pending Review" pill (as all items in this section are pending review).
+**Files touched:**
+- `supabase/migrations/0009_doctor_in_the_loop_specialty_reassignment.sql` [NEW] — added `ai_recommended_specialty`, `ai_recommended_sub_specialty`, `doctor_recommended_specialty`, `doctor_recommended_sub_specialty`, and `reassigned_by_doctor` columns with index.
+- `src/components/Icons.tsx` [MODIFIED] — added outline icons `IconMapPin`, `IconSparkles`, `IconFileText`, `IconClock`, `IconUser`.
+- `src/components/MatchResultView.tsx` [MODIFIED] — forwarded patient symptoms in `findDoctorsUrl`.
+- `src/app/patient/doctors/page.tsx` [MODIFIED] — forwarded `specialty`, `sub_specialty`, and `symptoms` into doctor booking profile links.
+- `src/app/patient/doctors/[id]/page.tsx` [MODIFIED] — pre-filled `symptomSummary` and persisted `ai_recommended_specialty` and `ai_recommended_sub_specialty` with defensive fallback.
+- `src/components/AppointmentsDashboard.tsx` [MODIFIED] — loaded patient profile and AI triage recommendation, implemented Doctor-in-the-Loop re-referral panel with 33 specialties taxonomy select, clinical rationale validation, and replaced emojis with outline cliparts.
+- `src/app/patient/dashboard/page.tsx` [MODIFIED] — rendered Doctor-in-the-Loop specialty reassignment card with physician explanation, 1-click re-booking CTA, and outline clipart icon.
+- `docs/BUILD_LOG.md` [MODIFIED] — documented implementation details.
+**Notes/trade-offs:**
+- **Double safety net for database backwards-compatibility:** All reads and writes to `appointments` include automatic schema fallback handling (`Postgres 42703 / undefined_column`) so that the application functions seamlessly even before migration 0009 is applied on a remote database.
+- **Mandatory physician guidance prevents patient drop-off:** Rather than simply rejecting patients, doctors actively guide misdirected patients to the right medical specialist with clinical rationale.
 ### 2026-08-26: Mobile responsiveness pass across the patient portal
 **Task:** none (iterative UI polish per direct instruction, not a numbered roadmap task)
 **Owner:** Coding agent

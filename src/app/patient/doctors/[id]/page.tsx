@@ -85,6 +85,9 @@ function DoctorDetailPageContent() {
 
   const doctorId = Array.isArray(params.id) ? params.id[0] : params.id;
   const patientHmo = searchParams.get('hmo') || null;
+  const aiSpecialtyParam = searchParams.get('specialty') || null;
+  const aiSubSpecialtyParam = searchParams.get('sub_specialty') || null;
+  const initialSymptoms = searchParams.get('symptoms') || '';
 
   const [doctor, setDoctor] = useState<DoctorDetail | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -94,7 +97,7 @@ function DoctorDetailPageContent() {
   // scopes which slots Step B shows (Task 7.4).
   const [selectedClinicId, setSelectedClinicId] = useState<string | null>(null);
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
-  const [symptomSummary, setSymptomSummary] = useState<string>('');
+  const [symptomSummary, setSymptomSummary] = useState<string>(initialSymptoms);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
   const confirmationRef = useRef<HTMLDivElement>(null);
@@ -276,17 +279,37 @@ function DoctorDetailPageContent() {
 
       // 2. Insert appointment record (status: 'pending')
       // Note: PostgreSQL trigger trg_sync_slot_status automatically updates schedule_slots.is_booked = 'booked'
-      const { data: apptData, error: insertError } = await supabase
+      const apptPayload: Record<string, unknown> = {
+        patient_id: user.id,
+        doctor_id: doctor.id,
+        slot_id: selectedSlot.id,
+        status: 'pending',
+        symptom_summary: symptomSummary.trim() || null,
+        ai_recommended_specialty: aiSpecialtyParam || doctor.specialty || null,
+        ai_recommended_sub_specialty: aiSubSpecialtyParam || doctor.sub_specialty || null,
+      };
+
+      let { data: apptData, error: insertError } = await supabase
         .from('appointments')
-        .insert({
-          patient_id: user.id,
-          doctor_id: doctor.id,
-          slot_id: selectedSlot.id,
-          status: 'pending',
-          symptom_summary: symptomSummary.trim() || null,
-        })
+        .insert(apptPayload)
         .select('id')
         .single();
+
+      // Graceful fallback if database schema is pre-0009
+      if (
+        insertError &&
+        (insertError.code === '42703' || insertError.message?.includes('ai_recommended_specialty'))
+      ) {
+        delete apptPayload.ai_recommended_specialty;
+        delete apptPayload.ai_recommended_sub_specialty;
+        const retryRes = await supabase
+          .from('appointments')
+          .insert(apptPayload)
+          .select('id')
+          .single();
+        apptData = retryRes.data;
+        insertError = retryRes.error;
+      }
 
       if (insertError) {
         // Handle unique constraint conflict (slot already booked)
@@ -294,6 +317,10 @@ function DoctorDetailPageContent() {
           throw new Error('This time slot was just booked by another patient. Please pick a different slot.');
         }
         throw insertError;
+      }
+
+      if (!apptData) {
+        throw new Error('Failed to create appointment record. Please try again.');
       }
 
       // 3. Redirect to the dedicated confirmation screen (Task 4.3).
