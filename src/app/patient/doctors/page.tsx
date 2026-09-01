@@ -28,6 +28,7 @@ function DoctorListContent() {
   const initialSubSpecialty = searchParams.get('sub_specialty') || null;
   const initialHmo = searchParams.get('hmo') || null;
   const symptomsParam = searchParams.get('symptoms') || '';
+  const initialLocation = searchParams.get('location') || null;
 
   const [doctors, setDoctors] = useState<DoctorRecord[]>([]);
   const [availableSubSpecialties, setAvailableSubSpecialties] = useState<string[]>([]);
@@ -37,7 +38,7 @@ function DoctorListContent() {
   // default shown on their card (see pickOptimalClinic). A patient who
   // isn't signed in, or hasn't saved a location, just gets no proximity
   // signal -- everything degrades gracefully to "soonest slot wins".
-  const [patientLocation, setPatientLocation] = useState<string | null>(null);
+  const [patientLocation, setPatientLocation] = useState<string | null>(initialLocation);
   const [similarityScores, setSimilarityScores] = useState<Map<string, number> | undefined>(undefined);
   const [vectorSearchApplied, setVectorSearchApplied] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
@@ -58,6 +59,10 @@ function DoctorListContent() {
   useEffect(() => {
     setSelectedSubSpecialty(searchParams.get('sub_specialty') || null);
     setPatientHmo(searchParams.get('hmo') || null);
+    const loc = searchParams.get('location');
+    if (loc) {
+      setPatientLocation(loc);
+    }
   }, [searchParams]);
 
   // Best-effort fetch of the signed-in patient's saved location, for
@@ -77,7 +82,7 @@ function DoctorListContent() {
         .maybeSingle();
 
       if (!cancelled && data?.location) {
-        setPatientLocation(data.location);
+        setPatientLocation((prev) => prev || data.location);
       }
     }
     loadPatientLocation();
@@ -236,13 +241,6 @@ function DoctorListContent() {
     [doctors, specialtyParam, selectedSubSpecialty, patientHmo, similarityScores, patientLocation]
   );
 
-  const isTagalog = useMemo(
-    () =>
-      /[\b\s](ang|ng|mga|sa|ko|mo|siya|kami|tayo|sila|ito|iyan|iyon|may|mayroon|wala|hindi|masakit|lagnat|ubo|sipon|tiyan|ulo|katawan|nahihilo|nanghihina)[\b\s]/i.test(
-        ` ${symptomsParam} `
-      ),
-    [symptomsParam]
-  );
 
   const ranked = useMemo(
     () => sortDoctors(applyDoctorFilters(rankedAll, filters), filters.sort),
@@ -483,12 +481,8 @@ function DoctorListContent() {
                               >
                                 <span className="h-1.5 w-1.5 rounded-full bg-current" />
                                 {doctor.similarityScore >= 0.80
-                                  ? isTagalog
-                                    ? 'Pinakamainam'
-                                    : 'Top match'
-                                  : isTagalog
-                                    ? 'Magandang tugma'
-                                    : 'Good match'}
+                                  ? 'Top match'
+                                  : 'Good match'}
                               </span>
                             )}
                             {doctor.verification_status === 'verified' && (

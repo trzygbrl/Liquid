@@ -41,7 +41,9 @@ export default function MatchResultView({
       match.specialty
     )}&sub_specialty=${encodeURIComponent(
       match.sub_specialty || ''
-    )}&hmo=${encodeURIComponent(patientData.hmoProvider || '')}&symptoms=${encodeURIComponent(
+    )}&hmo=${encodeURIComponent(patientData.hmoProvider || '')}&location=${encodeURIComponent(
+      patientData.location || ''
+    )}&symptoms=${encodeURIComponent(
       patientData.symptomText || ''
     )}`;
 

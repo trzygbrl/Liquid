@@ -31,6 +31,7 @@ function IntakePageContent() {
         age: data.age,
         sex: data.sex,
         location: data.location,
+        hmo: data.hmoProvider || undefined,
         isForFamilyMember: data.isForFamilyMember,
       });
       if (res.type === 'off_topic') {
@@ -70,6 +71,7 @@ function IntakePageContent() {
         age: patientData.age,
         sex: patientData.sex,
         location: patientData.location,
+        hmo: patientData.hmoProvider || undefined,
         isForFamilyMember: patientData.isForFamilyMember,
         conversationHistory: updatedHistory,
       });

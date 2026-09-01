@@ -488,7 +488,8 @@ ${noSubLines}`;
       matchedSpecialty,
       matchedSubSpecialty,
       patientHmo,
-      similarityRawMap.size > 0 ? similarityMap : undefined
+      similarityRawMap.size > 0 ? similarityMap : undefined,
+      body.location || null
     );
 
     // NEW STEP E — Convert top 10 ranked doctors to RankedDoctorSummary

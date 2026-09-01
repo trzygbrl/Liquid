@@ -157,10 +157,10 @@ export function pickOptimalClinic(
   }));
 
   scored.sort((a, b) => {
-    // A clinic with an open slot always beats one with none.
-    if (Boolean(a.slot) !== Boolean(b.slot)) return a.slot ? -1 : 1;
-    // Then closer beats farther.
+    // Proximity first: closer to patient beats farther (same city > same province > same region > unknown).
     if (a.tier !== b.tier) return a.tier - b.tier;
+    // Within the same proximity tier, a clinic with an open slot beats one with none.
+    if (Boolean(a.slot) !== Boolean(b.slot)) return a.slot ? -1 : 1;
     // Then, among equally-close clinics with slots, earlier wins.
     if (a.slot && b.slot) {
       const dateCmp = a.slot.date.localeCompare(b.slot.date);
