@@ -83,7 +83,7 @@ function PatientDashboardContent() {
   const [patientName, setPatientName] = useState<string>('');
   const [appointments, setAppointments] = useState<AppointmentItem[]>([]);
   const [loadingAppts, setLoadingAppts] = useState<boolean>(true);
-  const [apptTab, setApptTab] = useState<'upcoming' | 'completed'>('upcoming');
+  const [apptTab, setApptTab] = useState<'upcoming' | 'declined' | 'completed'>('upcoming');
   const [loadError, setLoadError] = useState<string | null>(null);
 
   // Which appointment's inline "reason for cancelling" panel is open, and
@@ -93,6 +93,11 @@ function PatientDashboardContent() {
   const [cancelReason, setCancelReason] = useState('');
   const [cancelError, setCancelError] = useState<string | null>(null);
   const [cancelSubmitting, setCancelSubmitting] = useState(false);
+
+  // Which declined/cancelled appointment is showing its "are you sure"
+  // delete confirmation.
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
 
   const loadPatientData = useCallback(async () => {
     setLoadingAppts(true);
@@ -256,19 +261,54 @@ function PatientDashboardContent() {
     await loadPatientData();
   }
 
-  const completedAppts = appointments.filter((a) => a.status === 'completed');
+  async function handleDeleteConfirm(appointmentId: string) {
+    setDeleteSubmitting(true);
+    const { error } = await supabase.from('appointments').delete().eq('id', appointmentId);
+    setDeleteSubmitting(false);
+
+    if (error) {
+      console.error('[patient dashboard] delete appointment failed:', error.message);
+      return;
+    }
+
+    setDeletingId(null);
+    setAppointments((prev) => prev.filter((a) => a.id !== appointmentId));
+  }
+
+  // A confirmed slot whose end time has already passed but that the doctor
+  // hasn't marked 'completed' yet is neither upcoming nor a verified
+  // completed visit -- it's hidden from the patient until the doctor side
+  // (AppointmentsDashboard) actually flips the status.
+  const isPastSlot = (a: AppointmentItem) => {
+    if (!a.slot) return false;
+    return new Date(`${a.slot.date}T${a.slot.end_time}`).getTime() < Date.now();
+  };
+
+  const slotStart = (a: AppointmentItem) =>
+    a.slot ? new Date(`${a.slot.date}T${a.slot.start_time}`).getTime() : null;
+
+  // Only a real 'completed' status counts -- set by the doctor, never
+  // inferred client-side (see isPastSlot above).
+  const completedAppts = appointments
+    .filter((a) => a.status === 'completed')
+    // Most recently consulted first.
+    .sort((a, b) => (slotStart(b) ?? 0) - (slotStart(a) ?? 0));
+
+  const upcomingAppts = appointments
+    .filter((a) => (a.status === 'pending' || a.status === 'confirmed') && !isPastSlot(a))
+    // Soonest upcoming date first; appointments with no slot yet trail behind.
+    .sort((a, b) => (slotStart(a) ?? Infinity) - (slotStart(b) ?? Infinity));
+
   // Declined/cancelled appointments older than the retention window are
   // dropped from the dashboard entirely (see DROPPED_APPT_RETENTION_DAYS).
-  const activeAppts = appointments.filter((a) => {
-    if (a.status === 'completed') return false;
-    if (a.status === 'declined' || a.status === 'cancelled') {
-      return daysSince(a.created_at) <= DROPPED_APPT_RETENTION_DAYS;
-    }
-    return true;
-  });
+  const declinedAppts = appointments
+    .filter((a) => (a.status === 'declined' || a.status === 'cancelled') && daysSince(a.created_at) <= DROPPED_APPT_RETENTION_DAYS)
+    // Most recently declined/cancelled first.
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   const awaitingReview = completedAppts.filter((a) => !a.review).length;
-  const shownAppts = apptTab === 'upcoming' ? activeAppts : completedAppts;
+  const shownAppts =
+    apptTab === 'upcoming' ? upcomingAppts : apptTab === 'declined' ? declinedAppts : completedAppts;
 
   return (
     <main className="flex min-h-screen flex-col px-4 py-8 sm:px-6 lg:px-8">
@@ -288,12 +328,13 @@ function PatientDashboardContent() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <section className="lg:col-span-2">
             <div className="card overflow-hidden">
-              <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4 sm:px-6">
+              <div className="space-y-3 border-b border-slate-200 px-5 py-4 sm:px-6">
                 <h2 className="min-w-0 truncate text-sm font-bold text-slate-900 md:text-lg">My consultations</h2>
-                <div className="flex shrink-0 gap-1 rounded-full bg-slate-100 p-1">
+                <div className="flex w-fit gap-1 rounded-full bg-slate-100 p-1">
                   {(
                     [
-                      ['upcoming', 'Upcoming', activeAppts.length],
+                      ['upcoming', 'Upcoming', upcomingAppts.length],
+                      ['declined', 'Declined', declinedAppts.length],
                       ['completed', 'Completed', completedAppts.length],
                     ] as const
                   ).map(([id, label, count]) => (
@@ -302,14 +343,14 @@ function PatientDashboardContent() {
                       type="button"
                       onClick={() => setApptTab(id)}
                       aria-current={apptTab === id ? 'true' : undefined}
-                      className={`rounded-full px-3.5 py-1.5 text-[0.4rem] md:text-xs font-semibold transition ${
+                      className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
                         apptTab === id
                           ? 'bg-white text-slate-900 shadow-sm'
                           : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
                       {label}
-                      <span className="ml-1.5 text-[0.4rem] md:text-xs text-slate-500">{count}</span>
+                      <span className="ml-1.5 text-xs md:text-xs text-slate-500">{count}</span>
                     </button>
                   ))}
                 </div>
@@ -345,11 +386,15 @@ function PatientDashboardContent() {
               <p className="text-sm font-semibold text-slate-800">
                 {apptTab === 'upcoming'
                   ? 'No upcoming appointments.'
+                  : apptTab === 'declined'
+                  ? 'No declined or cancelled appointments.'
                   : 'No completed consultations yet.'}
               </p>
               <p className="mt-1 text-sm text-slate-500 max-w-sm mx-auto">
                 {apptTab === 'upcoming'
                   ? 'Check your symptoms and book a doctor, and your scheduled visits will appear here.'
+                  : apptTab === 'declined'
+                  ? 'Declined or cancelled appointments show up here for 14 days.'
                   : 'Once a visit is marked complete by the clinic, it shows up here for review.'}
               </p>
               {apptTab === 'upcoming' && (
@@ -363,11 +408,13 @@ function PatientDashboardContent() {
             </div>
           ) : (
             <div className="space-y-6">
-              {/* Upcoming & active */}
-              {apptTab === 'upcoming' && (
+              {/* Upcoming & declined/cancelled share the same card layout --
+                  it already renders the right badge and reason for each
+                  status. */}
+              {(apptTab === 'upcoming' || apptTab === 'declined') && (
                 <div className="space-y-3">
                   <div className="grid grid-cols-1 gap-3.5">
-                    {activeAppts.map((appt) => {
+                    {shownAppts.map((appt) => {
                       const canCancel = appt.status === 'pending' || appt.status === 'confirmed';
                       return (
                       <div
@@ -502,12 +549,44 @@ function PatientDashboardContent() {
                               </button>
                             )}
 
-                            <a
-                              href={`/patient/appointments/${appt.id}/confirmation`}
-                              className="fluid-hover rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900"
-                            >
-                              Details
-                            </a>
+                            {apptTab === 'declined' ? (
+                              deletingId === appt.id ? (
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteConfirm(appt.id)}
+                                    disabled={deleteSubmitting}
+                                    className="rounded-2xl bg-rose-600 px-4 py-1 text-xs font-bold text-white shadow-sm transition hover:bg-rose-700 disabled:opacity-50"
+                                  >
+                                    {deleteSubmitting ? '…' : 'Confirm'}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setDeletingId(null)}
+                                    disabled={deleteSubmitting}
+                                    className="rounded-2xl border border-slate-200 bg-white px-4 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-100 disabled:opacity-50"
+                                  >
+                                    Nevermind
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  id={`delete-appt-${appt.id}`}
+                                  type="button"
+                                  onClick={() => setDeletingId(appt.id)}
+                                  className="fluid-hover rounded-2xl border border-slate-200 bg-white px-4 py-1 text-xs font-semibold text-slate-600 hover:border-rose-300 hover:text-rose-600 hover:bg-rose-50/50"
+                                >
+                                  Delete
+                                </button>
+                              )
+                            ) : (
+                              <a
+                                href={`/patient/appointments/${appt.id}/confirmation`}
+                                className="fluid-hover rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                              >
+                                Details
+                              </a>
+                            )}
                           </div>
                         </div>
 
@@ -563,53 +642,73 @@ function PatientDashboardContent() {
                     {completedAppts.map((appt) => (
                       <div
                         key={appt.id}
-                        className="rounded-2xl border border-emerald-200/60 bg-white p-5 sm:p-6 shadow-sm fluid-hover hover:border-emerald-300 hover:shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                        className="card p-5 sm:p-6 fluid-hover hover:border-emerald-300/70 hover:shadow-md"
                       >
-                        <div className="flex min-w-0 gap-3.5">
-                          {appt.doctor && (
-                            <DoctorAvatar name={appt.doctor.name} id={appt.doctor.id} size={48} className="mt-0.5 shrink-0" />
-                          )}
-                          <div className="min-w-0 space-y-1">
-                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                              <h4 className="text-sm font-bold text-slate-900">
-                                {appt.doctor?.name || 'Specialist'}
-                              </h4>
-                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 border border-emerald-200">
-                                <IconCheck className="h-3 w-3" /> Completed Visit
-                              </span>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-3.5">
+                              {appt.doctor && (
+                                <DoctorAvatar name={appt.doctor.name} id={appt.doctor.id} size={48} className="shrink-0" />
+                              )}
+                              <div className="min-w-0">
+                                <h4 className="truncate text-sm font-bold text-slate-900">
+                                  {appt.doctor?.name || 'Specialist'}
+                                </h4>
+                                <p className="text-xs font-semibold text-brand-700">
+                                  {appt.doctor?.specialty}
+                                  {appt.doctor?.sub_specialty ? ` (${appt.doctor.sub_specialty})` : ''}
+                                </p>
+                              </div>
                             </div>
 
-                            {appt.slot && (
-                              <p className="text-xs text-slate-500 font-medium">
-                                Consulted on {fmtDate(appt.slot.date)}
-                                {appt.slot.clinic && ` at ${appt.slot.clinic.name}`}
-                              </p>
+                            {/* Date/time and location sit below as their own
+                                full-width block instead of being indented under
+                                the avatar. */}
+                            <div className="mt-3 space-y-1">
+                              {appt.slot && (
+                                <p className="text-xs text-slate-700 font-medium">
+                                  Consulted {fmtDate(appt.slot.date)} at <span className="font-bold text-slate-900">{fmtTime(appt.slot.start_time)}</span>
+                                </p>
+                              )}
+
+                              {appt.slot?.clinic && (
+                                <p className="text-xs text-slate-600">{appt.slot.clinic.name}</p>
+                              )}
+
+                              {appt.symptom_summary && (
+                                <p className="text-xs text-slate-500 italic">
+                                  &ldquo;{appt.symptom_summary}&rdquo;
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3 self-end sm:self-center">
+                            {appt.review ? (
+                              <>
+                                <span
+                                  aria-disabled="true"
+                                  className="inline-flex items-center gap-1 rounded-2xl bg-amber-50 border border-amber-200 px-3.5 py-1.5 text-xs font-bold text-amber-700"
+                                >
+                                  <IconStar className="h-3.5 w-3.5" /> Rated {appt.review.rating}.0
+                                </span>
+                                <a
+                                  href={`/patient/appointments/${appt.id}/review`}
+                                  className="fluid-hover rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                                >
+                                  View Review
+                                </a>
+                              </>
+                            ) : (
+                              <a
+                                id={`write-review-${appt.id}`}
+                                href={`/patient/appointments/${appt.id}/review`}
+                                className="fluid-hover rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                              >
+                                Write a Review
+                              </a>
                             )}
                           </div>
-                        </div>
-
-                        <div className="flex items-center gap-3 self-end sm:self-center">
-                          {appt.review ? (
-                            <div className="flex items-center gap-2">
-                              <span className="inline-flex items-center gap-1 rounded-2xl bg-amber-50 border border-amber-200 px-3.5 py-1.5 text-xs font-bold text-amber-700">
-                                <IconStar className="h-3.5 w-3.5" /> Rated {appt.review.rating}.0
-                              </span>
-                              <a
-                                href={`/patient/appointments/${appt.id}/review`}
-                                className="text-xs font-medium text-slate-500 hover:text-slate-900 transition underline"
-                              >
-                                View Review
-                              </a>
-                            </div>
-                          ) : (
-                            <a
-                              id={`write-review-${appt.id}`}
-                              href={`/patient/appointments/${appt.id}/review`}
-                              className="fluid-hover inline-flex items-center gap-1 rounded-2xl bg-brand-600 px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-brand-700"
-                            >
-                              <IconStar className="h-3.5 w-3.5" /> Write a Review
-                            </a>
-                          )}
                         </div>
                       </div>
                     ))}
@@ -630,8 +729,9 @@ function PatientDashboardContent() {
               <h2 className="text-sm font-bold text-slate-900 md:text-base">At a glance</h2>
               <dl className="mt-3 divide-y divide-slate-100">
                 {[
-                  { label: 'Upcoming & active', value: activeAppts.length, tone: 'text-brand-700' },
+                  { label: 'Upcoming', value: upcomingAppts.length, tone: 'text-brand-700' },
                   { label: 'Completed visits', value: completedAppts.length, tone: 'text-emerald-700' },
+                  { label: 'Declined/cancelled', value: declinedAppts.length, tone: 'text-rose-700' },
                   { label: 'Awaiting your review', value: awaitingReview, tone: 'text-amber-700' },
                 ].map((row) => (
                   <div key={row.label} className="flex items-center justify-between py-2.5">

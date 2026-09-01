@@ -56,10 +56,6 @@ interface Appointment {
 }
 
 // Helpers
-function todayISO(): string {
-  return new Date().toISOString().split('T')[0];
-}
-
 /** Formats 'HH:MM:SS' as '9:00 AM' */
 function fmt24to12(t: string): string {
   const [hStr, mStr] = t.split(':');
@@ -90,10 +86,14 @@ function fmtSex(sex: string | null): string {
 export default function AppointmentsDashboard() {
   const [pendingAppts, setPendingAppts] = useState<Appointment[]>([]);
   const [confirmedAppts, setConfirmedAppts] = useState<Appointment[]>([]);
+  // Confirmed appointments whose slot has already ended -- the patient
+  // dashboard hides these until the doctor confirms the visit actually
+  // happened, since nothing flips status to 'completed' automatically.
+  const [awaitingCompletionAppts, setAwaitingCompletionAppts] = useState<Appointment[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Track which appointment ids currently have an in-flight accept/decline request
+  // Track which appointment ids currently have an in-flight accept/decline/complete request
   const [actioning, setActioning] = useState<Set<string>>(new Set());
 
   // Which appointment's inline decline/re-referral panel is open
@@ -106,16 +106,12 @@ export default function AppointmentsDashboard() {
 
   // Fetch helper, called on init and on realtime events
   const fetchAppointments = useCallback(async (uid: string) => {
-    const today = todayISO();
-
-    const runFetch = (withReassign: boolean) => {
-      const selectQuery = withReassign
-        ? `
-          id, status, symptom_summary, created_at, status_reason,
-          ai_recommended_specialty, ai_recommended_sub_specialty,
-          doctor_recommended_specialty, doctor_recommended_sub_specialty,
-          reassigned_by_doctor,
-          patients ( name, age, sex, location, hmo_provider ),
+    const [pendingRes, confirmedRes] = await Promise.all([
+      supabase
+        .from('appointments')
+        .select(`
+          id, status, symptom_summary, created_at,
+          patients ( name, age, sex ),
           schedule_slots ( date, start_time, end_time, clinics ( name ) )
         `
         : `
@@ -159,21 +155,32 @@ export default function AppointmentsDashboard() {
 
     setPendingAppts((pendingRes.data ?? []) as unknown as Appointment[]);
 
-    const upcoming = ((confirmedRes.data ?? []) as unknown as Appointment[])
-      .filter((a) => {
-        const slotDate = a.schedule_slots?.date;
-        return slotDate !== undefined && slotDate >= today;
-      })
-      .sort((a, b) => {
-        const da = a.schedule_slots?.date ?? '';
-        const db = b.schedule_slots?.date ?? '';
-        if (da !== db) return da.localeCompare(db);
-        const ta = a.schedule_slots?.start_time ?? '';
-        const tb = b.schedule_slots?.start_time ?? '';
-        return ta.localeCompare(tb);
-      });
+    // Assumption 5: client-side filter/sort. Supabase embedded-resource filters on
+    // the nested schedule_slots object filter the nested object per row, not which
+    // parent rows come back, so we can't reliably exclude past-dated appointments
+    // at query level.
+    const now = Date.now();
+    const isPastSlot = (a: Appointment) => {
+      const slot = a.schedule_slots;
+      if (!slot) return false;
+      return new Date(`${slot.date}T${slot.end_time}`).getTime() < now;
+    };
+    const byDateTimeAsc = (a: Appointment, b: Appointment) => {
+      const da = a.schedule_slots?.date ?? '';
+      const db = b.schedule_slots?.date ?? '';
+      if (da !== db) return da.localeCompare(db);
+      const ta = a.schedule_slots?.start_time ?? '';
+      const tb = b.schedule_slots?.start_time ?? '';
+      return ta.localeCompare(tb);
+    };
+
+    const confirmed = (confirmedRes.data ?? []) as unknown as Appointment[];
+    const upcoming = confirmed.filter((a) => !isPastSlot(a)).sort(byDateTimeAsc);
+    // Most recently ended first -- these need the doctor's attention soonest.
+    const awaitingCompletion = confirmed.filter(isPastSlot).sort((a, b) => byDateTimeAsc(b, a));
 
     setConfirmedAppts(upcoming);
+    setAwaitingCompletionAppts(awaitingCompletion);
     setLoading(false);
   }, []);
 
@@ -310,6 +317,46 @@ export default function AppointmentsDashboard() {
       setRecommendedSubSpecialty('');
       setDeclineError(null);
     }
+  }
+
+  // Marks a confirmed, already-ended visit as completed. This is the only
+  // place in the app that ever writes status = 'completed' -- the patient
+  // dashboard and review page both gate on it, so nothing shows up there as
+  // completed until the doctor confirms it here.
+  async function handleMarkCompleted(appointmentId: string) {
+    setActioning((prev) => new Set(prev).add(appointmentId));
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session) {
+      setActioning((prev) => {
+        const next = new Set(prev);
+        next.delete(appointmentId);
+        return next;
+      });
+      return;
+    }
+
+    setAwaitingCompletionAppts((prev) => prev.filter((a) => a.id !== appointmentId));
+
+    const { error } = await supabase
+      .from('appointments')
+      .update({ status: 'completed' })
+      .eq('id', appointmentId)
+      .eq('status', 'confirmed');
+
+    setActioning((prev) => {
+      const next = new Set(prev);
+      next.delete(appointmentId);
+      return next;
+    });
+
+    if (error) {
+      console.error('AppointmentsDashboard: mark-completed error', error.message);
+    }
+
+    await fetchAppointments(session.user.id);
   }
 
   function handleDeclineClick(appointmentId: string) {
@@ -628,11 +675,85 @@ export default function AppointmentsDashboard() {
         )}
       </section>
 
+      {/* Confirmed appointments whose slot has ended -- the patient dashboard
+          keeps these hidden until marked completed here. */}
+      <section className="card p-6 sm:p-7">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-5">
+          <div className="flex items-center gap-2.5">
+            <h2 className="text-lg font-bold text-slate-900">Needs Completion Confirmation</h2>
+            {awaitingCompletionAppts.length > 0 && (
+              <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-bold text-amber-800 border border-amber-200">
+                {awaitingCompletionAppts.length}
+              </span>
+            )}
+          </div>
+          <span className="text-xs text-slate-500 font-medium">Confirm the visit happened</span>
+        </div>
+
+        {awaitingCompletionAppts.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 px-6 py-10 text-center">
+            <p className="text-xs font-medium text-slate-500">No consultations awaiting completion.</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2.5">
+            {awaitingCompletionAppts.map((appt) => {
+              const isActioning = actioning.has(appt.id);
+              const slot = appt.schedule_slots;
+              const patient = appt.patients;
+
+              return (
+                <div
+                  key={appt.id}
+                  className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-100 bg-slate-50/70 px-5 py-3.5"
+                >
+                  {/* Left: patient name + slot date/time/clinic */}
+                  <div className="flex min-w-0 flex-col gap-0.5">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-bold text-slate-900">
+                        {patient?.name ?? 'N/A'}
+                      </p>
+                      {(patient?.age || patient?.sex) && (
+                        <span className="rounded-full bg-white border border-slate-200 px-2 py-0.5 text-xs text-slate-600 font-medium">
+                          {[patient.age ? `${patient.age} y/o` : null, fmtSex(patient.sex)]
+                            .filter(Boolean)
+                            .join(' · ')}
+                        </span>
+                      )}
+                    </div>
+                    {slot ? (
+                      <p className="truncate text-xs text-slate-500 font-medium">
+                        <strong className="text-slate-800 font-semibold">{fmtDate(slot.date)}&nbsp;·&nbsp;{fmt24to12(slot.start_time)} to {fmt24to12(slot.end_time)}</strong>
+                        {slot.clinics?.name && (
+                          <>&nbsp;·&nbsp;{slot.clinics.name}</>
+                        )}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-slate-500 italic">Slot details unavailable</p>
+                    )}
+                  </div>
+
+                  {/* Right: mark completed */}
+                  <button
+                    id={`complete-appt-${appt.id}`}
+                    type="button"
+                    onClick={() => handleMarkCompleted(appt.id)}
+                    disabled={isActioning}
+                    aria-label={`Mark appointment for ${patient?.name ?? 'patient'} as completed`}
+                    className="shrink-0 rounded-2xl bg-emerald-600 px-4 py-2 min-h-[40px] text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-50"
+                  >
+                    {isActioning ? '…' : 'Mark as Completed'}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
       {/* Confirmed / Upcoming Appointments */}
       <section className="card p-6 sm:p-7">
         <div className="border-b border-slate-100 pb-4 mb-5">
           <h2 className="text-lg font-bold text-slate-900">Upcoming Confirmed Consultations</h2>
-          <p className="text-sm text-slate-600 mt-1">Scheduled patient appointments for your practice.</p>
         </div>
 
         {confirmedAppts.length === 0 ? (
