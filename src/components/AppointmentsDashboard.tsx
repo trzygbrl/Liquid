@@ -106,17 +106,16 @@ export default function AppointmentsDashboard() {
 
   // Fetch helper, called on init and on realtime events
   const fetchAppointments = useCallback(async (uid: string) => {
-    const [pendingRes, confirmedRes] = await Promise.all([
-      supabase
-        .from('appointments')
-        .select(`
+    const runFetch = async (includeExtraFields: boolean) => {
+      const selectQuery = includeExtraFields
+        ? `
           id, status, symptom_summary, created_at,
-          patients ( name, age, sex ),
+          patients ( name, age, sex, location, hmo_provider ),
           schedule_slots ( date, start_time, end_time, clinics ( name ) )
         `
         : `
           id, status, symptom_summary, created_at,
-          patients ( name, age, sex, location, hmo_provider ),
+          patients ( name, age, sex ),
           schedule_slots ( date, start_time, end_time, clinics ( name ) )
         `;
 
