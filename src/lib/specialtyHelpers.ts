@@ -143,6 +143,18 @@ export const SPECIALTY_PLAIN_MAP: Record<string, SpecialtyPlainInfo> = {
     description: 'Treats hearing problems, ear infections, sinus issues, sore throat, hoarseness, and tonsils.',
     tagalogDescription: 'Gumagamot sa problema sa pandinig, sinusitis, pananakit ng lalamunan, at tonsil.',
   },
+  'Ears, Nose, & Throat': {
+    plainName: 'Ear, Nose & Throat (ENT) Specialist',
+    tagalogName: 'Espesyalista sa Tainga, Ilong at Lalamunan (ENT)',
+    description: 'Treats ear pain, hearing issues, sinus trouble, nasal obstruction, throat pain, hoarseness, and tonsils.',
+    tagalogDescription: 'Gumagamot sa pananakit ng tainga, pandinig, bara sa ilong, sinusitis, at pananakit ng lalamunan.',
+  },
+  'Hearing & Otolaryngology': {
+    plainName: 'Hearing & Ear Specialist (Otolaryngology)',
+    tagalogName: 'Espesyalista sa Pandinig at Tainga',
+    description: 'Specializes in hearing loss, tinnitus, ear canal infections, eardrums, and inner ear balance disorders.',
+    tagalogDescription: 'Nakatuon sa pagkabingi, ugong sa tainga, impeksyon sa eardrum, at pagkahilo.',
+  },
   'Pain Medicine': {
     plainName: 'Chronic Pain Relief Specialist',
     tagalogName: 'Espesyalista sa Pamamahala ng Matinding Sakit',

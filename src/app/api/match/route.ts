@@ -264,6 +264,12 @@ RULES:
   * Either ask a gentle clarifying question to narrow down the symptom (e.g. asking where they feel discomfort or if they have a fever/cough) OR return a match to General Practice / Family Medicine / Pediatrics as appropriate.
 - If confident in the match, return:
   {"type":"match","specialty":"...","sub_specialty":"..." or null,"reason":"short 1-3 sentence plain-language explanation referencing the patient's specific symptoms"}
+- SUB-SPECIALTY ACCURACY & NULLABILITY:
+  * Select a specific sub-specialty ONLY when the patient's symptoms directly fall within that sub-specialist's specific domain (e.g., in "Ears, Nose, & Throat": choose "Otology" for ear pain/infections/hearing, "Rhinology" for sinuses/nasal passage, "Laryngology" strictly for voice box/vocal cord/throat/swallowing issues).
+  * NEVER force an unrelated sub-specialty (e.g. do NOT assign "Laryngology" for ear pain or jaw clicking).
+  * If no listed sub-specialty accurately matches the symptoms, or if the symptoms are broad/general, return "sub_specialty": null (or "General Otolaryngology" / "General Dentistry" as appropriate).
+- CLINICAL TRIAGE SPECIAL CASES:
+  * Jaw cracking, popping, clicking, or pain when chewing/moving mouth (even if pain radiates or feels like it is inside the ear/temple): This is classic temporomandibular joint (TMJ) / masticatory muscle dysfunction. Recommend "Dentistry" with sub_specialty "Oral & Maxillofacial Surgery" (or "General Dentistry" / null), or "Ears, Nose, & Throat" with "Otology" / "General Otolaryngology" (or null) if the patient is seeking to rule out primary ear disease.
 - If the symptoms are too ambiguous or vague, return:
   {"type":"clarify","question":"one plain-language follow-up question"}
 - If the patient has already answered a clarifying question (you will see it in the conversation history), you MUST now return a {"type":"match",...} response. Do not ask another question if the history already contains a patient answer.
@@ -292,7 +298,7 @@ ACCESSIBILITY, PLAIN-LANGUAGE & NURSE-TONE RULES (PRD 8.7 - CRITICAL):
 VALID SPECIALTY / SUB-SPECIALTY PAIRS (specialty: sub-specialty):
 ${taxonomyLines}
 
-SPECIALTIES WITH NO SUB-SPECIALTY (use sub_specialty: null for these):
+SPECIALTIES WITH NO SUB-SPECIALTY OR SUPPORTING GENERAL PRACTICE (use sub_specialty: null for general cases):
 ${noSubLines}`;
 
   // 6. Build the user turn content

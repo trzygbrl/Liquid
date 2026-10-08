@@ -60,7 +60,7 @@ const ROSTER = [
   ['Skin & Dermatology', 7, ['Dermatopathology', 'Cosmetic Dermatology', 'Mohs Micrographic Surgery']],
   ['Lung, Chest, & Pulmonology', 9, ['Interventional Pulmonology', 'Cystic Fibrosis', 'Lung Transplantation']],
   ['Stomach, Digestion, & Gastroenterology', 7, ['Advanced Endoscopy', 'Inflammatory Bowel Disease', 'Neurogastroenterology']],
-  ['Ears, Nose, & Throat', 4, ['Laryngology']],
+  ['Ears, Nose, & Throat', 6, ['Otology', 'Rhinology', 'Laryngology', 'Head & Neck Surgery', 'Pediatric Otolaryngology', 'Audiology']],
   ['Hearing & Otolaryngology', 3, ['Audiology', 'Otology']],
   ['Kidney, Urine, & Nephrology', 6, ['Transplant Nephrology', 'Interventional Nephrology', 'Dialysis Medicine']],
   ['Liver, Pancreas, & Hepatology', 6, ['Transplant Hepatology', 'Pancreatobiliary Medicine']],

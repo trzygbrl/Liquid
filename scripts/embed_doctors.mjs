@@ -85,6 +85,8 @@ const SPECIALTY_PLAIN_MAP = {
   'Ophthalmology': { description: 'Treats blurry vision, cataracts, glaucoma, eye redness, eye pain, and vision correction.' },
   'Orthopedics': { description: 'Helps with fractures, arthritis, joint pain, back pain, sports injuries, and spine conditions.' },
   'Otolaryngology': { description: 'Treats hearing problems, ear infections, sinus issues, sore throat, hoarseness, and tonsils.' },
+  'Ears, Nose, & Throat': { description: 'Treats ear pain, hearing issues, sinus trouble, nasal obstruction, throat pain, hoarseness, and tonsils.' },
+  'Hearing & Otolaryngology': { description: 'Specializes in hearing loss, tinnitus, ear canal infections, eardrums, and inner ear balance disorders.' },
   'Pain Medicine': { description: 'Helps relieve chronic nerve pain, back pain, and long-lasting body discomfort.' },
   'Pathology': { description: 'Analyzes blood tests, biopsies, and tissue samples to accurately identify diseases.' },
   'Pediatrics': { description: 'Comprehensive health care, growth monitoring, immunizations, and illnesses in infants, children, and teens.' },
